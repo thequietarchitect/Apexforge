@@ -1,0 +1,105 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Owner\\source\\repos\\ApexForge\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{089100B1-113F-4E66-888A-E83F3999EAFD}|Solution Items{089100B1-113F-4E66-888A-E83F3999EAFD}|C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge_air.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{089100B1-113F-4E66-888A-E83F3999EAFD}|Solution Items{089100B1-113F-4E66-888A-E83F3999EAFD}|solutionrelative:apexforge_air.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1143EFEC-B968-44D4-AEA2-BFBFC9FCAAE9}|ApexForge\\ApexForge.pyproj|C:\\Users\\Owner\\source\\repos\\ApexForge\\ApexForge\\air\\model.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{1143EFEC-B968-44D4-AEA2-BFBFC9FCAAE9}|ApexForge\\ApexForge.pyproj|solutionrelative:ApexForge\\air\\model.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1143EFEC-B968-44D4-AEA2-BFBFC9FCAAE9}|ApexForge\\ApexForge.pyproj|C:\\Users\\Owner\\source\\repos\\ApexForge\\ApexForge\\runtime\\diagnostics.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{1143EFEC-B968-44D4-AEA2-BFBFC9FCAAE9}|ApexForge\\ApexForge.pyproj|solutionrelative:ApexForge\\runtime\\diagnostics.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1143EFEC-B968-44D4-AEA2-BFBFC9FCAAE9}|ApexForge\\ApexForge.pyproj|C:\\Users\\Owner\\source\\repos\\ApexForge\\ApexForge\\air\\types.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{1143EFEC-B968-44D4-AEA2-BFBFC9FCAAE9}|ApexForge\\ApexForge.pyproj|solutionrelative:ApexForge\\air\\types.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1143EFEC-B968-44D4-AEA2-BFBFC9FCAAE9}|ApexForge\\ApexForge.pyproj|C:\\Users\\Owner\\source\\repos\\ApexForge\\ApexForge\\ApexForge.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{1143EFEC-B968-44D4-AEA2-BFBFC9FCAAE9}|ApexForge\\ApexForge.pyproj|solutionrelative:ApexForge\\ApexForge.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "types.py",
+              "DocumentMoniker": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge\\air\\types.py",
+              "RelativeDocumentMoniker": "apexforge\\air\\types.py",
+              "ToolTip": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge\\air\\types.py",
+              "RelativeToolTip": "apexforge\\air\\types.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-06-14T01:25:15.373Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "diagnostics.py",
+              "DocumentMoniker": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge\\runtime\\diagnostics.py",
+              "RelativeDocumentMoniker": "apexforge\\runtime\\diagnostics.py",
+              "ToolTip": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge\\runtime\\diagnostics.py",
+              "RelativeToolTip": "apexforge\\runtime\\diagnostics.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-06-14T01:23:10.295Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "apexforge_air.py",
+              "DocumentMoniker": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge_air.py",
+              "RelativeDocumentMoniker": "apexforge_air.py",
+              "ToolTip": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge_air.py",
+              "RelativeToolTip": "apexforge_air.py",
+              "ViewState": "AgIAAPcCAAAAAAAAAAAAAAADAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-06-14T01:18:50.609Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "model.py",
+              "DocumentMoniker": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge\\air\\model.py",
+              "RelativeDocumentMoniker": "apexforge\\air\\model.py",
+              "ToolTip": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge\\air\\model.py",
+              "RelativeToolTip": "apexforge\\air\\model.py",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAAABwAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-06-14T01:08:11.797Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ApexForge.py",
+              "DocumentMoniker": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge\\apexforge.py",
+              "RelativeDocumentMoniker": "apexforge\\apexforge.py",
+              "ToolTip": "C:\\Users\\Owner\\source\\repos\\ApexForge\\apexforge\\apexforge.py",
+              "RelativeToolTip": "apexforge\\apexforge.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-06-13T23:10:43.26Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
