@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Literal, TypeAlias, Union
+from typing import Literal, Union
 
 AIR_VERSION = "0.2"
 
 Primitive = Union[int, str, bool]
-Severity = Literal["error", "warning", "info"]
-DecisionPolicy = Literal["max_weight"]
 StateOperation = Literal["set_int", "add_int"]
 
 
@@ -19,15 +17,4 @@ def as_tuple(values: object) -> tuple:
         return ()
     if isinstance(values, tuple):
         return values
-    return tuple(values)  # type: ignore[arg-type]
-
-# apexforge/air/types.py
-
-from typing import Literal, Union
-
-AIR_VERSION = "0.2"
-
-Primitive = Union[int, str, bool]
-Severity = Literal["error", "warning", "info"]
-DecisionPolicy = Literal["max_weight"]
-StateOperation = Literal["set_int", "add_int"]
+    return tuple(values)

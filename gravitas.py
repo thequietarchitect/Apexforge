@@ -1,4 +1,4 @@
-"""""Hand-authored AIR example for Gravitas/Sentinel/Vigilance/Response.
+"""Hand-authored AIR example for Gravitas/Sentinel/Vigilance/Response.
 
 This module is deliberately AIR-first:
 - no lexer

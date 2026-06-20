@@ -1,4 +1,4 @@
-"""""Hand-authored AIR example for Gravitas/Sentinel/Vigilance/Response.
+"""Hand-authored AIR example for Gravitas/Sentinel/Vigilance/Response.
 
 This module is deliberately AIR-first:
 - no lexer
@@ -21,9 +21,9 @@ from air.model import (
 from air.types import AIR_VERSION
 from air.verify import AIRVerifier
 from authority.engine import AuthorityEngine
-from authority.model import AuthorityCheck, AuthorityGrant, Principal
+from authority import AuthorityCheck, AuthorityGrant, Principal
 from causality.engine import CausalEngine
-from causality.model import CausalDecision, CausalPath
+from causality import CausalDecision, CausalPath
 from runtime.context import ExecutionContext
 from runtime.engine import ExecutionResult, RuntimeEngine
 from runtime.state import StateSnapshot

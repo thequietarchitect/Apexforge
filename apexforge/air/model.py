@@ -80,20 +80,27 @@ class AIRDirective:
     causal_decisions: Tuple[str, ...]
     order: int = 0
 
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "authority_checks", tuple(sorted(as_tuple(self.authority_checks))))
-        object.__setattr__(self, "causal_decisions", tuple(sorted(as_tuple(self.causal_decisions))))
+def validate_assignment_shape(assignment: "StateAssignment") -> bool:
+    return (
+        assignment.operation in ("set_int", "add_int")
+        and type(assignment.value) is int
+    )
+
+
+def validate_state_definition_shape(state: "StateDefinition") -> bool:
+    return state.value_type == "int" and type(state.initial) is int
 
 
 @dataclass(frozen=True)
 class AIRProgram:
     version: str
     principals: tuple["Principal", ...]
-    states: Tuple[StateDefinition, ...]
-    events: Tuple[EventDefinition, ...]
+    states: tuple["StateDefinition", ...]
+    events: tuple["EventDefinition", ...]
     authority_checks: tuple["AuthorityCheck", ...]
     causal_decisions: tuple["CausalDecision", ...]
-    directives: Tuple[AIRDirective, ...]
+    directives: tuple["AIRDirective", ...]
+
 
 @dataclass(frozen=True, order=True)
 class Principal:
@@ -156,3 +163,28 @@ def validate_state_definition_shape(state: StateDefinition) -> bool:
 
 def validate_assignment_shape(assignment: StateAssignment) -> bool:
     return assignment.operation in ("set_int", "add_int") and is_int(assignment.value)
+"""Causal AIR model objects."""
+
+
+from dataclasses import dataclass
+from typing import Literal, Tuple
+
+from air.model import EventEmission, StateAssignment
+
+
+@dataclass(frozen=True, order=True)
+class CausalPath:
+    id: str
+    weight: int
+    assignments: Tuple[StateAssignment, ...] = ()
+    emits: Tuple[EventEmission, ...] = ()
+    effects: tuple = ()
+    rationale: str = ""
+
+
+@dataclass(frozen=True, order=True)
+class CausalDecision:
+    id: str
+    cause: str
+    paths: Tuple[CausalPath, ...]
+    policy: Literal["max_weight"] = "max_weight"

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Iterable, Protocol, Tuple
 
 from air.types import as_tuple
-from authority.model import AuthorityCheck, AuthorityGrant
+from authority import AuthorityCheck, AuthorityGrant
 
 
 class AuthorityPolicy(Protocol):

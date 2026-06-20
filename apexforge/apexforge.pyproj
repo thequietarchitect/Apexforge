@@ -5,8 +5,7 @@
     <ProjectGuid>1143efec-b968-44d4-aea2-bfbfc9fcaae9</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>ApexForge.py</StartupFile>
-    <SearchPath>
-    </SearchPath>
+    <SearchPath>..\apexforge</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>ApexForge</Name>
@@ -24,6 +23,9 @@
     <Compile Include="air\model.py" />
     <Compile Include="air\types.py" />
     <Compile Include="ApexForge.py" />
+    <Compile Include="authority\authority.py" />
+    <Compile Include="causality\engine.py" />
+    <Compile Include="examples\gravitas.py" />
     <Compile Include="runtime\diagnostics.py" />
   </ItemGroup>
   <ItemGroup>
