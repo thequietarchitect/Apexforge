@@ -1,0 +1,22 @@
+
+GRAVITAS TRACE
+==============
+  ├─ runtime.start: started AIR execution
+  ├─ directive.start: entered directive
+  ├─ AUTHORITY ALLOW
+  │  principal: principal:Sentinel
+  │  capability: directive.invoke:Gravitas
+  │  resource: state:Vigilance
+  ├─ causal.evaluate: evaluated weighted paths
+  ├─ CAUSAL SELECT
+  │  path: path:Escalate
+  │  weight: 70
+  ├─ STATE DELTA
+  │  Vigilance +5
+  │  path: path:Escalate
+  ├─ EVENT EMIT
+  │  event: event:Response
+  │  id: directive:Gravitas:cause:Response:path:Escalate:event:0:event:Response
+  └─ RUNTIME FINISH
+     events: 1
+     updates: 1

@@ -1,0 +1,22 @@
+
+AEGIS TRACE
+===========
+  ├─ runtime.start: started AIR execution
+  ├─ directive.start: entered directive
+  ├─ AUTHORITY ALLOW
+  │  principal: principal:AEGIS
+  │  capability: directive.invoke:AEGIS
+  │  resource: state:Integrity
+  ├─ causal.evaluate: evaluated weighted paths
+  ├─ CAUSAL SELECT
+  │  path: path:Stabilize
+  │  weight: 90
+  ├─ STATE DELTA
+  │  Integrity +4
+  │  path: path:Stabilize
+  ├─ EVENT EMIT
+  │  event: event:AegisValidation
+  │  id: directive:AEGIS:cause:Validation:path:Stabilize:event:0:event:AegisValidation
+  └─ RUNTIME FINISH
+     events: 1
+     updates: 1

@@ -1,0 +1,22 @@
+
+SENTINEL TRACE
+==============
+  ├─ runtime.start: started AIR execution
+  ├─ directive.start: entered directive
+  ├─ AUTHORITY ALLOW
+  │  principal: principal:Sentinel
+  │  capability: directive.invoke:Sentinel
+  │  resource: state:Awareness
+  ├─ causal.evaluate: evaluated weighted paths
+  ├─ CAUSAL SELECT
+  │  path: path:Investigate
+  │  weight: 80
+  ├─ STATE DELTA
+  │  Awareness +3
+  │  path: path:Investigate
+  ├─ EVENT EMIT
+  │  event: event:SentinelObservation
+  │  id: directive:Sentinel:cause:Observation:path:Investigate:event:0:event:SentinelObservation
+  └─ RUNTIME FINISH
+     events: 1
+     updates: 1

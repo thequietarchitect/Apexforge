@@ -1,0 +1,84 @@
+{
+  "title": "GRAVITAS",
+  "ok": true,
+  "final_state": {
+    "Vigilance": 15
+  },
+  "diagnostics": [],
+  "trace": [
+    {
+      "kind": "runtime.start",
+      "message": "started AIR execution",
+      "facts": {
+        "version": "0.2"
+      }
+    },
+    {
+      "kind": "directive.start",
+      "message": "entered directive",
+      "facts": {
+        "directive": "directive:Gravitas",
+        "name": "Gravitas",
+        "principal": "principal:Sentinel"
+      }
+    },
+    {
+      "kind": "authority.check",
+      "message": "evaluated authority check",
+      "facts": {
+        "allowed": true,
+        "capability": "directive.invoke:Gravitas",
+        "check": "auth:Sentinel:Gravitas",
+        "principal": "principal:Sentinel",
+        "resource": "state:Vigilance"
+      }
+    },
+    {
+      "kind": "causal.evaluate",
+      "message": "evaluated weighted paths",
+      "facts": {
+        "cause": "Response",
+        "selected": "path:Escalate",
+        "weight": 70,
+        "path.path:Escalate.weight": 70,
+        "path.path:Hold.weight": 40,
+        "path.path:Observe.weight": 30
+      }
+    },
+    {
+      "kind": "causal.select",
+      "message": "selected deterministic causal path",
+      "facts": {
+        "path": "path:Escalate",
+        "weight": 70
+      }
+    },
+    {
+      "kind": "state.delta",
+      "message": "queued selected path assignments",
+      "facts": {
+        "assignments": 1,
+        "operation": "add_int",
+        "path": "path:Escalate",
+        "state": "state:Vigilance",
+        "value": 5
+      }
+    },
+    {
+      "kind": "event.emit",
+      "message": "queued event emission",
+      "facts": {
+        "event": "event:Response",
+        "event_id": "directive:Gravitas:cause:Response:path:Escalate:event:0:event:Response"
+      }
+    },
+    {
+      "kind": "runtime.finish",
+      "message": "finished AIR execution",
+      "facts": {
+        "events": 1,
+        "updates": 1
+      }
+    }
+  ]
+}

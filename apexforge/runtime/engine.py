@@ -161,18 +161,19 @@ class RuntimeEngine:
                 )
 
                 trace_steps.append(
-                    TraceStep(
-                        "state.delta",
-                        "queued selected path assignments",
+                TraceStep(
+                    "state.delta",
+                    "queued selected path assignments",
                         facts(
-                            assignments=len(
-                                selected.assignments
-                            ),
+                            assignments=len(selected.assignments),
                             path=selected.id,
-                        ),
+                            state=selected.assignments[0].state if selected.assignments else "",
+                            operation=selected.assignments[0].operation if selected.assignments else "",
+                            value=selected.assignments[0].value if selected.assignments else 0,
                     )
                 )
-
+            )
+                
                 for index, emission in enumerate(
                     selected.emits
                 ):

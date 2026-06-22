@@ -1,0 +1,84 @@
+{
+  "title": "AEGIS",
+  "ok": true,
+  "final_state": {
+    "Integrity": 9
+  },
+  "diagnostics": [],
+  "trace": [
+    {
+      "kind": "runtime.start",
+      "message": "started AIR execution",
+      "facts": {
+        "version": "0.2"
+      }
+    },
+    {
+      "kind": "directive.start",
+      "message": "entered directive",
+      "facts": {
+        "directive": "directive:AEGIS",
+        "name": "AEGIS",
+        "principal": "principal:AEGIS"
+      }
+    },
+    {
+      "kind": "authority.check",
+      "message": "evaluated authority check",
+      "facts": {
+        "allowed": true,
+        "capability": "directive.invoke:AEGIS",
+        "check": "auth:AEGIS",
+        "principal": "principal:AEGIS",
+        "resource": "state:Integrity"
+      }
+    },
+    {
+      "kind": "causal.evaluate",
+      "message": "evaluated weighted paths",
+      "facts": {
+        "cause": "Validation",
+        "selected": "path:Stabilize",
+        "weight": 90,
+        "path.path:Pass.weight": 30,
+        "path.path:Review.weight": 60,
+        "path.path:Stabilize.weight": 90
+      }
+    },
+    {
+      "kind": "causal.select",
+      "message": "selected deterministic causal path",
+      "facts": {
+        "path": "path:Stabilize",
+        "weight": 90
+      }
+    },
+    {
+      "kind": "state.delta",
+      "message": "queued selected path assignments",
+      "facts": {
+        "assignments": 1,
+        "operation": "add_int",
+        "path": "path:Stabilize",
+        "state": "state:Integrity",
+        "value": 4
+      }
+    },
+    {
+      "kind": "event.emit",
+      "message": "queued event emission",
+      "facts": {
+        "event": "event:AegisValidation",
+        "event_id": "directive:AEGIS:cause:Validation:path:Stabilize:event:0:event:AegisValidation"
+      }
+    },
+    {
+      "kind": "runtime.finish",
+      "message": "finished AIR execution",
+      "facts": {
+        "events": 1,
+        "updates": 1
+      }
+    }
+  ]
+}
