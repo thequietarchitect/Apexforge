@@ -32,33 +32,27 @@ class WorkflowEngine:
         name: str,
         steps: Tuple[WorkflowStep, ...],
     ) -> WorkflowResult:
-
         context = WorkflowContext()
         results = []
 
         for step in steps:
             rule = GOVERNANCE_RULES.get(step.name)
 
-            if rule and not rule.is_satisfied(context): 
+            if rule and not rule.is_satisfied(context):
                 missing = [
-        key for key in rule.requires
-        if key not in context.states
-                          ]
+                    key
+                    for key in rule.requires
+                    if key not in context.states
+                ]
 
-        raise RuntimeError(
-        f"Workflow rule failed for {step.name}. Missing: {missing}"
-    )
-
-        result = step.runner()
-        context.absorb_result(result)
-        results.append(
-                (
-                    step.name,
-                    result,
+                raise RuntimeError(
+                    f"Workflow rule failed for {step.name}. Missing: {missing}"
                 )
-            )
-    
-        
+
+            result = step.runner()
+            context.absorb_result(result)
+            results.append((step.name, result))
+
         return WorkflowResult(
             name=name,
             context=context,
