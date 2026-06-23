@@ -1,0 +1,125 @@
+{
+  "version": "0.2",
+  "principals": [
+    {
+      "id": "principal:Sentinel",
+      "display_name": "Sentinel"
+    }
+  ],
+  "states": [
+    {
+      "id": "state:Awareness",
+      "initial": 0,
+      "value_type": "int"
+    }
+  ],
+  "events": [
+    {
+      "id": "event:SentinelObservation",
+      "name": "SentinelObservation"
+    }
+  ],
+  "authority_checks": [
+    {
+      "id": "auth:Sentinel",
+      "principal": "principal:Sentinel",
+      "capability": "directive.invoke:Sentinel",
+      "resource": "state:Awareness"
+    }
+  ],
+  "causal_decisions": [
+    {
+      "id": "cause:Observation",
+      "cause": "Observation",
+      "paths": [
+        {
+          "id": "path:Ignore",
+          "weight": 20,
+          "assignments": [
+            {
+              "state": "state:Awareness",
+              "operation": "add_int",
+              "value": 0
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:SentinelObservation",
+              "facts": [
+                {
+                  "key": "path",
+                  "value": "Ignore"
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": "No significant signal."
+        },
+        {
+          "id": "path:Monitor",
+          "weight": 50,
+          "assignments": [
+            {
+              "state": "state:Awareness",
+              "operation": "add_int",
+              "value": 1
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:SentinelObservation",
+              "facts": [
+                {
+                  "key": "path",
+                  "value": "Monitor"
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": "Continue observation."
+        },
+        {
+          "id": "path:Investigate",
+          "weight": 80,
+          "assignments": [
+            {
+              "state": "state:Awareness",
+              "operation": "add_int",
+              "value": 3
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:SentinelObservation",
+              "facts": [
+                {
+                  "key": "path",
+                  "value": "Investigate"
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": "Highest awareness path."
+        }
+      ],
+      "policy": "max_weight"
+    }
+  ],
+  "directives": [
+    {
+      "id": "directive:Sentinel",
+      "name": "Sentinel",
+      "principal": "principal:Sentinel",
+      "authority_checks": [
+        "auth:Sentinel"
+      ],
+      "causal_decisions": [
+        "cause:Observation"
+      ],
+      "order": 0
+    }
+  ]
+}

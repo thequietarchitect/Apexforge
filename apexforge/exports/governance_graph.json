@@ -1,0 +1,20 @@
+{
+  "name": "Routed Governance Stack",
+  "nodes": [
+    "Sentinel",
+    "AEGIS",
+    "Gravitas"
+  ],
+  "edges": [
+    {
+      "event": "event:SentinelObservation",
+      "from": "Sentinel",
+      "to": "AEGIS"
+    },
+    {
+      "event": "event:AegisValidation",
+      "from": "AEGIS",
+      "to": "Gravitas"
+    }
+  ]
+}

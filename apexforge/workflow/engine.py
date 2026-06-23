@@ -25,6 +25,11 @@ class WorkflowResult:
     def ok(self) -> bool:
         return all(result.ok for _, result in self.results)
 
+    def latest_event(self) -> str | None:
+        if not self.context.events:
+            return None
+        return self.context.events[-1]
+
 
 class WorkflowEngine:
     def execute(

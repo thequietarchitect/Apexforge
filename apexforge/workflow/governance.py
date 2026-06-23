@@ -6,6 +6,7 @@ from examples.sentinel import run_sentinel_demo
 from examples.aegis import run_aegis_demo
 from examples.gravitas import run_gravitas_demo
 from workflow.engine import WorkflowEngine, WorkflowStep
+from workflow.registry import DirectiveRegistry
 
 def run_governance_workflow():
     engine = WorkflowEngine()
@@ -21,32 +22,56 @@ def run_governance_workflow():
 
 from workflow.router import WorkflowRouter, GOVERNANCE_ROUTES
 
-STEP_RUNNERS = {
-    "Sentinel": run_sentinel_demo,
-    "AEGIS": run_aegis_demo,
-    "Gravitas": run_gravitas_demo,
-}
+REGISTRY = DirectiveRegistry()
+
+REGISTRY.register(
+    "Sentinel",
+    run_sentinel_demo,
+)
+
+REGISTRY.register(
+    "AEGIS",
+    run_aegis_demo,
+)
+
+REGISTRY.register(
+    "Gravitas",
+    run_gravitas_demo,
+)
 
 
 def run_routed_governance_workflow():
     router = WorkflowRouter(GOVERNANCE_ROUTES)
-    engine = WorkflowEngine()
 
-    steps = []
+    context_steps = []
     current = "Sentinel"
 
-    while current:
-        runner = STEP_RUNNERS[current]
-        steps.append(WorkflowStep(current, runner))
+    while current is not None:
+        runner = REGISTRY.resolve(current)
+        step_result = runner()
+        temp_engine = WorkflowEngine()
+        context_steps.append(
+            WorkflowStep(
+                current,
+                lambda result=step_result: result,
+            )
+        )
 
-        if current == "Sentinel":
-            current = router.target_for("SentinelObservation")
-        elif current == "AEGIS":
-            current = router.target_for("AegisValidation")
-        else:
-            current = None
+        workflow_result = temp_engine.execute(
+            "Routed Governance Stack",
+            tuple(context_steps),
+        )
 
-    return engine.execute(
+        latest_event = workflow_result.latest_event()
+
+        if latest_event is None:
+            break
+
+        current = router.target_for(latest_event)
+
+    final_engine = WorkflowEngine()
+
+    return final_engine.execute(
         "Routed Governance Stack",
-        tuple(steps),
+        tuple(context_steps),
     )

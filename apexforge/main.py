@@ -8,6 +8,9 @@ from examples.aegis import run_aegis_demo, run_smoke_tests as run_aegis_smoke_te
 from tools.trace_viewer import print_trace, print_summary
 from tools.trace_export import save_trace_json, save_trace_text
 from tools.trace_viewer import render_trace
+from workflow.governance import run_routed_governance_workflow
+from tools.workflow_viewer import print_workflow_trace
+from tools.workflow_export import export_workflow_graph
 
 def print_result(name, result, state_key: str) -> None:
     print()
@@ -57,6 +60,13 @@ def main() -> None:
 
 print()
 print("Trace exports written.")
+
+workflow_result = run_routed_governance_workflow()
+export_workflow_graph(
+    workflow_result,
+    "apexforge/exports/governance_graph.json",
+)
+print_workflow_trace(workflow_result)
     
 if __name__ == "__main__":
     main()

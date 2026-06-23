@@ -24,6 +24,7 @@ class WorkflowRouter:
 
 
 GOVERNANCE_ROUTES = (
-    Route("SentinelObservation", "AEGIS"),
-    Route("AegisValidation", "Gravitas"),
+    Route("event:SentinelObservation", "AEGIS"),
+    Route("event:AegisValidation", "Gravitas"),
+    Route("event:Response", None),
 )
