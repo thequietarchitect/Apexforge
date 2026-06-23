@@ -16,6 +16,7 @@ SYMBOLS = {
     "{": "LBRACE",
     "}": "RBRACE",
     "=": "EQUAL",
+    "@": "AT",
 }
 
 
@@ -51,7 +52,7 @@ def lex(source: str) -> List[Token]:
 
             value = source[start:i]
 
-            if value in ("directive", "state"):
+            if value in ("directive", "state", "event", "cause", "path", "add", "emit"):
                 tokens.append(Token(value.upper(), value))
             else:
                 tokens.append(Token("IDENT", value))

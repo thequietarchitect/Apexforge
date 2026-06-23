@@ -13,16 +13,59 @@
       "value_type": "int"
     }
   ],
-  "events": [],
-  "authority_checks": [],
-  "causal_decisions": [],
+  "events": [
+    {
+      "id": "event:SentinelObservation",
+      "name": "SentinelObservation"
+    }
+  ],
+  "authority_checks": [
+    {
+      "id": "auth:Sentinel",
+      "principal": "principal:Sentinel",
+      "capability": "directive.invoke:Sentinel",
+      "resource": "directive:Sentinel"
+    }
+  ],
+  "causal_decisions": [
+    {
+      "id": "cause:Observation",
+      "cause": "Observation",
+      "paths": [
+        {
+          "id": "path:Investigate",
+          "weight": 80,
+          "assignments": [
+            {
+              "state": "state:Awareness",
+              "operation": "add_int",
+              "value": 3
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:SentinelObservation",
+              "facts": []
+            }
+          ],
+          "effects": [],
+          "rationale": ""
+        }
+      ],
+      "policy": "max_weight"
+    }
+  ],
   "directives": [
     {
       "id": "directive:Sentinel",
       "name": "Sentinel",
       "principal": "principal:Sentinel",
-      "authority_checks": [],
-      "causal_decisions": [],
+      "authority_checks": [
+        "auth:Sentinel"
+      ],
+      "causal_decisions": [
+        "cause:Observation"
+      ],
       "order": 0
     }
   ]
