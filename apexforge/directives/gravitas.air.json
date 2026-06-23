@@ -1,0 +1,125 @@
+{
+  "version": "0.2",
+  "principals": [
+    {
+      "id": "principal:Sentinel",
+      "display_name": "Sentinel"
+    }
+  ],
+  "states": [
+    {
+      "id": "state:Vigilance",
+      "initial": 10,
+      "value_type": "int"
+    }
+  ],
+  "events": [
+    {
+      "id": "event:Response",
+      "name": "Response"
+    }
+  ],
+  "authority_checks": [
+    {
+      "id": "auth:Sentinel:Gravitas",
+      "principal": "principal:Sentinel",
+      "capability": "directive.invoke:Gravitas",
+      "resource": "state:Vigilance"
+    }
+  ],
+  "causal_decisions": [
+    {
+      "id": "cause:Response",
+      "cause": "Response",
+      "paths": [
+        {
+          "id": "path:Observe",
+          "weight": 30,
+          "assignments": [
+            {
+              "state": "state:Vigilance",
+              "operation": "add_int",
+              "value": 1
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:Response",
+              "facts": [
+                {
+                  "key": "path",
+                  "value": "Observe"
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": "Low-pressure observation."
+        },
+        {
+          "id": "path:Hold",
+          "weight": 40,
+          "assignments": [
+            {
+              "state": "state:Vigilance",
+              "operation": "add_int",
+              "value": 2
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:Response",
+              "facts": [
+                {
+                  "key": "path",
+                  "value": "Hold"
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": "Moderate response path."
+        },
+        {
+          "id": "path:Escalate",
+          "weight": 70,
+          "assignments": [
+            {
+              "state": "state:Vigilance",
+              "operation": "add_int",
+              "value": 5
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:Response",
+              "facts": [
+                {
+                  "key": "path",
+                  "value": "Escalate"
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": "Highest-weight response path."
+        }
+      ],
+      "policy": "max_weight"
+    }
+  ],
+  "directives": [
+    {
+      "id": "directive:Gravitas",
+      "name": "Gravitas",
+      "principal": "principal:Sentinel",
+      "authority_checks": [
+        "auth:Sentinel:Gravitas"
+      ],
+      "causal_decisions": [
+        "cause:Response"
+      ],
+      "order": 0
+    }
+  ]
+}

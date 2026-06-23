@@ -1,0 +1,125 @@
+{
+  "version": "0.2",
+  "principals": [
+    {
+      "id": "principal:AEGIS",
+      "display_name": "AEGIS"
+    }
+  ],
+  "states": [
+    {
+      "id": "state:Integrity",
+      "initial": 5,
+      "value_type": "int"
+    }
+  ],
+  "events": [
+    {
+      "id": "event:AegisValidation",
+      "name": "AegisValidation"
+    }
+  ],
+  "authority_checks": [
+    {
+      "id": "auth:AEGIS",
+      "principal": "principal:AEGIS",
+      "capability": "directive.invoke:AEGIS",
+      "resource": "state:Integrity"
+    }
+  ],
+  "causal_decisions": [
+    {
+      "id": "cause:Validation",
+      "cause": "Validation",
+      "paths": [
+        {
+          "id": "path:Pass",
+          "weight": 30,
+          "assignments": [
+            {
+              "state": "state:Integrity",
+              "operation": "add_int",
+              "value": 0
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:AegisValidation",
+              "facts": [
+                {
+                  "key": "path",
+                  "value": "Pass"
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": "Validation succeeded with no corrective action required."
+        },
+        {
+          "id": "path:Review",
+          "weight": 60,
+          "assignments": [
+            {
+              "state": "state:Integrity",
+              "operation": "add_int",
+              "value": 2
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:AegisValidation",
+              "facts": [
+                {
+                  "key": "path",
+                  "value": "Review"
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": "Additional evaluation is warranted before final acceptance."
+        },
+        {
+          "id": "path:Stabilize",
+          "weight": 90,
+          "assignments": [
+            {
+              "state": "state:Integrity",
+              "operation": "add_int",
+              "value": 4
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:AegisValidation",
+              "facts": [
+                {
+                  "key": "path",
+                  "value": "Stabilize"
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": "Integrity risk detected;stabilization is the highest-priority response."
+        }
+      ],
+      "policy": "max_weight"
+    }
+  ],
+  "directives": [
+    {
+      "id": "directive:AEGIS",
+      "name": "AEGIS",
+      "principal": "principal:AEGIS",
+      "authority_checks": [
+        "auth:AEGIS"
+      ],
+      "causal_decisions": [
+        "cause:Validation"
+      ],
+      "order": 0
+    }
+  ]
+}
