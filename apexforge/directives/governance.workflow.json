@@ -1,0 +1,8 @@
+{
+  "name": "AIR Governance Stack",
+  "steps": [
+    "sentinel",
+    "aegis",
+    "gravitas"
+  ]
+}

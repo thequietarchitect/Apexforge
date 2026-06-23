@@ -41,3 +41,18 @@ class AirWorkflowRunner:
             context=context,
             results=tuple(results),
         )
+
+from workflow.workflow_loader import load_workflow_json
+
+
+def run_air_workflow_from_file(
+    registry: AirRegistry,
+    path: str,
+) -> AirWorkflowResult:
+    name, steps = load_workflow_json(path)
+
+    return AirWorkflowRunner().run(
+        name,
+        registry,
+        steps,
+    )
