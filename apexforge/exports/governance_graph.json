@@ -1,20 +1,20 @@
 {
-  "name": "Routed Governance Stack",
+  "name": "AIR Governance Stack",
   "nodes": [
-    "Sentinel",
-    "AEGIS",
-    "Gravitas"
+    "sentinel",
+    "aegis",
+    "gravitas"
   ],
   "edges": [
     {
       "event": "event:SentinelObservation",
-      "from": "Sentinel",
-      "to": "AEGIS"
+      "from": "sentinel",
+      "to": "aegis"
     },
     {
       "event": "event:AegisValidation",
-      "from": "AEGIS",
-      "to": "Gravitas"
+      "from": "aegis",
+      "to": "gravitas"
     }
   ]
 }

@@ -1,0 +1,29 @@
+{
+  "version": "0.2",
+  "principals": [
+    {
+      "id": "principal:Sentinel",
+      "display_name": "Sentinel"
+    }
+  ],
+  "states": [
+    {
+      "id": "state:Awareness",
+      "initial": 0,
+      "value_type": "int"
+    }
+  ],
+  "events": [],
+  "authority_checks": [],
+  "causal_decisions": [],
+  "directives": [
+    {
+      "id": "directive:Sentinel",
+      "name": "Sentinel",
+      "principal": "principal:Sentinel",
+      "authority_checks": [],
+      "causal_decisions": [],
+      "order": 0
+    }
+  ]
+}
