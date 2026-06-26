@@ -28,6 +28,17 @@ def build_default_context(program):
     )
 
 
+def collect_invocations(program) -> tuple[str, ...]:
+    targets = []
+
+    for decision in program.causal_decisions:
+        for path in decision.paths:
+            for invocation in path.invocations:
+                targets.append(invocation.target)
+
+    return tuple(targets)
+
+
 def run_air_program(program):
     verified = AIRVerifier().verify(program).require_verified()
     context = build_default_context(program)
@@ -37,3 +48,10 @@ def run_air_program(program):
 def run_air_from_registry(registry, name: str):
     program = registry.resolve(name)
     return run_air_program(program)
+
+
+def run_air_with_invocation_report(program):
+    result = run_air_program(program)
+    invocations = collect_invocations(program)
+
+    return result, invocations

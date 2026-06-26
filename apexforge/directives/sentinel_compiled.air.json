@@ -33,6 +33,48 @@
       "cause": "Observation",
       "paths": [
         {
+          "id": "path:Ignore",
+          "weight": 20,
+          "assignments": [],
+          "emits": [
+            {
+              "event": "event:SentinelObservation",
+              "facts": [
+                {
+                  "key": "message",
+                  "value": "Observation ignored."
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": ""
+        },
+        {
+          "id": "path:Monitor",
+          "weight": 50,
+          "assignments": [
+            {
+              "state": "state:Awareness",
+              "operation": "add_int",
+              "value": 1
+            }
+          ],
+          "emits": [
+            {
+              "event": "event:SentinelObservation",
+              "facts": [
+                {
+                  "key": "message",
+                  "value": "Observation monitored."
+                }
+              ]
+            }
+          ],
+          "effects": [],
+          "rationale": ""
+        },
+        {
           "id": "path:Investigate",
           "weight": 80,
           "assignments": [
@@ -45,7 +87,12 @@
           "emits": [
             {
               "event": "event:SentinelObservation",
-              "facts": []
+              "facts": [
+                {
+                  "key": "message",
+                  "value": "Investigation initiated."
+                }
+              ]
             }
           ],
           "effects": [],

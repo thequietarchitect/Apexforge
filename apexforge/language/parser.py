@@ -30,6 +30,16 @@ class EmitActionNode:
 
 
 @dataclass(frozen=True)
+class MessageActionNode:
+    text: str
+
+
+@dataclass(frozen=True)
+class InvokeActionNode:
+    target: str
+
+
+@dataclass(frozen=True)
 class PathNode:
     name: str
     weight: int
@@ -72,9 +82,9 @@ class Parser:
         name = self.consume("IDENT").value
         self.consume("LBRACE")
 
-        states = []
-        events = []
-        causes = []
+        states: list[StateNode] = []
+        events: list[EventNode] = []
+        causes: list[CauseNode] = []
 
         while self.current().kind != "RBRACE":
             if self.current().kind == "STATE":
@@ -115,7 +125,7 @@ class Parser:
         name = self.consume("IDENT").value
         self.consume("LBRACE")
 
-        paths = []
+        paths: list[PathNode] = []
 
         while self.current().kind != "RBRACE":
             paths.append(self.parse_path())
@@ -131,13 +141,17 @@ class Parser:
         weight = int(self.consume("NUMBER").value)
         self.consume("LBRACE")
 
-        actions = []
+        actions: list[object] = []
 
         while self.current().kind != "RBRACE":
             if self.current().kind == "ADD":
                 actions.append(self.parse_add())
             elif self.current().kind == "EMIT":
                 actions.append(self.parse_emit())
+            elif self.current().kind == "MESSAGE":
+                actions.append(self.parse_message())
+            elif self.current().kind == "INVOKE":
+                actions.append(self.parse_invoke())
             else:
                 raise SyntaxError(f"Unexpected path token: {self.current().kind}")
 
@@ -154,16 +168,25 @@ class Parser:
         state_name = self.consume("IDENT").value
         value = int(self.consume("NUMBER").value)
 
-        return AddActionNode(
-            state_name=state_name,
-            value=value,
-        )
+        return AddActionNode(state_name=state_name, value=value)
 
     def parse_emit(self) -> EmitActionNode:
         self.consume("EMIT")
         event_name = self.consume("IDENT").value
 
         return EmitActionNode(event_name=event_name)
+
+    def parse_message(self) -> MessageActionNode:
+        self.consume("MESSAGE")
+        text = self.consume("STRING").value
+
+        return MessageActionNode(text=text)
+
+    def parse_invoke(self) -> InvokeActionNode:
+        self.consume("INVOKE")
+        target = self.consume("IDENT").value
+
+        return InvokeActionNode(target=target)
 
 
 def parse(source: str) -> DirectiveNode:

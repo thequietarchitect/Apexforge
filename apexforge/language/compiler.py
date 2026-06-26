@@ -9,14 +9,17 @@ from air.model import (
     EventEmission,
     StateAssignment,
     StateDefinition,
+    facts,
 )
 from air.types import AIR_VERSION
 from authority.model import AuthorityCheck, Principal
-from causality.model import CausalDecision, CausalPath
+from causality.model import CausalDecision, CausalPath, DirectiveInvocation
 from language.parser import (
     AddActionNode,
     DirectiveNode,
     EmitActionNode,
+    InvokeActionNode,
+    MessageActionNode,
     parse,
 )
 
@@ -44,9 +47,14 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
         for path in cause.paths:
             assignments = []
             emits = []
+            invocations = []
+            pending_message = None
 
             for action in path.actions:
-                if isinstance(action, AddActionNode):
+                if isinstance(action, MessageActionNode):
+                    pending_message = action.text
+
+                elif isinstance(action, AddActionNode):
                     assignments.append(
                         StateAssignment(
                             state=state_ids[action.state_name],
@@ -56,10 +64,22 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                     )
 
                 elif isinstance(action, EmitActionNode):
+                    if pending_message is None:
+                        event_facts = ()
+                    else:
+                        event_facts = facts(message=pending_message)
+
                     emits.append(
                         EventEmission(
                             event=event_ids[action.event_name],
-                            facts=(),
+                            facts=event_facts,
+                        )
+                    )
+
+                elif isinstance(action, InvokeActionNode):
+                    invocations.append(
+                        DirectiveInvocation(
+                            target=action.target,
                         )
                     )
 
@@ -69,6 +89,7 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                     weight=path.weight,
                     assignments=tuple(assignments),
                     emits=tuple(emits),
+                    invocations=tuple(invocations),
                     effects=(),
                     rationale="",
                 )

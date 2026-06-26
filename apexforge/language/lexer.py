@@ -20,6 +20,19 @@ SYMBOLS = {
 }
 
 
+KEYWORDS = (
+    "directive",
+    "state",
+    "event",
+    "cause",
+    "path",
+    "add",
+    "emit",
+    "message",
+    "invoke",
+)
+
+
 def lex(source: str) -> List[Token]:
     tokens: List[Token] = []
     i = 0
@@ -28,6 +41,20 @@ def lex(source: str) -> List[Token]:
         char = source[i]
 
         if char.isspace():
+            i += 1
+            continue
+
+        if char == '"':
+            i += 1
+            start = i
+
+            while i < len(source) and source[i] != '"':
+                i += 1
+
+            if i >= len(source):
+                raise SyntaxError("Unterminated string literal")
+
+            tokens.append(Token("STRING", source[start:i]))
             i += 1
             continue
 
@@ -52,7 +79,7 @@ def lex(source: str) -> List[Token]:
 
             value = source[start:i]
 
-            if value in ("directive", "state", "event", "cause", "path", "add", "emit"):
+            if value in KEYWORDS:
                 tokens.append(Token(value.upper(), value))
             else:
                 tokens.append(Token("IDENT", value))
@@ -62,5 +89,4 @@ def lex(source: str) -> List[Token]:
         raise SyntaxError(f"Unexpected character: {char}")
 
     tokens.append(Token("EOF", ""))
-
     return tokens

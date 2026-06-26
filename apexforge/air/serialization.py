@@ -6,6 +6,22 @@ import json
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 
+from air.model import (
+    AIRDirective,
+    AIRProgram,
+    EventDefinition,
+    EventEmission,
+    Fact,
+    StateAssignment,
+    StateDefinition,
+)
+from authority.model import AuthorityCheck, Principal
+from causality.model import (
+    CausalDecision,
+    CausalPath,
+    DirectiveInvocation,
+)
+
 
 def _to_data(value):
     if is_dataclass(value):
@@ -42,6 +58,7 @@ def save_air_json(program, path: str) -> None:
         encoding="utf-8",
     )
 
+
 def load_air_dict(path: str) -> dict:
     input_path = Path(path)
 
@@ -49,21 +66,24 @@ def load_air_dict(path: str) -> dict:
         input_path.read_text(encoding="utf-8")
     )
 
-from air.model import (
-    AIRDirective,
-    AIRProgram,
-    EventDefinition,
-    EventEmission,
-    StateAssignment,
-    StateDefinition,
-    Fact,
-)
-from authority.model import AuthorityCheck, Principal
-from causality.model import CausalDecision, CausalPath
-
 
 def _facts_from_data(items) -> tuple[Fact, ...]:
-    return tuple(Fact(item["key"], item["value"]) for item in items)
+    return tuple(
+        Fact(
+            key=item["key"],
+            value=item["value"],
+        )
+        for item in items
+    )
+
+
+def _invocations_from_data(items) -> tuple[DirectiveInvocation, ...]:
+    return tuple(
+        DirectiveInvocation(
+            target=item["target"],
+        )
+        for item in items
+    )
 
 
 def air_from_dict(data: dict) -> AIRProgram:
@@ -101,9 +121,14 @@ def air_from_dict(data: dict) -> AIRProgram:
                         emits=tuple(
                             EventEmission(
                                 event=emission["event"],
-                                facts=_facts_from_data(emission.get("facts", [])),
+                                facts=_facts_from_data(
+                                    emission.get("facts", [])
+                                ),
                             )
                             for emission in path["emits"]
+                        ),
+                        invocations=_invocations_from_data(
+                            path.get("invocations", [])
                         ),
                         effects=tuple(path.get("effects", ())),
                         rationale=path.get("rationale", ""),

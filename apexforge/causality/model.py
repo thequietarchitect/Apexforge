@@ -8,19 +8,24 @@ from typing import Literal, Tuple
 from air.model import EventEmission, StateAssignment
 
 
-@dataclass(frozen=True, order=True)
+@dataclass(frozen=True)
+class DirectiveInvocation:
+    target: str
+
+
+@dataclass(frozen=True)
 class CausalPath:
     id: str
     weight: int
-    assignments: Tuple[StateAssignment, ...] = ()
-    emits: Tuple[EventEmission, ...] = ()
+    assignments: tuple
+    emits: tuple
+    invocations: tuple = ()
     effects: tuple = ()
     rationale: str = ""
 
-
-@dataclass(frozen=True, order=True)
+@dataclass(frozen=True)
 class CausalDecision:
     id: str
-    cause: str
-    paths: Tuple[CausalPath, ...]
-    policy: Literal["max_weight"] = "max_weight"
+    cause: str = ""
+    paths: tuple[CausalPath, ...] = ()
+    policy: str = "max_weight"

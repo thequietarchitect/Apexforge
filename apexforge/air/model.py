@@ -123,6 +123,10 @@ class CausalDecision:
     paths: tuple
     policy: Literal["max_weight"] = "max_weight"
 
+@dataclass(frozen=True)
+class DirectiveInvocation:
+    target: str
+
     def __post_init__(self) -> None:
         object.__setattr__(self, "principals", tuple(sorted(as_tuple(self.principals), key=lambda item: item.id)))
         object.__setattr__(self, "states", tuple(sorted(as_tuple(self.states), key=lambda item: item.id)))
@@ -171,13 +175,18 @@ from typing import Literal, Tuple
 
 from air.model import EventEmission, StateAssignment
 
+@dataclass(frozen=True)
+class DirectiveInvocation:
+    target: str
 
-@dataclass(frozen=True, order=True)
+
+@dataclass(frozen=True)
 class CausalPath:
     id: str
     weight: int
-    assignments: Tuple[StateAssignment, ...] = ()
-    emits: Tuple[EventEmission, ...] = ()
+    assignments: tuple
+    emits: tuple
+    invocations: tuple = ()
     effects: tuple = ()
     rationale: str = ""
 
