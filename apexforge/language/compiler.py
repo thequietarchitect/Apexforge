@@ -9,6 +9,8 @@ from air.model import (
     EventEmission,
     StateAssignment,
     StateDefinition,
+    DirectiveRequirement,
+    DirectiveAuthority,
     facts,
 )
 from air.types import AIR_VERSION
@@ -20,6 +22,7 @@ from language.parser import (
     EmitActionNode,
     InvokeActionNode,
     MessageActionNode,
+    RequirementNode,
     parse,
 )
 
@@ -104,6 +107,13 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
             )
         )
 
+        requirements = tuple(
+            DirectiveRequirement(
+                capability=requirement.capability
+            )
+            for requirement in node.requirements
+        )
+
     return AIRProgram(
         version=AIR_VERSION,
         principals=(
@@ -148,7 +158,16 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                 order=0,
             ),
         ),
-    )
+            requirements=tuple(
+                DirectiveRequirement(capability=req.capability)
+                for req in node.requirements
+        ),
+            authorities=tuple(
+                DirectiveAuthority(name=authority.name)
+                for authority in node.authorities
+    ),
+)
+    
 
 
 def compile_source(source: str) -> AIRProgram:

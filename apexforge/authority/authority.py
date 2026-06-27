@@ -27,7 +27,7 @@ class AuthorityEngine:
 
     def allows(self, check: AuthorityCheck) -> bool:
         return any(
-            grant.principal == check.principal
+            grant.n == check.principal
             and grant.capability == check.capability
             and grant.resource == check.resource
             for grant in self.grants

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from typing import Optional
+
 
 @dataclass(frozen=True, order=True)
 class Principal:
@@ -18,9 +20,8 @@ class AuthorityCheck:
     capability: str
     resource: str
 
-
-@dataclass(frozen=True, order=True)
+@dataclass(frozen=True)
 class AuthorityGrant:
-    principal: str
-    capability: str
-    resource: str
+    name: str
+    capabilities: tuple[str, ...]
+    extends: Optional[str] = None

@@ -1,34 +1,37 @@
-"""Explicit authority policy evaluation."""
-
-from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import Iterable, Protocol, Tuple
+from typing import Protocol
 
-from air.types import as_tuple
-from authority.model import AuthorityCheck, AuthorityGrant
+from authority.model import AuthorityGrant
 
 
 class AuthorityPolicy(Protocol):
-    def allows(self, check: AuthorityCheck) -> bool:
+    def allows(self, check) -> bool:
         ...
 
 
 @dataclass(frozen=True)
 class AuthorityEngine:
-    grants: Tuple[AuthorityGrant, ...]
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "grants", tuple(sorted(as_tuple(self.grants))))
+    grants: tuple[AuthorityGrant, ...]
 
     @classmethod
-    def from_grants(cls, grants: Iterable[AuthorityGrant]) -> "AuthorityEngine":
-        return cls(tuple(grants))
+    def from_grants(cls, grants: tuple[AuthorityGrant, ...]):
+        return cls(grants=grants)
 
-    def allows(self, check: AuthorityCheck) -> bool:
-        return any(
-            grant.principal == check.principal
-            and grant.capability == check.capability
-            and grant.resource == check.resource
-            for grant in self.grants
+    def check(
+        self,
+        principal: str,
+        capability: str,
+        resource: str = "",
+    ) -> bool:
+        for grant in self.grants:
+            if grant.name == principal:
+                return capability in grant.capabilities
+
+        return False
+
+    def allows(self, check) -> bool:
+        return self.check(
+            principal=check.principal,
+            capability=check.capability,
+            resource=getattr(check, "resource", ""),
         )

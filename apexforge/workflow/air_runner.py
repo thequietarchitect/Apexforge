@@ -11,20 +11,21 @@ from air.verify import AIRVerifier
 
 
 def build_default_context(program):
-    grants = []
+    capabilities = tuple(
+        check.capability
+        for check in program.authority_checks
+    )
 
-    for check in program.authority_checks:
-        grants.append(
-            AuthorityGrant(
-                principal=check.principal,
-                capability=check.capability,
-                resource=check.resource,
-            )
-        )
+    grants = (
+        AuthorityGrant(
+            name=program.principals[0].id,
+            capabilities=capabilities,
+        ),
+    )
 
     return ExecutionContext(
         state=StateSnapshot.from_program_initials(program),
-        authority=AuthorityEngine.from_grants(tuple(grants)),
+        authority=AuthorityEngine.from_grants(grants),
     )
 
 

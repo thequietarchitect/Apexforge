@@ -1,37 +1,18 @@
-from air.serialization import load_air_json, save_air_json
 from language.compiler import compile_source
-from workflow.air_runner import run_air_with_invocation_report
 
 source = """
-directive Sentinel {
-    state Awareness = 0
-    event SentinelObservation
-
-    cause Observation {
-        path Investigate @ 80 {
-            invoke AEGIS
-            invoke Gravitas
-            message "Investigation initiated."
-            add Awareness 3
-            emit SentinelObservation
-        }
-    }
+directive Investigate {
+    authority Sentinel
+    requires Observe
 }
 """
 
-program = compile_source(source)
+air = compile_source(source)
 
-save_air_json(
-    program,
-    "apexforge/exports/invoke_test.air.json",
-)
+print(air)
 
-loaded = load_air_json(
-    "apexforge/exports/invoke_test.air.json",
-)
+assert air.directives[0].name == "Investigate"
+assert air.authorities[0].name == "Sentinel"
+assert air.requirements[0].capability == "Observe"
 
-result, invocations = run_air_with_invocation_report(loaded)
-
-print(result.ok)
-print(result.final_state.get_int("state:Awareness"))
-print(invocations)
+print("PASS")

@@ -9,8 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal,Union
 from typing import TYPE_CHECKING, Tuple
+from typing import Literal, Tuple
 
 from air.types import AIR_VERSION, Primitive, StateOperation, as_tuple, is_int
+
 
 if TYPE_CHECKING:
     from runtime.diagnostics import Diagnostic
@@ -90,6 +92,10 @@ def validate_assignment_shape(assignment: "StateAssignment") -> bool:
 def validate_state_definition_shape(state: "StateDefinition") -> bool:
     return state.value_type == "int" and type(state.initial) is int
 
+@dataclass(frozen=True)
+class DirectiveRequirement:
+    capability: str
+
 
 @dataclass(frozen=True)
 class AIRProgram:
@@ -100,6 +106,8 @@ class AIRProgram:
     authority_checks: tuple["AuthorityCheck", ...]
     causal_decisions: tuple["CausalDecision", ...]
     directives: tuple["AIRDirective", ...]
+    requirements:tuple[DirectiveRequirement, ...]
+    authorities: tuple[DirectiveAuthority, ...] = ()
 
 
 @dataclass(frozen=True, order=True)
@@ -169,12 +177,6 @@ def validate_assignment_shape(assignment: StateAssignment) -> bool:
     return assignment.operation in ("set_int", "add_int") and is_int(assignment.value)
 """Causal AIR model objects."""
 
-
-from dataclasses import dataclass
-from typing import Literal, Tuple
-
-from air.model import EventEmission, StateAssignment
-
 @dataclass(frozen=True)
 class DirectiveInvocation:
     target: str
@@ -197,3 +199,7 @@ class CausalDecision:
     cause: str
     paths: Tuple[CausalPath, ...]
     policy: Literal["max_weight"] = "max_weight"
+
+@dataclass(frozen=True)
+class DirectiveAuthority:
+    name: str

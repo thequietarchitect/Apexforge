@@ -476,7 +476,7 @@ class AIRVerifier:
 
 class AuthorityEngine:
     def __init__(self, grants: tuple[AuthorityGrant, ...]) -> None:
-        self._grants = {(grant.principal, grant.capability, grant.resource) for grant in grants}
+        self._grants = {(grant.name, grant.capabilities,) for grant in grants}
 
     def allows(self, check: AuthorityCheck) -> bool:
         return (check.principal, check.capability, check.resource) in self._grants

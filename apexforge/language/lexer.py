@@ -22,6 +22,9 @@ SYMBOLS = {
 
 KEYWORDS = (
     "directive",
+    "workflow",
+    "authority",
+    "capability",
     "state",
     "event",
     "cause",
@@ -30,6 +33,8 @@ KEYWORDS = (
     "emit",
     "message",
     "invoke",
+    "requires",
+    "extends",
 )
 
 

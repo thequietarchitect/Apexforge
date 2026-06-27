@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Tuple
 
 from workflow.air_runner import run_air_from_registry
-
+from authority.validator import validate_requirements, AuthorizationError, validate_authorities
 
 @dataclass(frozen=True)
 class DirectiveExecutionResult:
@@ -17,11 +17,22 @@ class DirectiveExecutionResult:
     def ok(self) -> bool:
         return all(result.ok for _, result in self.results)
 
+class TestDirectiveRegistry:
+    def __init__(self):
+        self._programs = {}
+
+    def register(self, name, program):
+        self._programs[name.lower()] = program
+
+    def resolve(self, name):
+        return self._programs[name.lower()]
+
 
 class DirectiveExecutionEngine:
     def execute(
         self,
         registry,
+        authority_registry,
         root: str,
         max_depth: int = 10,
     ) -> DirectiveExecutionResult:
@@ -45,6 +56,14 @@ class DirectiveExecutionEngine:
             results.append((name, result))
 
             program = registry.resolve(name)
+            validate_authorities(
+                program,
+                authority_registry,
+            )
+            validate_requirements(
+                program,
+                authority_registry,
+            )
 
             for decision in program.causal_decisions:
                 for path in decision.paths:

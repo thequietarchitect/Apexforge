@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 from language.lexer import Token, lex
 
+from typing import Optional
+
 
 @dataclass(frozen=True)
 class StateNode:
@@ -58,43 +60,67 @@ class DirectiveNode:
     states: tuple[StateNode, ...]
     events: tuple[EventNode, ...]
     causes: tuple[CauseNode, ...]
+    requirements: tuple[RequirementNode, ...] = ()
+    authorities: tuple[DirectiveAuthorityNode, ...] = ()
 
+@dataclass(frozen=True)
+class WorkflowInvokeNode:
+    target: str
+
+
+@dataclass(frozen=True)
+class WorkflowNode:
+    name: str
+    invocations: tuple[WorkflowInvokeNode, ...]
+
+@dataclass(frozen=True)
+class CapabilityNode:
+    name: str
+
+@dataclass(frozen=True)
+class AuthorityNode:
+    name: str
+    capabilities: tuple[CapabilityNode, ...]
+    extends: Optional[str] = None
+
+@dataclass(frozen=True)
+class RequirementNode:
+    capability: str
+
+@dataclass(frozen=True)
+class DirectiveAuthorityNode:
+    name: str
 
 class Parser:
-    def __init__(self, tokens: list[Token]) -> None:
+    def __init__(self, tokens):
         self.tokens = tokens
         self.index = 0
 
-    def current(self) -> Token:
+    def current(self):
         return self.tokens[self.index]
 
-    def consume(self, kind: str) -> Token:
+    def consume(self, expected_kind):
         token = self.current()
 
-        if token.kind != kind:
-            raise SyntaxError(f"Expected {kind}, got {token.kind}")
+        if token.kind != expected_kind:
+            raise SyntaxError(f"Expected {expected_kind}, got {token.kind}")
 
         self.index += 1
         return token
 
-    def parse(self) -> DirectiveNode:
-        self.consume("DIRECTIVE")
-        name = self.consume("IDENT").value
-        self.consume("LBRACE")
+    def parse(self):
 
-        states: list[StateNode] = []
-        events: list[EventNode] = []
-        causes: list[CauseNode] = []
+        kind = self.current().kind
 
-        while self.current().kind != "RBRACE":
-            if self.current().kind == "STATE":
-                states.append(self.parse_state())
-            elif self.current().kind == "EVENT":
-                events.append(self.parse_event())
-            elif self.current().kind == "CAUSE":
-                causes.append(self.parse_cause())
-            else:
-                raise SyntaxError(f"Unexpected token: {self.current().kind}")
+        if kind == "DIRECTIVE":
+            return self.parse_directive()
+
+        if kind == "AUTHORITY":
+            return self.parse_authority()
+
+        raise SyntaxError(
+            f"Unexpected top-level token {kind}"
+    )
 
         self.consume("RBRACE")
         self.consume("EOF")
@@ -104,7 +130,118 @@ class Parser:
             states=tuple(states),
             events=tuple(events),
             causes=tuple(causes),
+            requirements=tuple(requirements),
         )
+
+    def parse_directive(self) -> DirectiveNode:
+        self.consume("DIRECTIVE")
+        name = self.consume("IDENT").value
+        self.consume("LBRACE")
+
+        states = []
+        events = []
+        causes = []
+        requirements = []
+        authorities = []
+
+        while self.current().kind != "RBRACE":
+            print("DIRECTIVE LOOP:", self.current(), "INDEX:", self.index)
+
+            kind = self.current().kind
+
+            if kind == "AUTHORITY":
+                print("FOUND AUTHORITY")
+                self.consume("AUTHORITY")
+                authority_name = self.consume("IDENT").value
+                authorities.append(DirectiveAuthorityNode(name=authority_name))
+                continue
+
+            if kind == "REQUIRES":
+                print("FOUND REQUIRES")
+                self.consume("REQUIRES")
+                capability = self.consume("IDENT").value
+                requirements.append(RequirementNode(capability=capability))
+                continue
+
+            raise SyntaxError(f"Unexpected directive token {kind}")
+
+        self.consume("RBRACE")
+        self.consume("EOF")
+
+        return DirectiveNode(
+            name=name,
+            states=tuple(states),
+            events=tuple(events),
+            causes=tuple(causes),
+            requirements=tuple(requirements),
+            authorities=tuple(authorities),
+    )
+
+    def parse_workflow(self) -> WorkflowNode:
+        self.consume("WORKFLOW")
+        name = self.consume("IDENT").value
+        self.consume("LBRACE")
+
+        invocations: list[WorkflowInvokeNode] = []
+
+        while self.current().kind != "RBRACE":
+            self.consume("INVOKE")
+            target = self.consume("IDENT").value
+
+            invocations.append(
+            WorkflowInvokeNode(target=target)
+        )
+
+        self.consume("RBRACE")
+        self.consume("EOF")
+
+        return WorkflowNode(
+            name=name,
+            invocations=tuple(invocations),
+        )
+
+    def parse_authority(self) -> AuthorityNode:
+        self.consume("AUTHORITY")
+        name = self.consume("IDENT").value
+
+        extends = None
+
+        if self.current().kind == "EXTENDS":
+            self.consume("EXTENDS")
+            extends = self.consume("IDENT").value
+
+            self.consume("LBRACE")
+
+            capabilities = []
+
+            loop_count = 0
+
+        while self.current().kind != "RBRACE":
+            print("LOOP TOKEN:", self.current(), "INDEX:", self.index)
+
+            loop_count += 1
+            if loop_count > 10:
+                    raise RuntimeError("Parser loop did not advance")
+
+            if self.current().kind != "CAPABILITY":
+                raise SyntaxError(
+                    f"Expected CAPABILITY or RBRACE, got {self.current().kind}"
+        )
+
+            self.consume("CAPABILITY")
+            capability_name = self.consume("IDENT").value
+
+            capabilities.append(
+            CapabilityNode(name=capability_name)
+    )
+
+        self.consume("RBRACE")
+
+        return AuthorityNode(
+            name=name,
+            capabilities=tuple(capabilities),
+            extends=extends,
+    )
 
     def parse_state(self) -> StateNode:
         self.consume("STATE")
@@ -188,6 +325,22 @@ class Parser:
 
         return InvokeActionNode(target=target)
 
+    def parse_requirement(self) -> RequirementNode:
+        self.consume("REQUIRES")
+        capability = self.consume("IDENT").value
 
-def parse(source: str) -> DirectiveNode:
-    return Parser(lex(source)).parse()
+        return RequirementNode(
+            capability=capability,
+        )
+
+
+def parse(source: str):
+    parser = Parser(lex(source))
+
+    if parser.current().kind == "WORKFLOW":
+        return parser.parse_workflow()
+
+    if parser.current().kind == "AUTHORITY":
+        return parser.parse_authority()
+
+    return parser.parse()
