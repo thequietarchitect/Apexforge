@@ -91,6 +91,16 @@ class RequirementNode:
 class DirectiveAuthorityNode:
     name: str
 
+@dataclass(frozen=True)
+class PrincipalAuthorityNode:
+    name: str
+
+
+@dataclass(frozen=True)
+class PrincipalNode:
+    name: str
+    authorities: tuple[PrincipalAuthorityNode, ...]
+
 class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
@@ -117,6 +127,10 @@ class Parser:
 
         if kind == "AUTHORITY":
             return self.parse_authority()
+
+        if kind == "PRINCIPAL":
+            print ("ENTERED PRINCIPAL DISPATCH")
+            return self.parse_principal()
 
         raise SyntaxError(
             f"Unexpected top-level token {kind}"
@@ -299,6 +313,39 @@ class Parser:
             weight=weight,
             actions=tuple(actions),
         )
+
+    def parse_principal(self):
+        self.consume("PRINCIPAL")
+        name = self.consume("IDENT").value
+        self.consume("LBRACE")
+
+        authorities = []
+
+        while self.current().kind != "RBRACE":
+            kind = self.current().kind
+
+            if kind == "AUTHORITY":
+                self.consume("AUTHORITY")
+                authority_name = self.consume("IDENT").value
+
+                authorities.append(
+                    PrincipalAuthorityNode(
+                        name=authority_name
+                )
+            )
+                continue
+
+            raise SyntaxError(
+            f"Unexpected principal token {kind}"
+        )
+
+        self.consume("RBRACE")
+        self.consume("EOF")
+
+        return PrincipalNode(
+            name=name,
+            authorities=tuple(authorities),
+    )
 
     def parse_add(self) -> AddActionNode:
         self.consume("ADD")

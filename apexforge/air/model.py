@@ -203,3 +203,13 @@ class CausalDecision:
 @dataclass(frozen=True)
 class DirectiveAuthority:
     name: str
+
+@dataclass(frozen=True)
+class PrincipalAuthorityNode:
+    name: str
+
+
+@dataclass(frozen=True)
+class PrincipalNode:
+    name: str
+    authorities: tuple[PrincipalAuthorityNode, ...]
