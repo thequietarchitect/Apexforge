@@ -95,22 +95,25 @@ class DirectiveAuthorityNode:
 class PrincipalAuthorityNode:
     name: str
 
-
-@dataclass(frozen=True)
-class PrincipalNode:
-    name: str
-    authorities: tuple[PrincipalAuthorityNode, ...]
-
 @dataclass(frozen=True)
 class RoleAuthorityNode:
     name: str
-
 
 @dataclass(frozen=True)
 class RoleNode:
     name: str
     authorities: tuple[RoleAuthorityNode, ...]
 
+@dataclass(frozen=True)
+class PrincipalRoleNode:
+    name: str
+
+@dataclass(frozen=True)
+class PrincipalNode:
+    name: str
+    authorities: tuple[PrincipalAuthorityNode, ...]
+    roles: tuple[PrincipalRoleNode, ...]
+    
 class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
@@ -327,39 +330,6 @@ class Parser:
             actions=tuple(actions),
         )
 
-    def parse_principal(self):
-        self.consume("PRINCIPAL")
-        name = self.consume("IDENT").value
-        self.consume("LBRACE")
-
-        authorities = []
-
-        while self.current().kind != "RBRACE":
-            kind = self.current().kind
-
-            if kind == "AUTHORITY":
-                self.consume("AUTHORITY")
-                authority_name = self.consume("IDENT").value
-
-                authorities.append(
-                    PrincipalAuthorityNode(
-                        name=authority_name
-                )
-            )
-                continue
-
-            raise SyntaxError(
-            f"Unexpected principal token {kind}"
-        )
-
-        self.consume("RBRACE")
-        self.consume("EOF")
-
-        return PrincipalNode(
-            name=name,
-            authorities=tuple(authorities),
-    )
-
     def parse_role(self):
         self.consume("ROLE")
 
@@ -395,6 +365,52 @@ class Parser:
 
         return RoleNode(
             name=name,
+            authorities=tuple(authorities),
+    )
+
+    def parse_principal(self):
+        self.consume("PRINCIPAL")
+        name = self.consume("IDENT").value
+        self.consume("LBRACE")
+
+        authorities = []
+        roles = []
+
+        while self.current().kind != "RBRACE":
+            kind = self.current().kind
+
+            if kind == "AUTHORITY":
+                self.consume("AUTHORITY")
+                authority_name = self.consume("IDENT").value
+
+                authorities.append(
+                    PrincipalAuthorityNode(
+                        name=authority_name
+                )
+            )
+
+            if kind == "ROLE":
+                self.consume("ROLE")
+
+                role_name = self.consume("IDENT").value
+
+                roles.append(
+                    PrincipalRoleNode(
+            name=role_name,
+        )
+    )
+                continue
+
+                raise SyntaxError(
+                    f"Unexpected principal token {kind}"
+        )
+
+        self.consume("RBRACE")
+        self.consume("EOF")
+
+        return PrincipalNode(
+            name=name,
+            roles=tuple(roles),
             authorities=tuple(authorities),
     )
 
