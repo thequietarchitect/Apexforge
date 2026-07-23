@@ -100,7 +100,6 @@ class DirectiveRequirement:
 @dataclass(frozen=True)
 class AIRProgram:
     version: str
-    principals: tuple["Principal", ...]
     states: tuple["StateDefinition", ...]
     events: tuple["EventDefinition", ...]
     authority_checks: tuple["AuthorityCheck", ...]
@@ -108,6 +107,8 @@ class AIRProgram:
     directives: tuple["AIRDirective", ...]
     requirements:tuple[DirectiveRequirement, ...]
     authorities: tuple[DirectiveAuthority, ...] = ()
+    principals: tuple[AIRPrincipal, ...] = ()
+    roles: tuple[AIRRole, ...] = ()
 
 
 @dataclass(frozen=True, order=True)
@@ -165,7 +166,9 @@ class VerificationResult:
     def require_verified(self) -> VerifiedAIRProgram:
         if not self.ok:
             rendered = "\n".join(f"{diagnostic.code}: {diagnostic.message}" for diagnostic in self.diagnostics)
+
             raise ValueError(f"AIR verification failed:\n{rendered}")
+
         return VerifiedAIRProgram(self.program)
 
 
@@ -213,3 +216,27 @@ class PrincipalAuthorityNode:
 class PrincipalNode:
     name: str
     authorities: tuple[PrincipalAuthorityNode, ...]
+
+@dataclass(frozen=True)
+class PrincipalAuthority:
+    name: str
+
+@dataclass(frozen=True)
+class PrincipalRole:
+    name: str
+
+@dataclass(frozen=True)
+class AIRPrincipal:
+    name: str
+    authorities: tuple[PrincipalAuthority, ...]
+    roles: tuple[PrincipalRole, ...] = ()
+
+@dataclass(frozen=True)
+class AIRRoleAuthority:
+    name: str
+
+
+@dataclass(frozen=True)
+class AIRRole:
+    name: str
+    authorities: tuple[AIRRoleAuthority, ...]

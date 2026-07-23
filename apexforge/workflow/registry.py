@@ -15,3 +15,26 @@ class DirectiveRegistry:
 
     def names(self):
         return sorted(self._directives.keys())
+
+class PrincipalRegistry:
+    def __init__(self):
+        self._principals = {}
+
+    def register(self, principal):
+        if principal.name in self._principals:
+            raise ValueError(
+                f"Principal already registered: {principal.name}"
+            )
+
+        self._principals[principal.name] = principal
+
+    def get(self, name):
+        try:
+            return self._principals[name]
+        except KeyError as exc:
+            raise KeyError(
+                f"Unknown principal: {name}"
+            ) from exc
+
+    def contains(self, name):
+        return name in self._principals

@@ -36,6 +36,7 @@ KEYWORDS = (
     "requires",
     "extends",
     "principal",
+    "role"
 )
 
 def lex(source: str) -> List[Token]:

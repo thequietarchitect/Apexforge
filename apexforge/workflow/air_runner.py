@@ -18,7 +18,7 @@ def build_default_context(program):
 
     grants = (
         AuthorityGrant(
-            name=program.principals[0].id,
+            name=program.principals[0].name,
             capabilities=capabilities,
         ),
     )

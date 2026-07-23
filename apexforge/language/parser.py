@@ -101,6 +101,16 @@ class PrincipalNode:
     name: str
     authorities: tuple[PrincipalAuthorityNode, ...]
 
+@dataclass(frozen=True)
+class RoleAuthorityNode:
+    name: str
+
+
+@dataclass(frozen=True)
+class RoleNode:
+    name: str
+    authorities: tuple[RoleAuthorityNode, ...]
+
 class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
@@ -132,19 +142,22 @@ class Parser:
             print ("ENTERED PRINCIPAL DISPATCH")
             return self.parse_principal()
 
-        raise SyntaxError(
-            f"Unexpected top-level token {kind}"
+        if kind == "ROLE":
+            return self.parse_role()
+
+            raise SyntaxError(
+                f"Unexpected top-level token {kind}"
     )
 
-        self.consume("RBRACE")
-        self.consume("EOF")
+            self.consume("RBRACE")
+            self.consume("EOF")
 
-        return DirectiveNode(
-            name=name,
-            states=tuple(states),
-            events=tuple(events),
-            causes=tuple(causes),
-            requirements=tuple(requirements),
+            return DirectiveNode(
+                name=name,
+                states=tuple(states),
+                events=tuple(events),
+                causes=tuple(causes),
+                requirements=tuple(requirements),
         )
 
     def parse_directive(self) -> DirectiveNode:
@@ -346,6 +359,64 @@ class Parser:
             name=name,
             authorities=tuple(authorities),
     )
+
+    def parse_role(self):
+        self.consume("ROLE")
+
+        name = self.consume("IDENT").value
+
+        self.consume("LBRACE")
+
+        authorities = []
+
+        while self.current().kind != "RBRACE":
+            kind = self.current().kind
+
+            if kind == "AUTHORITY":
+                self.consume("AUTHORITY")
+
+                authority_name = self.consume("IDENT").value
+
+                authorities.append(
+                    RoleAuthorityNode(
+                        name=authority_name,
+                )
+            )
+
+                continue
+
+                raise SyntaxError(
+                    f"Unexpected role token '{kind}'. "
+                    "Expected 'authority'."
+            )
+
+        self.consume("RBRACE")
+        self.consume("EOF")
+
+        return RoleNode(
+            name=name,
+            authorities=tuple(authorities),
+    )
+
+    def parse_authority_list(self):
+        authorities = []
+
+        while self.current().kind != "RBRACE":
+            kind = self.current().kind
+
+            if kind != "AUTHORITY":
+                raise SyntaxError(
+                    f"Unexpected token '{kind}'. "
+                    "Expected 'authority'."
+                )
+
+        self.consume("AUTHORITY")
+
+        authorities.append(
+            self.consume("IDENT").value
+        )
+
+        return tuple(authorities)
 
     def parse_add(self) -> AddActionNode:
         self.consume("ADD")

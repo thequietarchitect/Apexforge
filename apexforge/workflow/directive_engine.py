@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from typing import Tuple
 
 from workflow.air_runner import run_air_from_registry
-from authority.validator import validate_requirements, AuthorizationError, validate_authorities
+from authority.validator import validate_requirements, AuthorizationError, validate_authorities, validate_principal_authorities,PrincipalAuthorizationError, PrincipalCapabilityAuthorizationError
+from air.model import AIRPrincipal, AIRProgram
 
 @dataclass(frozen=True)
 class DirectiveExecutionResult:
@@ -27,12 +28,13 @@ class TestDirectiveRegistry:
     def resolve(self, name):
         return self._programs[name.lower()]
 
-
 class DirectiveExecutionEngine:
     def execute(
         self,
         registry,
         authority_registry,
+        principal_registry,
+        principal_name: str,
         root: str,
         max_depth: int = 10,
     ) -> DirectiveExecutionResult:
@@ -52,10 +54,11 @@ class DirectiveExecutionEngine:
 
             visited.add(name)
 
+            program = registry.resolve(name)
             result = run_air_from_registry(registry, name)
+
             results.append((name, result))
 
-            program = registry.resolve(name)
             validate_authorities(
                 program,
                 authority_registry,
@@ -65,6 +68,25 @@ class DirectiveExecutionEngine:
                 authority_registry,
             )
 
+            validate_principal_authorities(
+                program,
+                authority_registry,
+        )
+
+            principal = principal_registry.get(
+                principal_name
+        )
+
+            PrincipalAuthorizationError.authorize_principal(
+                principal,
+                program,
+        )
+            PrincipalCapabilityAuthorizationError.authorize_principal_capabilities(
+                principal,
+                program,
+                authority_registry,
+        )
+            
             for decision in program.causal_decisions:
                 for path in decision.paths:
                     for invocation in path.invocations:

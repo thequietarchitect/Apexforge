@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from role_compiler import compile_role
+from language.parser import RoleNode
+
 from air.model import (
     AIRDirective,
     AIRProgram,
+    AIRRole,
     EventDefinition,
     EventEmission,
     StateAssignment,
@@ -26,6 +30,19 @@ from language.parser import (
     parse,
 )
 
+def compile_node(
+        node: DirectiveNode | RoleNode,
+    ) -> AIRProgram | AIRRole:
+
+    if isinstance(node, DirectiveNode):
+        return compile_directive(node)
+
+    elif isinstance(node, RoleNode):
+        return compile_role(node)
+
+    raise TypeError(
+        f"Unsupported AST node type: {type(node).__name__}"
+    )
 
 def compile_directive(node: DirectiveNode) -> AIRProgram:
     principal_id = f"principal:{node.name}"
@@ -170,5 +187,8 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
     
 
 
-def compile_source(source: str) -> AIRProgram:
-    return compile_directive(parse(source))
+def compile_source(
+        source: str,
+    ) -> AIRProgram | AIRRole:
+    node = parse(source)
+    return compile_node(node)
