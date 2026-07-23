@@ -1,5 +1,7 @@
 from authority.registry import AuthorityRegistry
 from air.model import AIRProgram, AIRPrincipal
+from authorization.role_resolver import resolve_effective_authorities
+from role.registry import RoleRegistry
 
 class AuthorityValidationError(Exception):
     pass
@@ -54,95 +56,76 @@ def validate_principal_authorities(
 class PrincipalAuthorizationError(Exception):
     pass
 
-    def authorize_principal(
-        principal: AIRPrincipal,
-        program: AIRProgram,
-        ) -> None:
-        principal_authorities = {
-            authority.name
-            for authority in principal.authorities
-    }
 
-        required_authorities = {
-            authority.name
-        for authority in program.authorities
-    }
+class PrincipalAuthorizationError(Exception):
+    """Raised when a principal lacks a requested authority."""
 
-        missing_authorities = (
-            required_authorities - principal_authorities
+
+def authorize_principal(
+    principal: AIRPrincipal,
+    authority,
+    role_registry: RoleRegistry,
+    program: AIRProgram,
+    ) -> bool:
+        """
+        Authorize a principal for one requested authority.
+
+        The authority may be assigned directly to the principal
+        or inherited through one of the principal's roles.
+        """
+
+        effective_authorities = resolve_effective_authorities(
+        principal=principal,
+        role_registry=role_registry,
     )
 
-        if missing_authorities:
-            missing_text = ", ".join(
-            sorted(missing_authorities)
-        )
+        for effective_authority in effective_authorities:
+            if effective_authority.name == authority.name:
+                return True
 
-            raise PrincipalAuthorizationError(
-                f"Principal '{principal.name}' lacks required "
-                f"authorities: {missing_text}"
-        )
+        # This must remain outside the loop.
+        raise PrincipalAuthorizationError(
+            f"Principal '{principal.name}' lacks "
+            f"authority '{authority.name}'."
+    )
 
 class PrincipalCapabilityAuthorizationError(Exception):
     pass
 
 
-    def authorize_principal_capabilities(
-        principal: AIRPrincipal,
-        program: AIRProgram,
-        authority_registry: AuthorityRegistry,
-        ) -> None:
+def authorize_principal_capabilities(
+    principal: AIRPrincipal,
+    required_authorities,
+    role_registry,
+    program: AIRProgram,
+    ):
+    """
+    Verify that a principal possesses every authority
+    required to execute a capability.
+    """
 
-        """
-            Verify that the selected principal's directive authorities grant
-            every capability required by the AIR program.
-        """
+    missing = []
 
-        required_capabilities = {
-        requirement.capability
-            for requirement in program.requirements
-    }
+    for authority in required_authorities:
 
-        if not required_capabilities:
-            return
+        try:
+            PrincipalAuthorizationError.authorize_principal(
+                principal=principal,
+                    authority=authority,
+                    role_registry=role_registry,
+                    program=program,
+            )
 
-        principal_authorities = {
-            authority.name
-                for authority in principal.authorities
-    }
+        except PrincipalAuthorizationError:
+                missing.append(authority.name)
 
-        directive_authorities = {
-            authority.name
-                for authority in program.authorities
-    }
+        if missing:
 
-        usable_authorities = (
-            principal_authorities
-            & directive_authorities
-    )
-
-        granted_capabilities = set()
-
-        for authority_name in usable_authorities:
-            for capability_name in required_capabilities:
-                if authority_registry.has_capability(
-                    authority_name,
-                    capability_name,
-            ):
-                    granted_capabilities.add(
-                    capability_name
-                )
-
-        missing_capabilities = (
-            required_capabilities
-            - granted_capabilities
-    )
-
-        if missing_capabilities:
-            missing_text = ", ".join(
-                sorted(missing_capabilities)
-        )
+            missing_text = ", ".join(sorted(missing))
 
             raise PrincipalCapabilityAuthorizationError(
                 f"Principal '{principal.name}' lacks required "
-                f"capabilities: {missing_text}"
+                f"capability authorities: {missing_text}"
         )
+
+        return True
