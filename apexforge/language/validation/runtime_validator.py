@@ -1,0 +1,1176 @@
+"""
+ApexForge runtime validation.
+
+This module validates a compiled AIRProgram before it enters RuntimeEngine.
+
+Pipeline:
+
+    AIRProgram
+        ↓
+    RuntimeValidator
+        ↓
+    VerifiedAIRProgram
+        ↓
+    RuntimeEngine
+
+The validator guarantees the structural assumptions made by RuntimeEngine:
+
+- principal references exist
+- authority-check references exist
+- causal-decision references exist
+- state assignments reference defined states
+- event emissions reference defined events
+- directive invocations reference defined directives
+- identifiers are valid and unique
+- required textual values are non-empty strings
+
+This validator intentionally avoids importing the authority, principal, and
+role registries. Runtime validation only needs the declarations contained in
+the AIRProgram, and avoiding those imports prevents circular dependencies.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Iterable, Mapping, Optional, Sequence
+
+
+# Adjust this import only if AIRProgram is stored somewhere else.
+from air.model import AIRProgram, VerifiedAIRProgram
+
+
+# ============================================================================
+# Validation errors
+# ============================================================================
+
+
+class RuntimeValidationError(Exception):
+    """Base class for all runtime-validation failures."""
+
+
+class InvalidProgramError(RuntimeValidationError):
+    """Raised when the supplied object is not a valid AIRProgram."""
+
+
+class InvalidValueError(RuntimeValidationError):
+    """Raised when a required field contains an invalid value."""
+
+
+class DuplicateDefinitionError(RuntimeValidationError):
+    """Raised when two declarations use the same identifier."""
+
+
+class UndefinedReferenceError(RuntimeValidationError):
+    """Raised when an AIR object references an undefined declaration."""
+
+
+# ============================================================================
+# Verified wrapper
+# ============================================================================
+
+    program: AIRProgram
+
+
+# ============================================================================
+# Runtime validator
+# ============================================================================
+
+
+class RuntimeValidator:
+    """Validate an AIRProgram for safe execution by RuntimeEngine."""
+
+    def validate(
+        self,
+        program: AIRProgram,
+    ) -> VerifiedAIRProgram:
+        """
+        Validate the complete program and return a verified wrapper.
+
+        Raises:
+            InvalidProgramError
+            InvalidValueError
+            DuplicateDefinitionError
+            UndefinedReferenceError
+        """
+
+        if not isinstance(program, AIRProgram):
+            raise InvalidProgramError(
+                "RuntimeValidator.validate requires AIRProgram; "
+                f"received {type(program).__name__}."
+            )
+
+        self._required_string(
+            getattr(program, "version", None),
+            description="program version",
+        )
+
+        # ------------------------------------------------------------------
+        # Build canonical indexes.
+        #
+        # Important:
+        # Event emissions reference EventDefinition.id, not .name.
+        # Principal references use Principal.id.
+        # ------------------------------------------------------------------
+
+        state_index = self._index_by_id(
+            getattr(program, "states", ()),
+            owner="state",
+        )
+
+        event_index = self._index_by_id(
+            getattr(program, "events", ()),
+            owner="event",
+        )
+
+        authority_check_index = self._index_by_id(
+            getattr(program, "authority_checks", ()),
+            owner="authority check",
+        )
+
+        causal_decision_index = self._index_by_id(
+            getattr(program, "causal_decisions", ()),
+            owner="causal decision",
+        )
+
+        directive_index = self._index_by_id(
+            getattr(program, "directives", ()),
+            owner="directive",
+        )
+
+        principal_index = self._index_by_id(
+            getattr(program, "principals", ()),
+            owner="principal",
+        )
+
+        authority_index = self._index_by_name_or_id(
+            getattr(program, "authorities", ()),
+            owner="authority",
+        )
+
+        role_index = self._index_by_name_or_id(
+            getattr(program, "roles", ()),
+            owner="role",
+        )
+
+        # ------------------------------------------------------------------
+        # Validate declaration contents and references.
+        # ------------------------------------------------------------------
+
+        self._validate_states(
+            states=getattr(program, "states", ()),
+        )
+
+        self._validate_events(
+            events=getattr(program, "events", ()),
+        )
+
+        self._validate_authorities(
+            authorities=getattr(program, "authorities", ()),
+        )
+
+        self._validate_roles(
+            roles=getattr(program, "roles", ()),
+            authority_index=authority_index,
+            role_index=role_index,
+        )
+
+        self._validate_principals(
+            principals=getattr(program, "principals", ()),
+            principal_index=principal_index,
+            role_index=role_index,
+            authority_index=authority_index,
+        )
+
+        self._validate_authority_checks(
+            checks=getattr(program, "authority_checks", ()),
+            principal_index=principal_index,
+        )
+
+        self._validate_causal_decisions(
+            program=program,
+            state_ids=set(state_index),
+            event_ids=set(event_index),
+            directive_ids=set(directive_index),
+        )
+
+        self._validate_directives(
+            directives=getattr(program, "directives", ()),
+            principal_index=principal_index,
+            authority_check_index=authority_check_index,
+            causal_decision_index=causal_decision_index,
+        )
+
+        self._validate_requirements(
+            requirements=getattr(program, "requirements", ()),
+            directive_index=directive_index,
+            principal_index=principal_index,
+            authority_index=authority_index,
+        )
+
+        return VerifiedAIRProgram(
+            program=program,
+        )
+
+    # ======================================================================
+    # Index construction
+    # ======================================================================
+
+    def _index_by_id(
+        self,
+        values: Iterable[Any],
+        owner: str,
+    ) -> dict[str, Any]:
+        """Index declarations using their required .id field."""
+
+        index: dict[str, Any] = {}
+
+        for value in values:
+            identifier = self._required_string(
+                getattr(value, "id", None),
+                description=f"{owner} id",
+            )
+
+            if identifier in index:
+                raise DuplicateDefinitionError(
+                    f"Duplicate {owner} id '{identifier}'."
+                )
+
+            index[identifier] = value
+
+        return index
+
+    def _index_by_name_or_id(
+        self,
+        values: Iterable[Any],
+        owner: str,
+    ) -> dict[str, Any]:
+        """
+        Index declarations that may use either .name or .id.
+
+        Authorities and roles in ApexForge have historically used names,
+        while AIR runtime objects generally use IDs.
+        """
+
+        index: dict[str, Any] = {}
+
+        for value in values:
+            identifier = self._declaration_name_or_id(
+                value,
+                description=owner,
+            )
+
+            if identifier in index:
+                raise DuplicateDefinitionError(
+                    f"Duplicate {owner} declaration '{identifier}'."
+                )
+
+            index[identifier] = value
+
+        return index
+
+    # ======================================================================
+    # State and event declarations
+    # ======================================================================
+
+    def _validate_states(
+        self,
+        states: Iterable[Any],
+    ) -> None:
+        for state in states:
+            self._required_string(
+                getattr(state, "id", None),
+                description="state id",
+            )
+
+            # StateDefinition.initial may legitimately contain any supported
+            # AIR value, including zero, False, or None. Do not reject it.
+
+    def _validate_events(
+        self,
+        events: Iterable[Any],
+    ) -> None:
+        for event in events:
+            event_id = self._required_string(
+                getattr(event, "id", None),
+                description="event id",
+            )
+
+            event_name = getattr(event, "name", None)
+
+            if event_name is not None:
+                self._required_string(
+                    event_name,
+                    description=f"event '{event_id}' name",
+                )
+
+    # ======================================================================
+    # Authority and role declarations
+    # ======================================================================
+
+    def _validate_authorities(
+        self,
+        authorities: Iterable[Any],
+    ) -> None:
+        for authority in authorities:
+            self._declaration_name_or_id(
+                authority,
+                description="authority",
+            )
+
+    def _validate_roles(
+        self,
+        roles: Iterable[Any],
+        authority_index: Mapping[str, Any],
+        role_index: Mapping[str, Any],
+    ) -> None:
+        for role in roles:
+            role_name = self._declaration_name_or_id(
+                role,
+                description="role",
+            )
+
+            inherited_roles = getattr(
+                role,
+                "roles",
+                getattr(role, "inherits", ()),
+            )
+
+            for reference in inherited_roles or ():
+                inherited_name = self._reference_value(
+                    reference,
+                    description=(
+                        f"role '{role_name}' inherited role reference"
+                    ),
+                )
+
+                if inherited_name not in role_index:
+                    raise UndefinedReferenceError(
+                        f"Role '{role_name}' references undefined role "
+                        f"'{inherited_name}'."
+                    )
+
+                if inherited_name == role_name:
+                    raise InvalidValueError(
+                        f"Role '{role_name}' cannot inherit itself."
+                    )
+
+            role_authorities = getattr(
+                role,
+                "authorities",
+                (),
+            )
+
+            for reference in role_authorities or ():
+                # A direct capability-bearing object is an inline grant,
+                # rather than a reference to program.authorities.
+                if self._is_inline_authority(reference):
+                    continue
+
+                authority_name = self._reference_value(
+                    reference,
+                    description=(
+                        f"role '{role_name}' authority reference"
+                    ),
+                )
+
+                if authority_name not in authority_index:
+                    raise UndefinedReferenceError(
+                        f"Role '{role_name}' references undefined authority "
+                        f"'{authority_name}'."
+                    )
+
+    # ======================================================================
+    # Principals
+    # ======================================================================
+
+    def _validate_principals(
+        self,
+        principals: Iterable[Any],
+        principal_index: Mapping[str, Any],
+        role_index: Mapping[str, Any],
+        authority_index: Mapping[str, Any],
+    ) -> None:
+        for principal in principals:
+            principal_id = self._required_string(
+                getattr(principal, "id", None),
+                description="principal id",
+            )
+
+            # Merely accessing the index here also documents the invariant.
+            if principal_id not in principal_index:
+                raise UndefinedReferenceError(
+                    f"Principal '{principal_id}' is absent from its index."
+                )
+
+            display_name = getattr(
+                principal,
+                "display_name",
+                "",
+            )
+
+            if display_name not in ("", None):
+                self._required_string(
+                    display_name,
+                    description=(
+                        f"principal '{principal_id}' display name"
+                    ),
+                )
+
+            roles = getattr(
+                principal,
+                "roles",
+                (),
+            )
+
+            self._validate_unique_references(
+                roles or (),
+                owner=f"principal '{principal_id}'",
+                value_kind="role",
+            )
+
+            for reference in roles or ():
+                role_name = self._reference_value(
+                    reference,
+                    description=(
+                        f"principal '{principal_id}' role reference"
+                    ),
+                )
+
+                if role_name not in role_index:
+                    raise UndefinedReferenceError(
+                        f"Principal '{principal_id}' references undefined "
+                        f"role '{role_name}'."
+                    )
+
+            authorities = getattr(
+                principal,
+                "authorities",
+                (),
+            )
+
+            for reference in authorities or ():
+                # PrincipalAuthority may represent a direct grant with a
+                # capability rather than a named DirectiveAuthority.
+                if self._is_inline_authority(reference):
+                    continue
+
+                authority_name = self._reference_value(
+                    reference,
+                    description=(
+                        f"principal '{principal_id}' authority reference"
+                    ),
+                )
+
+                if authority_name not in authority_index:
+                    raise UndefinedReferenceError(
+                        f"Principal '{principal_id}' references undefined "
+                        f"authority '{authority_name}'."
+                    )
+
+    # ======================================================================
+    # Authority checks
+    # ======================================================================
+
+    def _validate_authority_checks(
+        self,
+        checks: Iterable[Any],
+        principal_index: Mapping[str, Any],
+    ) -> None:
+        for check in checks:
+            check_id = self._required_string(
+                getattr(check, "id", None),
+                description="authority check id",
+            )
+
+            principal_id = self._required_string(
+                getattr(check, "principal", None),
+                description=(
+                    f"authority check '{check_id}' principal reference"
+                ),
+            )
+
+            if principal_id not in principal_index:
+                raise UndefinedReferenceError(
+                    f"Authority check '{check_id}' references undefined "
+                    f"principal '{principal_id}'."
+                )
+
+            self._required_string(
+                getattr(check, "capability", None),
+                description=(
+                    f"authority check '{check_id}' capability"
+                ),
+            )
+
+            self._required_string(
+                getattr(check, "resource", None),
+                description=(
+                    f"authority check '{check_id}' resource"
+                ),
+            )
+
+    # ======================================================================
+    # Causal decisions and paths
+    # ======================================================================
+
+    def _validate_causal_decisions(
+        self,
+        program: AIRProgram,
+        state_ids: set[str],
+        event_ids: set[str],
+        directive_ids: set[str],
+    ) -> None:
+        """
+        Validate every causal decision and its paths.
+
+        The call site must pass:
+
+            program=program
+
+        not:
+
+            decisions=program.causal_decisions
+        """
+
+        for decision in getattr(
+            program,
+            "causal_decisions",
+            (),
+        ):
+            decision_id = self._required_string(
+                getattr(decision, "id", None),
+                description="causal decision id",
+            )
+
+            cause = getattr(
+                decision,
+                "cause",
+                None,
+            )
+
+            if cause is not None:
+                self._required_string(
+                    cause,
+                    description=(
+                        f"causal decision '{decision_id}' cause"
+                    ),
+                )
+
+            self._required_string(
+                getattr(decision, "policy", None),
+                description=(
+                    f"causal decision '{decision_id}' policy"
+                ),
+            )
+
+            paths = tuple(
+                getattr(decision, "paths", ()) or ()
+            )
+
+            if not paths:
+                raise InvalidValueError(
+                    f"Causal decision '{decision_id}' has no paths."
+                )
+
+            self._validate_unique_attribute(
+                paths,
+                attribute="id",
+                owner=(
+                    f"causal decision '{decision_id}' paths"
+                ),
+            )
+
+            for path in paths:
+                self._validate_path(
+                    path=path,
+                    state_ids=state_ids,
+                    event_ids=event_ids,
+                    directive_ids=directive_ids,
+                )
+
+    def _validate_path(
+        self,
+        path: Any,
+        state_ids: set[str],
+        event_ids: set[str],
+        directive_ids: set[str],
+    ) -> None:
+        path_id = self._required_string(
+            getattr(path, "id", None),
+            description="causal path id",
+        )
+
+        weight = getattr(
+            path,
+            "weight",
+            None,
+        )
+
+        if not isinstance(weight, (int, float)):
+            raise InvalidValueError(
+                f"Path '{path_id}' weight must be numeric; "
+                f"received {type(weight).__name__}."
+            )
+
+        # ------------------------------------------------------------------
+        # State assignments
+        # ------------------------------------------------------------------
+
+        for assignment in getattr(
+            path,
+            "assignments",
+            (),
+        ) or ():
+            state_id = self._required_string(
+                getattr(assignment, "state", None),
+                description=(
+                    f"path '{path_id}' state reference"
+                ),
+            )
+
+            if state_id not in state_ids:
+                raise UndefinedReferenceError(
+                    f"Path '{path_id}' assigns undefined state "
+                    f"'{state_id}'."
+                )
+
+            self._required_string(
+                getattr(assignment, "operation", None),
+                description=(
+                    f"path '{path_id}' assignment operation"
+                ),
+            )
+
+            if not hasattr(assignment, "value"):
+                raise InvalidValueError(
+                    f"Path '{path_id}' contains an assignment "
+                    "without a value."
+                )
+
+        # ------------------------------------------------------------------
+        # Event emissions
+        #
+        # EventEmission.event must match EventDefinition.id exactly.
+        # ------------------------------------------------------------------
+
+        for emission in getattr(
+            path,
+            "emits",
+            (),
+        ) or ():
+            event_id = self._required_string(
+                getattr(emission, "event", None),
+                description=(
+                    f"path '{path_id}' event reference"
+                ),
+            )
+
+            if event_id not in event_ids:
+                raise UndefinedReferenceError(
+                    f"Path '{path_id}' emits undefined event "
+                    f"'{event_id}'."
+                )
+
+        # ------------------------------------------------------------------
+        # Directive invocations
+        # ------------------------------------------------------------------
+
+        for invocation in getattr(
+            path,
+            "invocations",
+            (),
+        ) or ():
+            target = self._required_string(
+                getattr(invocation, "target", None),
+                description=(
+                    f"path '{path_id}' directive invocation target"
+                ),
+            )
+
+            if not self._directive_reference_exists(
+                target,
+                directive_ids,
+            ):
+                raise UndefinedReferenceError(
+                    f"Path '{path_id}' invokes undefined directive "
+                    f"'{target}'."
+                )
+
+        # ------------------------------------------------------------------
+        # Host effect intents
+        # ------------------------------------------------------------------
+
+        for effect in getattr(
+            path,
+            "effects",
+            (),
+        ) or ():
+            effect_id = getattr(
+                effect,
+                "id",
+                None,
+            )
+
+            if effect_id is not None:
+                self._required_string(
+                    effect_id,
+                    description=(
+                        f"path '{path_id}' effect id"
+                    ),
+                )
+
+            effect_type = getattr(
+                effect,
+                "effect_type",
+                None,
+            )
+
+            if effect_type is not None:
+                self._required_string(
+                    effect_type,
+                    description=(
+                        f"path '{path_id}' effect type"
+                    ),
+                )
+
+        rationale = getattr(
+            path,
+            "rationale",
+            None,
+        )
+
+        if rationale is not None and not isinstance(
+            rationale,
+            str,
+        ):
+            raise InvalidValueError(
+                f"Path '{path_id}' rationale must be a string; "
+                f"received {type(rationale).__name__}."
+            )
+
+    # ======================================================================
+    # Directives
+    # ======================================================================
+
+    def _validate_directives(
+        self,
+        directives: Iterable[Any],
+        principal_index: Mapping[str, Any],
+        authority_check_index: Mapping[str, Any],
+        causal_decision_index: Mapping[str, Any],
+    ) -> None:
+        orders: set[int] = set()
+
+        for directive in directives:
+            directive_id = self._required_string(
+                getattr(directive, "id", None),
+                description="directive id",
+            )
+
+            self._required_string(
+                getattr(directive, "name", None),
+                description=(
+                    f"directive '{directive_id}' name"
+                ),
+            )
+
+            principal_id = self._required_string(
+                getattr(directive, "principal", None),
+                description=(
+                    f"directive '{directive_id}' principal reference"
+                ),
+            )
+
+            if principal_id not in principal_index:
+                raise UndefinedReferenceError(
+                    f"Directive '{directive_id}' references undefined "
+                    f"principal '{principal_id}'."
+                )
+
+            authority_checks = tuple(
+                getattr(
+                    directive,
+                    "authority_checks",
+                    (),
+                ) or ()
+            )
+
+            self._validate_unique_strings(
+                authority_checks,
+                owner=(
+                    f"directive '{directive_id}' authority checks"
+                ),
+            )
+
+            for check_id in authority_checks:
+                check_id = self._required_string(
+                    check_id,
+                    description=(
+                        f"directive '{directive_id}' authority-check "
+                        "reference"
+                    ),
+                )
+
+                if check_id not in authority_check_index:
+                    raise UndefinedReferenceError(
+                        f"Directive '{directive_id}' references undefined "
+                        f"authority check '{check_id}'."
+                    )
+
+            causal_decisions = tuple(
+                getattr(
+                    directive,
+                    "causal_decisions",
+                    (),
+                ) or ()
+            )
+
+            self._validate_unique_strings(
+                causal_decisions,
+                owner=(
+                    f"directive '{directive_id}' causal decisions"
+                ),
+            )
+
+            for decision_id in causal_decisions:
+                decision_id = self._required_string(
+                    decision_id,
+                    description=(
+                        f"directive '{directive_id}' causal-decision "
+                        "reference"
+                    ),
+                )
+
+                if decision_id not in causal_decision_index:
+                    raise UndefinedReferenceError(
+                        f"Directive '{directive_id}' references undefined "
+                        f"causal decision '{decision_id}'."
+                    )
+
+            order = getattr(
+                directive,
+                "order",
+                0,
+            )
+
+            if not isinstance(order, int):
+                raise InvalidValueError(
+                    f"Directive '{directive_id}' order must be an integer; "
+                    f"received {type(order).__name__}."
+                )
+
+            if order in orders:
+                raise DuplicateDefinitionError(
+                    f"Duplicate directive order '{order}'."
+                )
+
+            orders.add(order)
+
+    # ======================================================================
+    # Requirements
+    # ======================================================================
+
+    def _validate_requirements(
+        self,
+        requirements: Iterable[Any],
+        directive_index: Mapping[str, Any],
+        principal_index: Mapping[str, Any],
+        authority_index: Mapping[str, Any],
+    ) -> None:
+        for index, requirement in enumerate(requirements):
+            owner = f"requirement[{index}]"
+
+            self._required_string(
+                getattr(requirement, "capability", None),
+                description=f"{owner} capability",
+            )
+
+            principal_name = getattr(
+                requirement,
+                "principal",
+                None,
+            )
+
+            if principal_name is not None:
+                principal_name = self._required_string(
+                    principal_name,
+                    description=(
+                        f"{owner} principal reference"
+                    ),
+                )
+
+                if principal_name not in principal_index:
+                    raise UndefinedReferenceError(
+                        f"{owner} references undefined principal "
+                        f"'{principal_name}'."
+                    )
+
+            authority_name = getattr(
+                requirement,
+                "authority",
+                None,
+            )
+
+            if authority_name is not None:
+                authority_name = self._reference_value(
+                    authority_name,
+                    description=(
+                        f"{owner} authority reference"
+                    ),
+                )
+
+                if authority_name not in authority_index:
+                    raise UndefinedReferenceError(
+                        f"{owner} references undefined authority "
+                        f"'{authority_name}'."
+                    )
+
+            directive_name = getattr(
+                requirement,
+                "directive",
+                None,
+            )
+
+            if directive_name is not None:
+                directive_name = self._required_string(
+                    directive_name,
+                    description=(
+                        f"{owner} directive reference"
+                    ),
+                )
+
+                if not self._directive_reference_exists(
+                    directive_name,
+                    set(directive_index),
+                ):
+                    raise UndefinedReferenceError(
+                        f"{owner} references undefined directive "
+                        f"'{directive_name}'."
+                    )
+
+    # ======================================================================
+    # Helpers
+    # ======================================================================
+
+    def _required_string(
+        self,
+        value: Any,
+        description: str,
+    ) -> str:
+        if not isinstance(value, str):
+            raise InvalidValueError(
+                f"{description} must be a string; "
+                f"received {type(value).__name__}."
+            )
+
+        normalized = value.strip()
+
+        if not normalized:
+            raise InvalidValueError(
+                f"{description} cannot be empty."
+            )
+
+        return normalized
+
+    def _declaration_name_or_id(
+        self,
+        value: Any,
+        description: str,
+    ) -> str:
+        name = getattr(
+            value,
+            "name",
+            None,
+        )
+
+        if name is not None:
+            return self._required_string(
+                name,
+                description=f"{description} name",
+            )
+
+        identifier = getattr(
+            value,
+            "id",
+            None,
+        )
+
+        return self._required_string(
+            identifier,
+            description=f"{description} id",
+        )
+
+    def _reference_value(
+        self,
+        value: Any,
+        description: str,
+    ) -> str:
+        """
+        Convert a string or lightweight reference object into its key.
+
+        Supported object fields:
+
+        - authority
+        - role
+        - name
+        - id
+        """
+
+        if isinstance(value, str):
+            return self._required_string(
+                value,
+                description=description,
+            )
+
+        for attribute in (
+            "authority",
+            "role",
+            "name",
+            "id",
+        ):
+            candidate = getattr(
+                value,
+                attribute,
+                None,
+            )
+
+            if candidate is not None:
+                return self._required_string(
+                    candidate,
+                    description=description,
+                )
+
+        raise InvalidValueError(
+            f"{description} must be a string or reference object; "
+            f"received {type(value).__name__}."
+        )
+
+    def _is_inline_authority(
+        self,
+        value: Any,
+    ) -> bool:
+        """
+        Return True when an object represents an inline authority grant.
+
+        PrincipalAuthority objects commonly contain capability information
+        directly instead of referencing a named DirectiveAuthority.
+        """
+
+        return getattr(
+            value,
+            "capability",
+            None,
+        ) is not None
+
+    def _directive_reference_exists(
+        self,
+        reference: str,
+        directive_ids: set[str],
+    ) -> bool:
+        """
+        Accept either a canonical directive ID or a plain directive name.
+
+        Examples:
+
+            directive:Hello
+            Hello
+        """
+
+        if reference in directive_ids:
+            return True
+
+        canonical = f"directive:{reference}"
+
+        return canonical in directive_ids
+
+    def _validate_unique_strings(
+        self,
+        values: Sequence[Any],
+        owner: str,
+    ) -> None:
+        seen: set[str] = set()
+
+        for value in values:
+            normalized = self._required_string(
+                value,
+                description=f"{owner} value",
+            )
+
+            if normalized in seen:
+                raise DuplicateDefinitionError(
+                    f"{owner} contains duplicate reference "
+                    f"'{normalized}'."
+                )
+
+            seen.add(normalized)
+
+    def _validate_unique_references(
+        self,
+        values: Sequence[Any],
+        owner: str,
+        value_kind: str,
+    ) -> None:
+        seen: set[str] = set()
+
+        for value in values:
+            reference = self._reference_value(
+                value,
+                description=(
+                    f"{owner} {value_kind} reference"
+                ),
+            )
+
+            if reference in seen:
+                raise DuplicateDefinitionError(
+                    f"{owner} contains duplicate {value_kind} "
+                    f"reference '{reference}'."
+                )
+
+            seen.add(reference)
+
+    def _validate_unique_attribute(
+        self,
+        values: Sequence[Any],
+        attribute: str,
+        owner: str,
+    ) -> None:
+        seen: set[str] = set()
+
+        for value in values:
+            identifier = self._required_string(
+                getattr(value, attribute, None),
+                description=f"{owner} {attribute}",
+            )
+
+            if identifier in seen:
+                raise DuplicateDefinitionError(
+                    f"{owner} contains duplicate {attribute} "
+                    f"'{identifier}'."
+                )
+
+            seen.add(identifier)
+
+
+# ============================================================================
+# Functional entry point
+# ============================================================================
+
+
+def validate_runtime(
+    program: AIRProgram,
+) -> VerifiedAIRProgram:
+    """Validate an AIRProgram using the default runtime validator."""
+
+    return RuntimeValidator().validate(program)
+
+
+__all__ = [
+    "RuntimeValidationError",
+    "InvalidProgramError",
+    "InvalidValueError",
+    "DuplicateDefinitionError",
+    "UndefinedReferenceError",
+    "VerifiedAIRProgram",
+    "RuntimeValidator",
+    "validate_runtime",
+]

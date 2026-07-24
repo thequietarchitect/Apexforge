@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 
 from authority.model import AuthorityGrant
@@ -5,7 +6,8 @@ from authority.model import AuthorityGrant
 class AuthorityInheritanceError(Exception):
     pass
 
-
+class UnknownAuthorityError(Exception):
+    """Raised when an authority is not registered."""
 
 class AuthorityRegistry:
     def __init__(self):
@@ -17,33 +19,42 @@ class AuthorityRegistry:
     def get(self, name: str) -> Optional[AuthorityGrant]:
         return self._grants.get(name.lower())
 
-    def resolve_capabilities(self, authority_name, seen=None):
-        if seen is None:
-            seen = set()
+    def resolve_capabilities(
+        self,
+        authority_name: str,
+        active_path: set[str] | None = None,
+    ) -> set[str]:
+        if active_path is None:
+            active_path = set()
 
-        key = authority_name
+        key = authority_name.lower()
 
-        if key in seen:
+        if key in active_path:
             raise AuthorityInheritanceError(
-            f"Authority inheritance cycle detected at '{key}'"
-        )
-
-        seen.add(key)
+                f"Authority inheritance cycle detected at "
+                f"'{authority_name}'."
+            )
 
         grant = self.get(authority_name)
 
         if grant is None:
-            return set()
+            raise UnknownAuthorityError(
+                f"Unknown authority '{authority_name}'."
+            )
 
-        inherited = set()
+        next_path = active_path | {key}
 
-        if grant.extends is not None:
-            inherited = self.resolve_capabilities(
-                grant.extends,
-                seen,
-        )
+        resolved = set(grant.capabilities)
 
-        return inherited | set(grant.capabilities)
+        for inherited_authority in grant.inherits:
+            resolved.update(
+                self.resolve_capabilities(
+                    authority_name=inherited_authority,
+                    active_path=next_path,
+                )
+            )
+
+        return resolved
 
     def has_capability(self, authority_name: str, capability: str) -> bool:
         return capability in self.resolve_capabilities(authority_name)

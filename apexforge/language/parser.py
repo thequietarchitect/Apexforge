@@ -175,28 +175,58 @@ class Parser:
         authorities = []
 
         while self.current().kind != "RBRACE":
-            print("DIRECTIVE LOOP:", self.current(), "INDEX:", self.index)
-
             kind = self.current().kind
 
+            if kind == "STATE":
+                states.append(
+                    self.parse_state()
+            )
+                continue
+
+            if kind == "EVENT":
+                events.append(
+                    self.parse_event()
+            )
+                continue
+
+            if kind == "CAUSE":
+                causes.append(
+                    self.parse_cause()
+            )
+                continue
+
             if kind == "AUTHORITY":
-                print("FOUND AUTHORITY")
                 self.consume("AUTHORITY")
                 authority_name = self.consume("IDENT").value
-                authorities.append(DirectiveAuthorityNode(name=authority_name))
+
+                authorities.append(
+                    DirectiveAuthorityNode(
+                        name=authority_name,
+                )
+            )
                 continue
 
             if kind == "REQUIRES":
-                print("FOUND REQUIRES")
                 self.consume("REQUIRES")
                 capability = self.consume("IDENT").value
-                requirements.append(RequirementNode(capability=capability))
+
+                requirements.append(
+                    RequirementNode(
+                    capability=capability,
+                )
+            )
                 continue
 
-            raise SyntaxError(f"Unexpected directive token {kind}")
+            token = self.current()
+
+            raise SyntaxError(
+                    "Unexpected token inside directive: "
+                    f"kind={token.kind!r}, "
+                    f"value={token.value!r}, "
+                    f"index={self.index}"
+        )
 
         self.consume("RBRACE")
-        self.consume("EOF")
 
         return DirectiveNode(
             name=name,
@@ -466,7 +496,6 @@ class Parser:
         return RequirementNode(
             capability=capability,
         )
-
 
 def parse(source: str):
     parser = Parser(lex(source))

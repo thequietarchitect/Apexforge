@@ -95,7 +95,7 @@ def validate_state_definition_shape(state: "StateDefinition") -> bool:
 @dataclass(frozen=True)
 class DirectiveRequirement:
     capability: str
-
+    principal: str | None = None
 
 @dataclass(frozen=True)
 class AIRProgram:
@@ -115,6 +115,8 @@ class AIRProgram:
 class Principal:
     id: str
     display_name: str = ""
+    roles: tuple[str,...] = ()
+    authorities: tuple[PrincipalAuthority, ...] = ()
 
 
 @dataclass(frozen=True, order=True)

@@ -7,11 +7,11 @@ class DirectiveRegistry:
     def __init__(self) -> None:
         self._directives = {}
 
-    def register(self, name: str, runner) -> None:
-        self._directives[name] = runner
+    def register(self, id: str, runner) -> None:
+        self._directives[id] = runner
 
-    def resolve(self, name: str):
-        return self._directives[name]
+    def resolve(self, id: str):
+        return self._directives[id]
 
     def names(self):
         return sorted(self._directives.keys())
@@ -21,20 +21,20 @@ class PrincipalRegistry:
         self._principals = {}
 
     def register(self, principal):
-        if principal.name in self._principals:
+        if principal.id in self._principals:
             raise ValueError(
-                f"Principal already registered: {principal.name}"
+                f"Principal already registered: {principal.id}"
             )
 
-        self._principals[principal.name] = principal
+        self._principals[principal.id] = principal
 
-    def get(self, name):
+    def get(self, id):
         try:
-            return self._principals[name]
+            return self._principals[id]
         except KeyError as exc:
             raise KeyError(
-                f"Unknown principal: {name}"
+                f"Unknown principal: {id}"
             ) from exc
 
-    def contains(self, name):
-        return name in self._principals
+    def contains(self, id):
+        return id in self._principals
