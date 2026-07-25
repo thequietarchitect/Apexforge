@@ -1,6 +1,7 @@
 """ApexForge AST to AIR compiler."""
 
 from __future__ import annotations
+from typing import Optional
 
 from role_compiler import compile_role
 from language.parser import RoleNode
@@ -30,6 +31,73 @@ from language.parser import (
     RequirementNode,
     parse,
 )
+
+from language.parser import (
+    ExpressionNode,
+    IntegerLiteralNode,
+    StringLiteralNode,
+    BooleanLiteralNode,
+    IdentifierNode,
+    UnaryExpressionNode,
+    BinaryExpressionNode,
+)
+
+from air.expressions import (
+    AIRExpression,
+    AIRIntegerLiteral,
+    AIRStringLiteral,
+    AIRBooleanLiteral,
+    AIRIdentifierReference,
+    AIRUnaryExpression,
+    AIRBinaryExpression,
+)
+
+def compile_expression(
+    node: ExpressionNode,
+) -> AIRExpression:
+    if isinstance(node, IntegerLiteralNode):
+        return AIRIntegerLiteral(
+            value=node.value,
+        )
+
+    if isinstance(node, StringLiteralNode):
+        return AIRStringLiteral(
+            value=node.value,
+        )
+
+    if isinstance(node, BooleanLiteralNode):
+        return AIRBooleanLiteral(
+            value=node.value,
+        )
+
+    if isinstance(node, IdentifierNode):
+        return AIRIdentifierReference(
+            name=node.name,
+        )
+
+    if isinstance(node, UnaryExpressionNode):
+        return AIRUnaryExpression(
+            operator=node.operator,
+            operand=compile_expression(
+                node.operand,
+            ),
+        )
+
+    if isinstance(node, BinaryExpressionNode):
+        return AIRBinaryExpression(
+            left=compile_expression(
+                node.left,
+            ),
+            operator=node.operator,
+            right=compile_expression(
+                node.right,
+            ),
+        )
+
+    raise TypeError(
+        "Unsupported expression AST node: "
+        f"{type(node).__name__}"
+    )
 
 def compile_node(
         node: DirectiveNode | RoleNode,
@@ -73,36 +141,66 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
 
             for action in path.actions:
                 if isinstance(action, MessageActionNode):
-                    pending_message = action.text
+                    pending_message = action.expression
 
                 elif isinstance(action, AddActionNode):
                     assignments.append(
                         StateAssignment(
                             state=state_ids[action.state_name],
                             operation="add_int",
-                            value=action.value,
+                            value=compile_expression(action.value,)
                         )
                     )
+
+            pending_message: Optional[AIRExpression] = None
+
+            for action in path.actions:
+                if isinstance(action, AddActionNode):
+                    assignments.append(
+                        StateAssignment(
+                            state=state_ids[action.state_name],
+                            operation="add_int",
+                            value=compile_expression(
+                            action.value,
+                        ),
+                    )
+                )
+
+                elif isinstance(action, MessageActionNode):
+                    pending_message = compile_expression(
+                        action.expression,
+                )
 
                 elif isinstance(action, EmitActionNode):
                     if pending_message is None:
                         event_facts = ()
                     else:
-                        event_facts = facts(message=pending_message)
+                        event_facts = facts(
+                        message=pending_message,
+            )
 
                     emits.append(
                         EventEmission(
                             event=event_ids[action.event_name],
                             facts=event_facts,
-                        )
-                    )
+                )
+            )
+
+        # A message applies only to the immediately following emission.
+                    pending_message = None
 
                 elif isinstance(action, InvokeActionNode):
                     invocations.append(
                         DirectiveInvocation(
-                            target=action.target,
-                        )
+                            directive=action.target,
                     )
+                )
+
+                else:
+                    raise TypeError(
+                        "Unsupported path action: "
+                        f"{type(action).__name__}"
+                )
 
             paths.append(
                 CausalPath(
@@ -143,7 +241,7 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
         states=tuple(
             StateDefinition(
                 id=f"state:{state.name}",
-                initial=state.initial,
+                initial=compile_expression(state.initial,)
             )
             for state in node.states
         ),

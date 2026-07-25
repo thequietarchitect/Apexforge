@@ -11,6 +11,7 @@ from air.model import EventEmission, StateAssignment
 @dataclass(frozen=True)
 class DirectiveInvocation:
     target: str
+    id: str
 
 
 @dataclass(frozen=True)

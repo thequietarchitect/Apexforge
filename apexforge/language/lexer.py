@@ -19,6 +19,16 @@ SYMBOLS = {
     "@": "AT",
 }
 
+EXPRESSIONS = {
+    "+": "PLUS",
+    "-": "MINUS",
+    "*": "STAR",
+    "/": "SLASH",
+    "%": "PERCENT",
+    "(": "LPAREN",
+    ")": "RPAREN",
+}
+
 
 KEYWORDS = (
     "directive",
@@ -39,6 +49,64 @@ KEYWORDS = (
     "role"
 )
 
+def scan_string(
+    source: str,
+    opening_quote_index: int,
+):
+    """
+    Read a quoted string and return:
+
+        (decoded_value, index_after_closing_quote)
+    """
+
+    i = opening_quote_index + 1
+    characters = []
+
+    while i < len(source):
+        current = source[i]
+
+        # Closing quotation mark
+        if current == '"':
+            return "".join(characters), i + 1
+
+        # Escape sequence
+        if current == "\\":
+            if i + 1 >= len(source):
+                raise SyntaxError(
+                    "Unterminated escape sequence "
+                    "inside string literal"
+                )
+
+            escaped = source[i + 1]
+
+            escape_values = {
+                "n": "\n",
+                "r": "\r",
+                "t": "\t",
+                '"': '"',
+                "\\": "\\",
+            }
+
+            if escaped not in escape_values:
+                raise SyntaxError(
+                    "Unsupported escape sequence: "
+                    f"\\{escaped}"
+                )
+
+            characters.append(
+                escape_values[escaped]
+            )
+
+            i += 2
+            continue
+
+        characters.append(current)
+        i += 1
+
+    raise SyntaxError(
+        "Unterminated string literal"
+    )
+
 def lex(source: str) -> List[Token]:
     tokens: List[Token] = []
     i = 0
@@ -51,16 +119,26 @@ def lex(source: str) -> List[Token]:
             continue
 
         if char == '"':
-            i += 1
-            start = i
+            value, i = scan_string(
+                source,
+                i,
+        )
 
-            while i < len(source) and source[i] != '"':
-                i += 1
+            tokens.append(
+                Token(
+                    kind="STRING",
+                    value=value,
+        )
+    )
+            continue
 
-            if i >= len(source):
-                raise SyntaxError("Unterminated string literal")
-
-            tokens.append(Token("STRING", source[start:i]))
+        if char in EXPRESSIONS:
+            tokens.append(
+                Token(
+                    kind=EXPRESSIONS[char],
+                    value=char,
+            )
+        )
             i += 1
             continue
 
@@ -73,7 +151,7 @@ def lex(source: str) -> List[Token]:
             start = i
             while i < len(source) and source[i].isdigit():
                 i += 1
-            tokens.append(Token("NUMBER", source[start:i]))
+                tokens.append(Token("NUMBER", source[start:i]))
             continue
 
         if char.isalpha() or char == "_":

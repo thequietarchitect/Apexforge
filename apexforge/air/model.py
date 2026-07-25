@@ -11,7 +11,13 @@ from typing import Literal,Union
 from typing import TYPE_CHECKING, Tuple
 from typing import Literal, Tuple
 
+from air.expressions import AIRExpression
 from air.types import AIR_VERSION, Primitive, StateOperation, as_tuple, is_int
+
+FactValue = Union[str,
+                  int,
+                  bool,
+                  AIRExpression,]
 
 
 if TYPE_CHECKING:
@@ -21,29 +27,34 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class Fact:
     key: str
-    value: Union[int,str, bool]
+    value: FactValue
 
 
 def sort_facts(items) -> Tuple[Fact, ...]:
     return tuple(sorted(as_tuple(items), key=lambda fact: (fact.key, type(fact.value).__name__, repr(fact.value))))
 
 
-def facts(**items: Union[int,str, bool]) -> Tuple[Fact, ...]:
-    return sort_facts(Fact(key, value) for key, value in items.items())
-
+def facts(**values: FactValue) -> tuple[Fact, ...]:
+    return tuple(
+        Fact(
+            key=name,
+            value=value,
+        )
+        for name, value in values.items()
+    )
 
 @dataclass(frozen=True, order=True)
 class StateDefinition:
     id: str
-    initial: int = 0
-    value_type: str = "int"
+    initial: AIRExpression = 0
+    value_type: str = "AIRExpression"
 
 
 @dataclass(frozen=True, order=True)
 class StateAssignment:
     state: str
     operation: Literal["set_int", "add_int"]
-    value: int
+    value: AIRExpression
 
 
 @dataclass(frozen=True, order=True)
@@ -80,7 +91,7 @@ class AIRDirective:
     principal: str
     authority_checks: Tuple[str, ...]
     causal_decisions: Tuple[str, ...]
-    order: int = 0
+    order: AIRExpression = 0
 
 def validate_assignment_shape(assignment: "StateAssignment") -> bool:
     return (
@@ -137,6 +148,7 @@ class CausalDecision:
 @dataclass(frozen=True)
 class DirectiveInvocation:
     target: str
+    id: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "principals", tuple(sorted(as_tuple(self.principals), key=lambda item: item.id)))
@@ -185,12 +197,12 @@ def validate_assignment_shape(assignment: StateAssignment) -> bool:
 @dataclass(frozen=True)
 class DirectiveInvocation:
     target: str
-
+    id: str
 
 @dataclass(frozen=True)
 class CausalPath:
     id: str
-    weight: int
+    weight: AIRExpression
     assignments: tuple
     emits: tuple
     invocations: tuple = ()
