@@ -31,8 +31,7 @@ the AIRProgram, and avoiding those imports prevents circular dependencies.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Optional, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 
 # Adjust this import only if AIRProgram is stored somewhere else.
@@ -68,7 +67,8 @@ class UndefinedReferenceError(RuntimeValidationError):
 # Verified wrapper
 # ============================================================================
 
-    program: AIRProgram
+# VerifiedAIRProgram is imported from air.model so the validator and runtime
+# share one canonical wrapper class.
 
 
 # ============================================================================
@@ -158,6 +158,7 @@ class RuntimeValidator:
 
         self._validate_states(
             states=getattr(program, "states", ()),
+            state_ids=set(state_index),
         )
 
         self._validate_events(
@@ -275,15 +276,24 @@ class RuntimeValidator:
     def _validate_states(
         self,
         states: Iterable[Any],
+        state_ids: set[str],
     ) -> None:
         for state in states:
-            self._required_string(
+            state_id = self._required_string(
                 getattr(state, "id", None),
                 description="state id",
             )
 
-            # StateDefinition.initial may legitimately contain any supported
-            # AIR value, including zero, False, or None. Do not reject it.
+            if not hasattr(state, "initial"):
+                raise InvalidValueError(
+                    f"State '{state_id}' is missing its initial expression."
+                )
+
+            self._validate_expression(
+                getattr(state, "initial"),
+                state_ids=state_ids,
+                owner=f"state '{state_id}' initial expression",
+            )
 
     def _validate_events(
         self,
@@ -634,18 +644,32 @@ class RuntimeValidator:
                     f"'{state_id}'."
                 )
 
-            self._required_string(
+            operation = self._required_string(
                 getattr(assignment, "operation", None),
                 description=(
                     f"path '{path_id}' assignment operation"
                 ),
             )
 
+            if operation not in {"set_int", "add_int"}:
+                raise InvalidValueError(
+                    f"Path '{path_id}' uses unsupported assignment operation "
+                    f"'{operation}'. Expected 'set_int' or 'add_int'."
+                )
+
             if not hasattr(assignment, "value"):
                 raise InvalidValueError(
                     f"Path '{path_id}' contains an assignment "
                     "without a value."
                 )
+
+            self._validate_expression(
+                getattr(assignment, "value"),
+                state_ids=state_ids,
+                owner=(
+                    f"path '{path_id}' assignment to state '{state_id}'"
+                ),
+            )
 
         # ------------------------------------------------------------------
         # Event emissions
@@ -670,6 +694,14 @@ class RuntimeValidator:
                     f"Path '{path_id}' emits undefined event "
                     f"'{event_id}'."
                 )
+
+            self._validate_emission_facts(
+                emission=emission,
+                state_ids=state_ids,
+                owner=(
+                    f"path '{path_id}' emission of event '{event_id}'"
+                ),
+            )
 
         # ------------------------------------------------------------------
         # Directive invocations
@@ -947,6 +979,254 @@ class RuntimeValidator:
                         f"{owner} references undefined directive "
                         f"'{directive_name}'."
                     )
+
+
+    # ======================================================================
+    # AIR expressions
+    # ======================================================================
+
+    def _validate_expression(
+        self,
+        expression: Any,
+        state_ids: set[str],
+        owner: str,
+    ) -> None:
+        """
+        Validate one AIR expression recursively.
+
+        This implementation dispatches by the canonical AIR expression class
+        names instead of importing the expression module. That keeps the
+        runtime validator independent from the module's filename/casing and
+        avoids introducing a new circular import.
+        """
+
+        expression_type = type(expression).__name__
+
+        if expression_type == "AIRIntegerLiteral":
+            value = getattr(expression, "value", None)
+
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise InvalidValueError(
+                    f"{owner} must contain an integer literal value; "
+                    f"received {type(value).__name__}."
+                )
+
+            return
+
+        if expression_type == "AIRStringLiteral":
+            value = getattr(expression, "value", None)
+
+            if not isinstance(value, str):
+                raise InvalidValueError(
+                    f"{owner} must contain a string literal value; "
+                    f"received {type(value).__name__}."
+                )
+
+            return
+
+        if expression_type == "AIRBooleanLiteral":
+            value = getattr(expression, "value", None)
+
+            if not isinstance(value, bool):
+                raise InvalidValueError(
+                    f"{owner} must contain a boolean literal value; "
+                    f"received {type(value).__name__}."
+                )
+
+            return
+
+        if expression_type == "AIRIdentifierReference":
+            reference = self._required_string(
+                getattr(expression, "name", None),
+                description=f"{owner} identifier reference",
+            )
+
+            if not self._state_reference_exists(
+                reference,
+                state_ids,
+            ):
+                raise UndefinedReferenceError(
+                    f"{owner} references undefined state '{reference}'."
+                )
+
+            return
+
+        if expression_type == "AIRUnaryExpression":
+            operator = self._required_string(
+                getattr(expression, "operator", None),
+                description=f"{owner} unary operator",
+            )
+
+            if operator not in {"+", "-", "not"}:
+                raise InvalidValueError(
+                    f"{owner} uses unsupported unary operator "
+                    f"'{operator}'."
+                )
+
+            if not hasattr(expression, "operand"):
+                raise InvalidValueError(
+                    f"{owner} is missing its unary operand."
+                )
+
+            self._validate_expression(
+                getattr(expression, "operand"),
+                state_ids=state_ids,
+                owner=f"{owner} operand",
+            )
+
+            return
+
+        if expression_type == "AIRBinaryExpression":
+            operator = self._required_string(
+                getattr(expression, "operator", None),
+                description=f"{owner} binary operator",
+            )
+
+            supported_operators = {
+                "+",
+                "-",
+                "*",
+                "/",
+                "%",
+                "==",
+                "!=",
+                "<",
+                "<=",
+                ">",
+                ">=",
+                "and",
+                "or",
+            }
+
+            if operator not in supported_operators:
+                raise InvalidValueError(
+                    f"{owner} uses unsupported binary operator "
+                    f"'{operator}'."
+                )
+
+            if not hasattr(expression, "left"):
+                raise InvalidValueError(
+                    f"{owner} is missing its left operand."
+                )
+
+            if not hasattr(expression, "right"):
+                raise InvalidValueError(
+                    f"{owner} is missing its right operand."
+                )
+
+            self._validate_expression(
+                getattr(expression, "left"),
+                state_ids=state_ids,
+                owner=f"{owner} left operand",
+            )
+
+            self._validate_expression(
+                getattr(expression, "right"),
+                state_ids=state_ids,
+                owner=f"{owner} right operand",
+            )
+
+            return
+
+        raise InvalidValueError(
+            f"{owner} has unsupported AIR expression type "
+            f"'{expression_type}'."
+        )
+
+    def _validate_emission_facts(
+        self,
+        emission: Any,
+        state_ids: set[str],
+        owner: str,
+    ) -> None:
+        """Validate expression-valued facts attached to an event emission."""
+
+        emission_facts = getattr(
+            emission,
+            "facts",
+            (),
+        ) or ()
+
+        if isinstance(emission_facts, Mapping):
+            fact_items = tuple(emission_facts.items())
+        else:
+            fact_items = []
+
+            for index, fact in enumerate(emission_facts):
+                if isinstance(fact, tuple) and len(fact) == 2:
+                    fact_items.append(fact)
+                    continue
+
+                fact_name = None
+
+                for attribute in (
+                    "key",
+                    "name",
+                    "label",
+                ):
+                    candidate = getattr(
+                        fact,
+                        attribute,
+                        None,
+                    )
+
+                    if candidate is not None:
+                        fact_name = candidate
+                        break
+
+                if fact_name is None:
+                    fact_name = f"fact[{index}]"
+
+                missing = object()
+                fact_value = getattr(
+                    fact,
+                    "value",
+                    missing,
+                )
+
+                if fact_value is missing:
+                    fact_value = getattr(
+                        fact,
+                        "expression",
+                        missing,
+                    )
+
+                if fact_value is missing:
+                    raise InvalidValueError(
+                        f"{owner} {fact_name!r} has no value."
+                    )
+
+                fact_items.append(
+                    (fact_name, fact_value)
+                )
+
+        for fact_name, fact_value in fact_items:
+            normalized_name = self._required_string(
+                fact_name,
+                description=f"{owner} fact name",
+            )
+
+            self._validate_expression(
+                fact_value,
+                state_ids=state_ids,
+                owner=(
+                    f"{owner} fact '{normalized_name}' expression"
+                ),
+            )
+
+    def _state_reference_exists(
+        self,
+        reference: str,
+        state_ids: set[str],
+    ) -> bool:
+        """Accept a canonical state ID or a plain state name."""
+
+        if reference in state_ids:
+            return True
+
+        canonical = f"state:{reference}"
+
+        return canonical in state_ids
 
     # ======================================================================
     # Helpers
