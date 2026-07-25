@@ -19,7 +19,7 @@ SYMBOLS = {
     "@": "AT",
 }
 
-EXPRESSIONS = {
+one_character_expressions = {
     "+": "PLUS",
     "-": "MINUS",
     "*": "STAR",
@@ -27,8 +27,27 @@ EXPRESSIONS = {
     "%": "PERCENT",
     "(": "LPAREN",
     ")": "RPAREN",
-}
+    "<": "LESS",
+    "<": "LT",
+    "AND": "and",
+    "OR": "or",
+    "NOT": "not",
+    },
 
+two_character_expressions = {
+    "==": "EQUAL_EQUAL",
+    "!=": "BANG_EQUAL",
+    "==": "EQEQ",         
+    "!=": "NE",
+    "<=": "LESS_EQUAL",
+    "<=": "LTE",
+    ">": "GREATER",
+    ">": "GT",       "GT": ">",
+    ">=": "GREATER_EQUAL",
+    ">=": "GTE",
+    }
+    
+EXPRESSIONS = one_character_expressions, two_character_expressions
 
 KEYWORDS = (
     "directive",
@@ -47,7 +66,8 @@ KEYWORDS = (
     "extends",
     "principal",
     "role",
-    "set"
+    "set",
+    "when",
 )
 
 def scan_string(
@@ -150,9 +170,19 @@ def lex(source: str) -> List[Token]:
 
         if char.isdigit():
             start = i
-            while i < len(source) and source[i].isdigit():
+            while (
+                i < len(source)
+                and source[i].isdigit()
+            ):
                 i += 1
-                tokens.append(Token("NUMBER", source[start:i]))
+
+            number_text = source[start:i]
+            tokens.append(
+                Token(
+                    kind="NUMBER",
+                    value=number_text,
+                )
+            )
             continue
 
         if char.isalpha() or char == "_":
@@ -169,6 +199,34 @@ def lex(source: str) -> List[Token]:
             else:
                 tokens.append(Token("IDENT", value))
 
+            continue
+
+        two_character = source[i:i + 2]
+
+        if two_character in two_character_expressions:
+            tokens.append(
+                Token(
+                    kind=two_character_expressions[
+                    two_character
+                ],
+                    value=two_character,
+            )
+        )
+
+            i += 2
+            continue
+
+        if char in one_character_expressions:
+            tokens.append(
+                Token(
+                    kind=one_character_expressions[
+                    char
+                ],
+                    value=char,
+            )
+        )
+
+            i += 1
             continue
 
         raise SyntaxError(f"Unexpected character: {char}")
