@@ -46,7 +46,8 @@ KEYWORDS = (
     "requires",
     "extends",
     "principal",
-    "role"
+    "role",
+    "set"
 )
 
 def scan_string(

@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from role_compiler import compile_role
-from language.parser import RoleNode
+from language.parser import RoleNode, SetActionNode
 
 from air.model import (
     AIRDirective,
@@ -195,6 +195,17 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                             directive=action.target,
                     )
                 )
+
+                elif isinstance(action, SetActionNode):
+                    assignments.append(
+                        StateAssignment(
+                            state=state_ids[action.state_name],
+                            operation="set_int",
+                            value=compile_expression(
+                            action.expression,
+                    ),
+                )
+            )
 
                 else:
                     raise TypeError(

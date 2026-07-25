@@ -172,6 +172,12 @@ class PrincipalNode:
     authorities: tuple[PrincipalAuthorityNode, ...]
     roles: tuple[PrincipalRoleNode, ...]
 
+@dataclass(frozen=True)
+class SetActionNode:
+    state_name: str
+    expression: ExpressionNode
+    
+
 
 # ---------------------------------------------------------------------------
 # Parser
@@ -449,6 +455,8 @@ class Parser:
                 actions.append(self.parse_message())
             elif kind == "INVOKE":
                 actions.append(self.parse_invoke())
+            elif kind == "SET":
+                actions.append(self.parse_set())
             else:
                 raise SyntaxError(f"Unexpected path token: {kind}")
 
@@ -697,6 +705,22 @@ class Parser:
         }
 
         return operator_by_kind[token.kind]
+
+    def parse_set(self) -> SetActionNode:
+        self.consume("SET")
+
+        state_name = self.consume(
+            "IDENT"
+        ).value
+
+        self.consume("EQUAL")
+
+        expression = self.parse_expression()
+
+        return SetActionNode(
+            state_name=state_name,
+            expression=expression,
+        )
 
 
 def parse(source: str):

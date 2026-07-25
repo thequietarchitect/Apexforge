@@ -9,7 +9,7 @@ directive Counter {
 
     cause start {
         path primary @ 1 {
-            add count count + 1
+            set count = count + 1
             message "Count: " + count
             emit updated
         }
