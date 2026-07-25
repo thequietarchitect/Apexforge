@@ -1,27 +1,21 @@
 from pipeline.execution_pipeline import ExecutionPipeline
 from runtime.context import ExecutionContext
 
+source = '''
+directive Counter {
+    state count = 2 + 3 * 4
 
-# ----------------------------------------------------------------------
-# ApexForge source
-# ----------------------------------------------------------------------
-
-source = """
-directive Hello {
-
-    event greeted
+    event updated
 
     cause start {
-
         path primary @ 1 {
-
-            message "Hello World"
-
-            emit greeted
+            add count count + 1
+            message "Count: " + count
+            emit updated
         }
     }
 }
-"""
+'''
 
 
 # ----------------------------------------------------------------------
@@ -61,6 +55,10 @@ context = ExecutionContext(
 # ----------------------------------------------------------------------
 
 pipeline = ExecutionPipeline()
+result = pipeline.execute_source(
+    source,
+    context,
+)
 
 print("===================================")
 print(" ApexForge Pipeline Verification")
@@ -141,5 +139,11 @@ except Exception as exc:
 
     print(type(exc).__name__)
     print(exc)
+
+    print("OK:", result.ok)
+    print("Diagnostics:", result.diagnostics)
+    print("Delta:", result.delta)
+    print("Final state:", result.final_state)
+    print("Events:", result.delta.events)
 
     raise
