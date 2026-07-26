@@ -208,6 +208,7 @@ class CausalPath:
     invocations: tuple = ()
     effects: tuple = ()
     rationale: str = ""
+    actions: tuple[object, ...] = ()
 
 
 @dataclass(frozen=True, order=True)
@@ -254,3 +255,8 @@ class AIRRoleAuthority:
 class AIRRole:
     name: str
     authorities: tuple[AIRRoleAuthority, ...]
+
+@dataclass(frozen=True)
+class AIRWhenAction:
+    condition: AIRExpression
+    actions: tuple[object, ...]

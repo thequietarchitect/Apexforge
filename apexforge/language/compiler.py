@@ -17,6 +17,7 @@ from air.model import (
     DirectiveRequirement,
     DirectiveAuthority,
     Principal,
+    AIRWhenAction,
     facts,
 )
 from air.types import AIR_VERSION
@@ -29,6 +30,7 @@ from language.parser import (
     InvokeActionNode,
     MessageActionNode,
     RequirementNode,
+    WhenActionNode,
     parse,
 )
 
@@ -113,6 +115,114 @@ def compile_node(
         f"Unsupported AST node type: {type(node).__name__}"
     )
 
+def compile_actions(
+    actions,
+    state_ids,
+    event_ids,
+):
+    compiled = []
+    pending_message = None
+
+    for action in actions:
+        if isinstance(action, AddActionNode):
+            compiled.append(
+                StateAssignment(
+                    state=state_ids[
+                    action.state_name
+                    ],
+                    operation="add_int",
+                    value=compile_expression(
+                    action.value,
+                    ),
+                )
+            )
+            continue
+
+        if isinstance(action, SetActionNode):
+            compiled.append(
+                StateAssignment(
+                    state=state_ids[
+                    action.state_name
+                    ],
+                    operation="set_int",
+                    value=compile_expression(
+                    action.expression,
+                    ),
+                )
+            )
+            continue
+
+        if isinstance(action, MessageActionNode):
+            if pending_message is not None:
+                raise ValueError(
+                    "A message must be followed by "
+                    "an emit before another message."
+                )
+
+                pending_message = compile_expression(
+                    action.expression,
+                    )
+            continue
+
+        if isinstance(action, EmitActionNode):
+            if pending_message is None:
+                event_facts = ()
+            else:
+                event_facts = facts(
+                    message=pending_message,
+                )
+
+            compiled.append(
+                EventEmission(
+                    event=event_ids[
+                    action.event_name
+                    ],
+                    facts=event_facts,
+                )
+            )
+
+            pending_message = None
+            continue
+
+        if pending_message is not None:
+            raise ValueError(
+                "A message cannot cross into "
+                "a when block.")
+            continue
+
+        if isinstance(action, InvokeActionNode):
+        # Preserve the same constructor and field
+        # that worked in your AFP-P1 compiler.
+            compiled.append(
+                DirectiveInvocation(
+                target=action.target,
+            )
+            )
+            continue
+
+        if isinstance(action, WhenActionNode):
+            compiled.append(
+                AIRWhenAction(
+                    condition=compile_expression(
+                    action.condition,
+                ),
+                    actions=compile_actions(
+                    action.actions,
+                    state_ids,
+                    event_ids,
+                    ),
+                )
+            )
+            continue
+
+        raise TypeError(
+            "Unsupported action node: "
+            f"{type(action).__name__}"
+        )
+
+    return tuple(compiled)
+    
+
 def compile_directive(node: DirectiveNode) -> AIRProgram:
     principal_id = f"principal:{node.name}"
     directive_id = f"directive:{node.name}"
@@ -134,135 +244,99 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
         paths = []
 
         for path in cause.paths:
-            assignments = []
-            emits = []
-            invocations = []
-            pending_message = None
+            ordered_actions = compile_actions(
+                path.actions,
+                state_ids=state_ids,
+                event_ids=event_ids,
+            )
 
-            for action in path.actions:
-                if isinstance(action, MessageActionNode):
-                    pending_message = action.expression
+        # Preserve AFP-P1 compatibility without flattening conditional actions.
+        assignments = tuple(
+            action
+                for action in ordered_actions
+                    if isinstance(
+                    action,
+                    StateAssignment,
+                )
+            )
 
-                elif isinstance(action, AddActionNode):
-                    assignments.append(
-                        StateAssignment(
-                            state=state_ids[action.state_name],
-                            operation="add_int",
-                            value=compile_expression(action.value,)
-                        )
-                    )
-
-            pending_message: Optional[AIRExpression] = None
-
-            for action in path.actions:
-                if isinstance(action, AddActionNode):
-                    assignments.append(
-                        StateAssignment(
-                            state=state_ids[action.state_name],
-                            operation="add_int",
-                            value=compile_expression(
-                            action.value,
-                        ),
+        emits = tuple(
+            action
+                for action in ordered_actions
+                    if isinstance(
+                        action,
+                        EventEmission,
                     )
                 )
 
-                elif isinstance(action, MessageActionNode):
-                    pending_message = compile_expression(
-                        action.expression,
-                )
-
-                elif isinstance(action, EmitActionNode):
-                    if pending_message is None:
-                        event_facts = ()
-                    else:
-                        event_facts = facts(
-                        message=pending_message,
-            )
-
-                    emits.append(
-                        EventEmission(
-                            event=event_ids[action.event_name],
-                            facts=event_facts,
-                )
-            )
-
-        # A message applies only to the immediately following emission.
-                    pending_message = None
-
-                elif isinstance(action, InvokeActionNode):
-                    invocations.append(
-                        DirectiveInvocation(
-                            directive=action.target,
+        invocations = tuple(
+            action
+                for action in ordered_actions
+                    if isinstance(
+                        action,
+                        DirectiveInvocation,
                     )
                 )
 
-                elif isinstance(action, SetActionNode):
-                    assignments.append(
-                        StateAssignment(
-                            state=state_ids[action.state_name],
-                            operation="set_int",
-                            value=compile_expression(
-                            action.expression,
-                    ),
-                )
-            )
-
-                else:
-                    raise TypeError(
-                        "Unsupported path action: "
-                        f"{type(action).__name__}"
-                )
-
-            paths.append(
-                CausalPath(
-                    id=f"path:{path.name}",
-                    weight=path.weight,
-                    assignments=tuple(assignments),
-                    emits=tuple(emits),
-                    invocations=tuple(invocations),
-                    effects=(),
-                    rationale="",
-                )
-            )
-
-        causal_decisions.append(
-            CausalDecision(
-                id=f"cause:{cause.name}",
-                cause=cause.name,
-                policy="max_weight",
-                paths=tuple(paths),
+        paths.append(
+            CausalPath(
+                id=f"path:{path.name}",
+                weight=path.weight,
+                actions=ordered_actions,
+                assignments=assignments,
+                emits=emits,
+                invocations=invocations,
+                effects=(),
+                rationale="",
             )
         )
 
-        requirements = tuple(
-            DirectiveRequirement(
-                capability=requirement.capability
-            )
+    causal_decisions.append(
+        CausalDecision(
+            id=f"cause:{cause.name}",
+            cause=cause.name,
+            policy="max_weight",
+            paths=tuple(paths),
+        )
+    )
+
+
+    requirements = tuple(
+        DirectiveRequirement(
+            capability=requirement.capability,
+        )
             for requirement in node.requirements
-        )
+    )
+
 
     return AIRProgram(
         version=AIR_VERSION,
+
         principals=(
             Principal(
                 id=principal_id,
                 display_name=node.name,
             ),
         ),
+
         states=tuple(
             StateDefinition(
                 id=f"state:{state.name}",
-                initial=compile_expression(state.initial,)
+                initial=compile_expression(
+                    state.initial,
+                ),
             )
-            for state in node.states
+                for state in node.states
         ),
+
         events=tuple(
             EventDefinition(
                 id=f"event:{event.name}",
                 name=event.name,
             )
-            for event in node.events
+                for event in node.events
         ),
+
         authority_checks=(
             AuthorityCheck(
                 id=authority_id,
@@ -271,13 +345,19 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                 resource=directive_id,
             ),
         ),
-        causal_decisions=tuple(causal_decisions),
+
+        causal_decisions=tuple(
+            causal_decisions
+        ),
+
         directives=(
             AIRDirective(
                 id=directive_id,
                 name=node.name,
                 principal=principal_id,
-                authority_checks=(authority_id,),
+                authority_checks=(
+                    authority_id,
+                ),
                 causal_decisions=tuple(
                     decision.id
                     for decision in causal_decisions
@@ -285,16 +365,18 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                 order=0,
             ),
         ),
-            requirements=tuple(
-                DirectiveRequirement(capability=req.capability)
-                for req in node.requirements
+
+        requirements=requirements,
+
+        authorities=tuple(
+            DirectiveAuthority(
+                name=authority.name,
+            )
+            for authority in node.authorities
         ),
-            authorities=tuple(
-                DirectiveAuthority(name=authority.name)
-                for authority in node.authorities
-    ),
-)
-    
+    )
+
+   
 
 
 def compile_source(

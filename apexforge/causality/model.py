@@ -23,6 +23,7 @@ class CausalPath:
     invocations: tuple = ()
     effects: tuple = ()
     rationale: str = ""
+    actions: tuple[object, ...] = ()
 
 @dataclass(frozen=True)
 class CausalDecision:

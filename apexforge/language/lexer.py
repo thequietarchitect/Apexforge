@@ -32,7 +32,7 @@ one_character_expressions = {
     "AND": "and",
     "OR": "or",
     "NOT": "not",
-    },
+    }
 
 two_character_expressions = {
     "==": "EQUAL_EQUAL",
@@ -46,8 +46,8 @@ two_character_expressions = {
     ">=": "GREATER_EQUAL",
     ">=": "GTE",
     }
-    
-EXPRESSIONS = one_character_expressions, two_character_expressions
+
+EXPRESSIONS = {**one_character_expressions, **two_character_expressions,}
 
 KEYWORDS = (
     "directive",
@@ -153,15 +153,43 @@ def lex(source: str) -> List[Token]:
     )
             continue
 
-        if char in EXPRESSIONS:
+        two_character = source[i:i + 2]
+
+        if two_character in two_character_expressions:
             tokens.append(
                 Token(
-                    kind=EXPRESSIONS[char],
+                    kind=two_character_expressions[
+                    two_character
+                ],
+                    value=two_character,
+            )
+        )
+
+            i += 2
+            continue
+
+        if char in one_character_expressions:
+            tokens.append(
+                Token(
+                    kind=one_character_expressions[
+                    char
+                ],
                     value=char,
             )
         )
+
             i += 1
             continue
+
+        print(
+            "LEX DEBUG:",
+            "index=", i,
+            "char=", repr(char),
+            "in EXPRESSIONS=", char in EXPRESSIONS,
+            "two=", repr(source[i:i + 2]),
+            "two in EXPRESSIONS=",
+            source[i:i + 2] in EXPRESSIONS,
+        )
 
         if char in SYMBOLS:
             tokens.append(Token(SYMBOLS[char], char))
@@ -201,35 +229,8 @@ def lex(source: str) -> List[Token]:
 
             continue
 
-        two_character = source[i:i + 2]
-
-        if two_character in two_character_expressions:
-            tokens.append(
-                Token(
-                    kind=two_character_expressions[
-                    two_character
-                ],
-                    value=two_character,
-            )
-        )
-
-            i += 2
-            continue
-
-        if char in one_character_expressions:
-            tokens.append(
-                Token(
-                    kind=one_character_expressions[
-                    char
-                ],
-                    value=char,
-            )
-        )
-
-            i += 1
-            continue
-
         raise SyntaxError(f"Unexpected character: {char}")
+
 
     tokens.append(Token("EOF", ""))
     return tokens
