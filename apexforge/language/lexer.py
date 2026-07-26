@@ -181,16 +181,6 @@ def lex(source: str) -> List[Token]:
             i += 1
             continue
 
-        print(
-            "LEX DEBUG:",
-            "index=", i,
-            "char=", repr(char),
-            "in EXPRESSIONS=", char in EXPRESSIONS,
-            "two=", repr(source[i:i + 2]),
-            "two in EXPRESSIONS=",
-            source[i:i + 2] in EXPRESSIONS,
-        )
-
         if char in SYMBOLS:
             tokens.append(Token(SYMBOLS[char], char))
             i += 1

@@ -623,7 +623,38 @@ class RuntimeValidator:
             )
 
         # ------------------------------------------------------------------
-        # State assignments
+        # Ordered AFP-P2 action stream
+        # ------------------------------------------------------------------
+        #
+        # Newer paths preserve source order in path.actions. Validate that
+        # stream recursively so AIRWhenAction boundaries and nested actions
+        # remain intact.
+        #
+        # The legacy assignments/emits/invocations collections are still
+        # validated below for AFP-P1 compatibility and to catch malformed
+        # compatibility projections.
+        # ------------------------------------------------------------------
+
+        ordered_actions = tuple(
+            getattr(
+                path,
+                "actions",
+                (),
+            ) or ()
+        )
+
+        if ordered_actions:
+            self._validate_ordered_actions(
+                actions=ordered_actions,
+                state_ids=state_ids,
+                event_ids=event_ids,
+                directive_ids=directive_ids,
+                owner=f"path '{path_id}'",
+                depth=0,
+            )
+
+        # ------------------------------------------------------------------
+        # Legacy AFP-P1 state assignments
         # ------------------------------------------------------------------
 
         for assignment in getattr(
@@ -631,50 +662,14 @@ class RuntimeValidator:
             "assignments",
             (),
         ) or ():
-            state_id = self._required_string(
-                getattr(assignment, "state", None),
-                description=(
-                    f"path '{path_id}' state reference"
-                ),
-            )
-
-            if state_id not in state_ids:
-                raise UndefinedReferenceError(
-                    f"Path '{path_id}' assigns undefined state "
-                    f"'{state_id}'."
-                )
-
-            operation = self._required_string(
-                getattr(assignment, "operation", None),
-                description=(
-                    f"path '{path_id}' assignment operation"
-                ),
-            )
-
-            if operation not in {"set_int", "add_int"}:
-                raise InvalidValueError(
-                    f"Path '{path_id}' uses unsupported assignment operation "
-                    f"'{operation}'. Expected 'set_int' or 'add_int'."
-                )
-
-            if not hasattr(assignment, "value"):
-                raise InvalidValueError(
-                    f"Path '{path_id}' contains an assignment "
-                    "without a value."
-                )
-
-            self._validate_expression(
-                getattr(assignment, "value"),
+            self._validate_state_assignment(
+                assignment=assignment,
                 state_ids=state_ids,
-                owner=(
-                    f"path '{path_id}' assignment to state '{state_id}'"
-                ),
+                owner=f"path '{path_id}'",
             )
 
         # ------------------------------------------------------------------
-        # Event emissions
-        #
-        # EventEmission.event must match EventDefinition.id exactly.
+        # Legacy AFP-P1 event emissions
         # ------------------------------------------------------------------
 
         for emission in getattr(
@@ -682,29 +677,15 @@ class RuntimeValidator:
             "emits",
             (),
         ) or ():
-            event_id = self._required_string(
-                getattr(emission, "event", None),
-                description=(
-                    f"path '{path_id}' event reference"
-                ),
-            )
-
-            if event_id not in event_ids:
-                raise UndefinedReferenceError(
-                    f"Path '{path_id}' emits undefined event "
-                    f"'{event_id}'."
-                )
-
-            self._validate_emission_facts(
+            self._validate_event_emission(
                 emission=emission,
+                event_ids=event_ids,
                 state_ids=state_ids,
-                owner=(
-                    f"path '{path_id}' emission of event '{event_id}'"
-                ),
+                owner=f"path '{path_id}'",
             )
 
         # ------------------------------------------------------------------
-        # Directive invocations
+        # Legacy AFP-P1 directive invocations
         # ------------------------------------------------------------------
 
         for invocation in getattr(
@@ -712,21 +693,11 @@ class RuntimeValidator:
             "invocations",
             (),
         ) or ():
-            target = self._required_string(
-                getattr(invocation, "target", None),
-                description=(
-                    f"path '{path_id}' directive invocation target"
-                ),
+            self._validate_directive_invocation(
+                invocation=invocation,
+                directive_ids=directive_ids,
+                owner=f"path '{path_id}'",
             )
-
-            if not self._directive_reference_exists(
-                target,
-                directive_ids,
-            ):
-                raise UndefinedReferenceError(
-                    f"Path '{path_id}' invokes undefined directive "
-                    f"'{target}'."
-                )
 
         # ------------------------------------------------------------------
         # Host effect intents
@@ -778,6 +749,250 @@ class RuntimeValidator:
             raise InvalidValueError(
                 f"Path '{path_id}' rationale must be a string; "
                 f"received {type(rationale).__name__}."
+            )
+
+    def _validate_ordered_actions(
+        self,
+        actions: Sequence[Any],
+        state_ids: set[str],
+        event_ids: set[str],
+        directive_ids: set[str],
+        owner: str,
+        depth: int,
+    ) -> None:
+        """Validate one ordered AIR action stream recursively."""
+
+        if depth > 64:
+            raise InvalidValueError(
+                f"{owner} exceeds the maximum conditional nesting "
+                "depth of 64."
+            )
+
+        for index, action in enumerate(actions):
+            action_owner = (
+                f"{owner} ordered action[{index}]"
+            )
+
+            action_type = type(action).__name__
+
+            if action_type == "StateAssignment":
+                self._validate_state_assignment(
+                    assignment=action,
+                    state_ids=state_ids,
+                    owner=action_owner,
+                )
+                continue
+
+            if action_type == "EventEmission":
+                self._validate_event_emission(
+                    emission=action,
+                    event_ids=event_ids,
+                    state_ids=state_ids,
+                    owner=action_owner,
+                )
+                continue
+
+            if action_type == "DirectiveInvocation":
+                self._validate_directive_invocation(
+                    invocation=action,
+                    directive_ids=directive_ids,
+                    owner=action_owner,
+                )
+                continue
+
+            if action_type == "AIRWhenAction":
+                if not hasattr(
+                    action,
+                    "condition",
+                ):
+                    raise InvalidValueError(
+                        f"{action_owner} is missing its condition."
+                    )
+
+                self._validate_expression(
+                    getattr(
+                        action,
+                        "condition",
+                    ),
+                    state_ids=state_ids,
+                    owner=f"{action_owner} condition",
+                )
+
+                if not hasattr(
+                    action,
+                    "actions",
+                ):
+                    raise InvalidValueError(
+                        f"{action_owner} is missing its nested "
+                        "action stream."
+                    )
+
+                nested_actions = getattr(
+                    action,
+                    "actions",
+                )
+
+                if isinstance(
+                    nested_actions,
+                    (str, bytes),
+                ):
+                    raise InvalidValueError(
+                        f"{action_owner} nested actions must be "
+                        "a sequence of AIR actions."
+                    )
+
+                try:
+                    nested_actions = tuple(
+                        nested_actions
+                    )
+                except TypeError as exc:
+                    raise InvalidValueError(
+                        f"{action_owner} nested actions must be "
+                        "iterable."
+                    ) from exc
+
+                self._validate_ordered_actions(
+                    actions=nested_actions,
+                    state_ids=state_ids,
+                    event_ids=event_ids,
+                    directive_ids=directive_ids,
+                    owner=f"{action_owner} when block",
+                    depth=depth + 1,
+                )
+                continue
+
+            raise InvalidValueError(
+                f"{action_owner} has unsupported AIR action type "
+                f"'{action_type}'."
+            )
+
+    def _validate_state_assignment(
+        self,
+        assignment: Any,
+        state_ids: set[str],
+        owner: str,
+    ) -> None:
+        """Validate one state assignment in either AIR representation."""
+
+        state_id = self._required_string(
+            getattr(
+                assignment,
+                "state",
+                None,
+            ),
+            description=f"{owner} state reference",
+        )
+
+        if state_id not in state_ids:
+            raise UndefinedReferenceError(
+                f"{owner} assigns undefined state "
+                f"'{state_id}'."
+            )
+
+        operation = self._required_string(
+            getattr(
+                assignment,
+                "operation",
+                None,
+            ),
+            description=f"{owner} assignment operation",
+        )
+
+        if operation not in {
+            "set_int",
+            "add_int",
+        }:
+            raise InvalidValueError(
+                f"{owner} uses unsupported assignment operation "
+                f"'{operation}'. Expected 'set_int' or 'add_int'."
+            )
+
+        if not hasattr(
+            assignment,
+            "value",
+        ):
+            raise InvalidValueError(
+                f"{owner} contains an assignment without a value."
+            )
+
+        self._validate_expression(
+            getattr(
+                assignment,
+                "value",
+            ),
+            state_ids=state_ids,
+            owner=(
+                f"{owner} assignment to state '{state_id}'"
+            ),
+        )
+
+    def _validate_event_emission(
+        self,
+        emission: Any,
+        event_ids: set[str],
+        state_ids: set[str],
+        owner: str,
+    ) -> None:
+        """Validate one event emission and all expression-valued facts."""
+
+        event_id = self._required_string(
+            getattr(
+                emission,
+                "event",
+                None,
+            ),
+            description=f"{owner} event reference",
+        )
+
+        if event_id not in event_ids:
+            raise UndefinedReferenceError(
+                f"{owner} emits undefined event "
+                f"'{event_id}'."
+            )
+
+        self._validate_emission_facts(
+            emission=emission,
+            state_ids=state_ids,
+            owner=(
+                f"{owner} emission of event '{event_id}'"
+            ),
+        )
+
+    def _validate_directive_invocation(
+        self,
+        invocation: Any,
+        directive_ids: set[str],
+        owner: str,
+    ) -> None:
+        """Validate one directive invocation in old or new AIR layouts."""
+
+        target = getattr(
+            invocation,
+            "target",
+            None,
+        )
+
+        if target is None:
+            target = getattr(
+                invocation,
+                "directive",
+                None,
+            )
+
+        target = self._required_string(
+            target,
+            description=(
+                f"{owner} directive invocation target"
+            ),
+        )
+
+        if not self._directive_reference_exists(
+            target,
+            directive_ids,
+        ):
+            raise UndefinedReferenceError(
+                f"{owner} invokes undefined directive "
+                f"'{target}'."
             )
 
     # ======================================================================
