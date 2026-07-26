@@ -68,6 +68,7 @@ KEYWORDS = (
     "role",
     "set",
     "when",
+    "otherwise",
 )
 
 def scan_string(

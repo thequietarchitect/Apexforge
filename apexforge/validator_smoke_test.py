@@ -23,9 +23,13 @@ directive Counter {
             set count = count + 1
 
             when count >= 10 {
-                add count 5
-                message "Threshold reached"
-                emit updated
+                add count 1
+
+                when count == 11 {
+                    add count 4
+                    message "Nested threshold reached"
+                    emit updated
+                }
             }
         }
     }
@@ -115,3 +119,54 @@ print(
 )
 
 print(result.trace.render())
+
+print("ok:", result.ok)
+
+print(
+    "final count:",
+    result.final_state.get_int(
+        "state:count"
+    ),
+)
+
+print(
+    "assignments:",
+    len(result.delta.assignments),
+)
+
+print(
+    "events:",
+    len(result.delta.events),
+)
+
+when_steps = [
+    step
+    for step in result.trace.steps
+    if step.kind == "when.evaluate"
+]
+
+print(
+    "when evaluations:",
+    len(when_steps),
+)
+
+for index, step in enumerate(
+    when_steps,
+    start=1,
+):
+    step_facts = {
+        fact.key: fact.value
+        for fact in step.facts
+    }
+
+    print(
+        f"when result {index}:",
+        step_facts.get("result"),
+    )
+
+print("\nTRACE")
+print(result.trace.render())
+
+print("\nDIAGNOSTICS")
+for diagnostic in result.diagnostics:
+    print(diagnostic)

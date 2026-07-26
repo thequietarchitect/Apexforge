@@ -96,6 +96,7 @@ class InvokeActionNode:
 class WhenActionNode:
     condition: ExpressionNode
     actions: tuple[object, ...]
+    otherwise_actions: tuple[object] = ()
 
 
 @dataclass(frozen=True)
@@ -602,21 +603,42 @@ class Parser:
         target = self.consume("IDENT").value
         return InvokeActionNode(target=target)
 
-    def parse_when(self) -> WhenActionNode:
+    def parse_when(
+        self,
+        ) -> WhenActionNode:
         self.consume("WHEN")
+
         condition = self.parse_expression()
+
         self.consume("LBRACE")
 
         actions: list[object] = []
 
         while self.current().kind != "RBRACE":
-            actions.append(self.parse_action())
+            actions.append(
+                self.parse_action()
+            )
 
         self.consume("RBRACE")
+
+        otherwise_actions: list[object] = []
+
+        if self.match("OTHERWISE") is not None:
+            self.consume("LBRACE")
+
+            while self.current().kind != "RBRACE":
+                otherwise_actions.append(
+                    self.parse_action()
+                )
+
+            self.consume("RBRACE")
 
         return WhenActionNode(
             condition=condition,
             actions=tuple(actions),
+            otherwise_actions=tuple(
+                otherwise_actions
+            ),
         )
 
     def parse_authority_list(self) -> tuple[str, ...]:

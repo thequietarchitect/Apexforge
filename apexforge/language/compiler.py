@@ -4,8 +4,6 @@ from __future__ import annotations
 from typing import Optional
 
 from role_compiler import compile_role
-from language.parser import RoleNode, SetActionNode
-
 from air.model import (
     AIRDirective,
     AIRProgram,
@@ -31,10 +29,6 @@ from language.parser import (
     MessageActionNode,
     RequirementNode,
     WhenActionNode,
-    parse,
-)
-
-from language.parser import (
     ExpressionNode,
     IntegerLiteralNode,
     StringLiteralNode,
@@ -42,6 +36,9 @@ from language.parser import (
     IdentifierNode,
     UnaryExpressionNode,
     BinaryExpressionNode,
+    RoleNode,
+    SetActionNode,
+    parse,
 )
 
 from air.expressions import (
@@ -116,66 +113,47 @@ def compile_node(
     )
 
 def compile_actions(
-    actions,
-    state_ids,
-    event_ids,
-):
-    compiled = []
+    actions: tuple[object, ...],
+    state_ids: dict[str, str],
+    event_ids: dict[str, str],
+) -> tuple[object, ...]:
+    """Compile one ordered parser-action stream recursively."""
+
+    compiled_actions: list[object] = []
     pending_message = None
 
     for action in actions:
-        if isinstance(action, AddActionNode):
-            compiled.append(
-                StateAssignment(
-                    state=state_ids[
-                    action.state_name
-                    ],
-                    operation="add_int",
-                    value=compile_expression(
-                    action.value,
-                    ),
-                )
-            )
-            continue
 
-        if isinstance(action, SetActionNode):
-            compiled.append(
-                StateAssignment(
-                    state=state_ids[
-                    action.state_name
-                    ],
-                    operation="set_int",
-                    value=compile_expression(
-                    action.expression,
-                    ),
-                )
-            )
-            continue
-
-        if isinstance(action, MessageActionNode):
+        if isinstance(
+            action,
+            MessageActionNode,
+        ):
             if pending_message is not None:
                 raise ValueError(
-                    "A message must be followed by "
-                    "an emit before another message."
+                    "A message action must be followed by an emit "
+                    "before another message."
                 )
 
-                pending_message = compile_expression(
-                    action.expression,
-                    )
+            pending_message = compile_expression(
+                action.expression,
+            )
             continue
 
-        if isinstance(action, EmitActionNode):
-            if pending_message is None:
-                event_facts = ()
-            else:
+        if isinstance(
+            action,
+            EmitActionNode,
+        ):
+            event_facts = ()
+
+            if pending_message is not None:
                 event_facts = facts(
                     message=pending_message,
                 )
 
-            compiled.append(
+            compiled_actions.append(
                 EventEmission(
                     event=event_ids[
-                    action.event_name
+                        action.event_name
                     ],
                     facts=event_facts,
                 )
@@ -186,41 +164,98 @@ def compile_actions(
 
         if pending_message is not None:
             raise ValueError(
-                "A message cannot cross into "
-                "a when block.")
-            continue
-
-        if isinstance(action, InvokeActionNode):
-        # Preserve the same constructor and field
-        # that worked in your AFP-P1 compiler.
-            compiled.append(
-                DirectiveInvocation(
-                target=action.target,
+                "A message action must be immediately followed "
+                "by an emit action."
             )
-            )
-            continue
 
-        if isinstance(action, WhenActionNode):
-            compiled.append(
-                AIRWhenAction(
-                    condition=compile_expression(
-                    action.condition,
-                ),
-                    actions=compile_actions(
-                    action.actions,
-                    state_ids,
-                    event_ids,
+        if isinstance(
+            action,
+            AddActionNode,
+        ):
+            compiled_actions.append(
+                StateAssignment(
+                    state=state_ids[
+                        action.state_name
+                    ],
+                    operation="add_int",
+                    value=compile_expression(
+                        action.value,
                     ),
                 )
             )
             continue
 
+        if isinstance(
+            action,
+            SetActionNode,
+        ):
+            compiled_actions.append(
+                StateAssignment(
+                    state=state_ids[
+                        action.state_name
+                    ],
+                    operation="set_int",
+                    value=compile_expression(
+                        action.expression,
+                    ),
+                )
+            )
+            continue
+
+        if isinstance(
+            action,
+            InvokeActionNode,
+        ):
+            compiled_actions.append(
+                DirectiveInvocation(
+                    directive=action.target,
+                )
+            )
+            continue
+
+        if isinstance(
+            action,
+            WhenActionNode,
+        ):
+            true_actions = compile_actions(
+                action.actions,
+                state_ids=state_ids,
+                event_ids=event_ids,
+            )
+
+            false_actions = compile_actions(
+                getattr(
+                    action,
+                    "otherwise_actions",
+                    (),
+                ),
+                state_ids=state_ids,
+                event_ids=event_ids,
+            )
+
+            compiled_actions.append(
+                AIRWhenAction(
+                    condition=compile_expression(
+                        action.condition,
+                    ),
+                    actions=true_actions,
+                    otherwise_actions=false_actions,
+                )
+            )
+            continue
+
         raise TypeError(
-            "Unsupported action node: "
+            "Unsupported ordered action: "
+            f"{type(action).__module__}."
             f"{type(action).__name__}"
         )
 
-    return tuple(compiled)
+    if pending_message is not None:
+        raise ValueError(
+            "A message action must be followed by an emit action."
+        )
+
+    return tuple(compiled_actions)
     
 
 def compile_directive(node: DirectiveNode) -> AIRProgram:
@@ -248,6 +283,45 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                 path.actions,
                 state_ids=state_ids,
                 event_ids=event_ids,
+            )
+            assignments = tuple(
+            action
+            for action in ordered_actions
+            if isinstance(
+                action,
+                StateAssignment,
+            )
+        )
+
+            emits = tuple(
+                action
+                for action in ordered_actions
+                if isinstance(
+                    action,
+                    EventEmission,
+                )
+            )
+
+            invocations = tuple(
+                action
+                for action in ordered_actions
+                if isinstance(
+                    action,
+                    DirectiveInvocation,
+                )
+            )
+
+            paths.append(
+                CausalPath(
+                    id=f"path:{path.name}",
+                    weight=path.weight,
+                    assignments=assignments,
+                    emits=emits,
+                    invocations=invocations,
+                    effects=(),
+                    rationale="",
+                    actions=ordered_actions,
+                )
             )
 
         # Preserve AFP-P1 compatibility without flattening conditional actions.

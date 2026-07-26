@@ -260,3 +260,4 @@ class AIRRole:
 class AIRWhenAction:
     condition: AIRExpression
     actions: tuple[object, ...]
+    otherwise_actions: tuple[object, ...] = ()
