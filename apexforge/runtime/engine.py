@@ -162,35 +162,56 @@ class RuntimeEngine:
                     selection.trace_steps
                 )
 
+                ordered_actions = tuple(
+                    getattr(
+                        selected,
+                        "actions",
+                        (),
+                    ) or ()
+                )
+
+                # AFP-P1 compatibility: older paths do not possess an
+                # ordered action stream. Reconstruct the legacy order.
+                if not ordered_actions:
+                    ordered_actions = (
+                        tuple(
+                            getattr(
+                                selected,
+                                "assignments",
+                                (),
+                            ) or ()
+                        )
+                        + tuple(
+                            getattr(
+                                selected,
+                                "emits",
+                                (),
+                            ) or ()
+                        )
+                        + tuple(
+                            getattr(
+                                selected,
+                                "invocations",
+                                (),
+                            ) or ()
+                        )
+                    )
+
                 try:
-                    evaluated_assignments = tuple(
-                        self._evaluate_assignment(
-                            assignment,
-                            working_state,
-                        )
-                        for assignment in selected.assignments
-                    )
-
-                    # Build the candidate state first. The selected path is
-                    # committed only after all expressions and event facts
-                    # evaluate successfully.
-                    path_delta = StateDelta(
-                        evaluated_assignments
-                    )
-
-                    candidate_state = working_state.apply(
-                        path_delta
-                    )
-
-                    evaluated_emissions = tuple(
-                        (
-                            emission,
-                            self._evaluate_facts(
-                                emission.facts,
-                                candidate_state,
-                            ),
-                        )
-                        for emission in selected.emits
+                    (
+                        candidate_state,
+                        evaluated_assignments,
+                        evaluated_events,
+                        action_trace_steps,
+                        _,
+                    ) = self._execute_ordered_actions(
+                        actions=ordered_actions,
+                        state=working_state,
+                        directive=directive,
+                        decision=decision,
+                        path=selected,
+                        event_index=0,
+                        depth=0,
                     )
 
                 except RuntimeExpressionError as exc:
@@ -205,7 +226,10 @@ class RuntimeEngine:
                     trace_steps.append(
                         TraceStep(
                             "expression.error",
-                            "failed to evaluate selected path expression",
+                            (
+                                "failed to evaluate selected "
+                                "path expression"
+                            ),
                             facts(
                                 path=selected.id,
                                 error=str(exc),
@@ -214,69 +238,20 @@ class RuntimeEngine:
                     )
                     continue
 
+                # Commit only after the complete ordered path succeeds.
                 working_state = candidate_state
 
                 assignments.extend(
                     evaluated_assignments
                 )
 
-                trace_steps.append(
-                    TraceStep(
-                        "state.delta",
-                        "applied selected path assignments",
-                        facts(
-                            assignments=len(evaluated_assignments),
-                            path=selected.id,
-                            state=(
-                                evaluated_assignments[0].state
-                                if evaluated_assignments
-                                else ""
-                            ),
-                            operation=(
-                                evaluated_assignments[0].operation
-                                if evaluated_assignments
-                                else ""
-                            ),
-                            value=(
-                                evaluated_assignments[0].value
-                                if evaluated_assignments
-                                else 0
-                            ),
-                        ),
-                    )
+                events.extend(
+                    evaluated_events
                 )
 
-                for index, (
-                    emission,
-                    evaluated_facts,
-                ) in enumerate(evaluated_emissions):
-
-                    event = EventRecord(
-                        id=event_record_id(
-                            directive.id,
-                            decision.id,
-                            selected.id,
-                            index,
-                            emission.event,
-                        ),
-                        event=emission.event,
-                        directive=directive.id,
-                        principal=directive.principal,
-                        facts=evaluated_facts,
-                    )
-
-                    events.append(event)
-
-                    trace_steps.append(
-                        TraceStep(
-                            "event.emit",
-                            "queued event emission",
-                            facts(
-                                event=event.event,
-                                event_id=event.id,
-                            ),
-                        )
-                    )
+                trace_steps.extend(
+                    action_trace_steps
+                )
 
                 effects.extend(
                     selected.effects
@@ -321,6 +296,246 @@ class RuntimeEngine:
                 sorted(diagnostics)
             ),
             final_state=working_state,
+        )
+
+    def _execute_ordered_actions(
+        self,
+        actions: Tuple[Any, ...],
+        state: StateSnapshot,
+        directive: Any,
+        decision: Any,
+        path: Any,
+        event_index: int = 0,
+        depth: int = 0,
+    ) -> Tuple[
+        StateSnapshot,
+        Tuple[Any, ...],
+        Tuple[EventRecord, ...],
+        Tuple[TraceStep, ...],
+        int,
+    ]:
+        """
+        Execute an ordered AIR action stream recursively.
+
+        All changes are applied to a candidate snapshot. The caller commits
+        that snapshot only after the entire path completes successfully.
+        """
+
+        if depth > 64:
+            raise RuntimeExpressionError(
+                "conditional nesting exceeds runtime limit of 64"
+            )
+
+        candidate_state = state
+
+        evaluated_assignments = []
+        evaluated_events = []
+        action_trace_steps = []
+
+        next_event_index = event_index
+
+        for action_index, action in enumerate(actions):
+            action_type = type(action).__name__
+
+            # ----------------------------------------------------------
+            # State assignment
+            # ----------------------------------------------------------
+
+            if action_type == "StateAssignment":
+                evaluated = self._evaluate_assignment(
+                    action,
+                    candidate_state,
+                )
+
+                candidate_state = candidate_state.apply(
+                    StateDelta(
+                        (evaluated,)
+                    )
+                )
+
+                evaluated_assignments.append(
+                    evaluated
+                )
+
+                action_trace_steps.append(
+                    TraceStep(
+                        "state.delta",
+                        "applied ordered state assignment",
+                        facts(
+                            assignments=1,
+                            path=path.id,
+                            state=evaluated.state,
+                            operation=evaluated.operation,
+                            value=evaluated.value,
+                        ),
+                    )
+                )
+                continue
+
+            # ----------------------------------------------------------
+            # Event emission
+            # ----------------------------------------------------------
+
+            if action_type == "EventEmission":
+                evaluated_facts = self._evaluate_facts(
+                    action.facts,
+                    candidate_state,
+                )
+
+                event = EventRecord(
+                    id=event_record_id(
+                        directive.id,
+                        decision.id,
+                        path.id,
+                        next_event_index,
+                        action.event,
+                    ),
+                    event=action.event,
+                    directive=directive.id,
+                    principal=directive.principal,
+                    facts=evaluated_facts,
+                )
+
+                next_event_index += 1
+
+                evaluated_events.append(
+                    event
+                )
+
+                action_trace_steps.append(
+                    TraceStep(
+                        "event.emit",
+                        "queued ordered event emission",
+                        facts(
+                            event=event.event,
+                            event_id=event.id,
+                        ),
+                    )
+                )
+                continue
+
+            # ----------------------------------------------------------
+            # Directive invocation
+            # ----------------------------------------------------------
+
+            if action_type == "DirectiveInvocation":
+                target = getattr(
+                    action,
+                    "target",
+                    None,
+                )
+
+                if target is None:
+                    target = getattr(
+                        action,
+                        "directive",
+                        None,
+                    )
+
+                action_trace_steps.append(
+                    TraceStep(
+                        "directive.invoke",
+                        (
+                            "visited directive invocation "
+                            "action"
+                        ),
+                        facts(
+                            directive=str(target),
+                            path=path.id,
+                        ),
+                    )
+                )
+                continue
+
+            # ----------------------------------------------------------
+            # Conditional action
+            # ----------------------------------------------------------
+
+            if action_type == "AIRWhenAction":
+                condition_value = self._evaluate_expression(
+                    action.condition,
+                    candidate_state,
+                )
+
+                condition = self._require_boolean(
+                    condition_value,
+                    "when",
+                )
+
+                action_trace_steps.append(
+                    TraceStep(
+                        "when.evaluate",
+                        "evaluated when condition",
+                        facts(
+                            action=action_index,
+                            depth=depth,
+                            path=path.id,
+                            result=condition,
+                        ),
+                    )
+                )
+
+                if not condition:
+                    action_trace_steps.append(
+                        TraceStep(
+                            "when.skip",
+                            (
+                                "skipped conditional "
+                                "action block"
+                            ),
+                            facts(
+                                action=action_index,
+                                depth=depth,
+                                path=path.id,
+                            ),
+                        )
+                    )
+                    continue
+
+                (
+                    nested_state,
+                    nested_assignments,
+                    nested_events,
+                    nested_trace_steps,
+                    next_event_index,
+                ) = self._execute_ordered_actions(
+                    actions=tuple(
+                        action.actions
+                    ),
+                    state=candidate_state,
+                    directive=directive,
+                    decision=decision,
+                    path=path,
+                    event_index=next_event_index,
+                    depth=depth + 1,
+                )
+
+                candidate_state = nested_state
+
+                evaluated_assignments.extend(
+                    nested_assignments
+                )
+
+                evaluated_events.extend(
+                    nested_events
+                )
+
+                action_trace_steps.extend(
+                    nested_trace_steps
+                )
+                continue
+
+            raise RuntimeExpressionError(
+                "unsupported ordered AIR action type "
+                f"{action_type!r}"
+            )
+
+        return (
+            candidate_state,
+            tuple(evaluated_assignments),
+            tuple(evaluated_events),
+            tuple(action_trace_steps),
+            next_event_index,
         )
 
     def _evaluate_assignment(
@@ -663,6 +878,22 @@ class RuntimeEngine:
         )
 
         sentinel = object()
+
+        get_int = getattr(
+            state,
+            "get_int",
+            None,
+        )
+
+        if callable(get_int):
+            for candidate in candidates:
+                value = get_int(
+                    candidate,
+                    sentinel,
+                )
+
+                if value is not sentinel:
+                    return value
 
         get_value = getattr(
             state,
