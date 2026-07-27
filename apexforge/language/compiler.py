@@ -311,19 +311,6 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                 )
             )
 
-            paths.append(
-                CausalPath(
-                    id=f"path:{path.name}",
-                    weight=path.weight,
-                    assignments=assignments,
-                    emits=emits,
-                    invocations=invocations,
-                    effects=(),
-                    rationale="",
-                    actions=ordered_actions,
-                )
-            )
-
         # Preserve AFP-P1 compatibility without flattening conditional actions.
         assignments = tuple(
             action
@@ -353,17 +340,17 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                 )
 
         paths.append(
-            CausalPath(
-                id=f"path:{path.name}",
-                weight=path.weight,
-                actions=ordered_actions,
-                assignments=assignments,
-                emits=emits,
-                invocations=invocations,
-                effects=(),
-                rationale="",
+                CausalPath(
+                    id=f"path:{path.name}",
+                    weight=path.weight,
+                    assignments=assignments,
+                    emits=emits,
+                    invocations=invocations,
+                    effects=(),
+                    rationale="",
+                    actions=ordered_actions,
+                )
             )
-        )
 
     causal_decisions.append(
         CausalDecision(

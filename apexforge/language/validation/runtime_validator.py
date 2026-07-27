@@ -799,7 +799,6 @@ class RuntimeValidator:
                     owner=action_owner,
                 )
                 continue
-
             if action_type == "AIRWhenAction":
                 if not hasattr(
                     action,
@@ -818,47 +817,70 @@ class RuntimeValidator:
                     owner=f"{action_owner} condition",
                 )
 
-                if not hasattr(
-                    action,
-                    "actions",
-                ):
-                    raise InvalidValueError(
-                        f"{action_owner} is missing its nested "
-                        "action stream."
-                    )
-
-                nested_actions = getattr(
-                    action,
-                    "actions",
+                branch_specs = (
+                    (
+                        "actions",
+                        "when block",
+                        True,
+                    ),
+                    (
+                        "otherwise_actions",
+                        "otherwise block",
+                        False,
+                    ),
                 )
 
-                if isinstance(
-                    nested_actions,
-                    (str, bytes),
-                ):
-                    raise InvalidValueError(
-                        f"{action_owner} nested actions must be "
-                        "a sequence of AIR actions."
+                for (
+                    attribute_name,
+                    branch_name,
+                    required,
+                ) in branch_specs:
+                    if required and not hasattr(
+                        action,
+                        attribute_name,
+                    ):
+                        raise InvalidValueError(
+                            f"{action_owner} is missing its "
+                            f"{branch_name} action stream."
+                        )
+
+                    branch_actions = getattr(
+                        action,
+                        attribute_name,
+                        (),
                     )
 
-                try:
-                    nested_actions = tuple(
-                        nested_actions
-                    )
-                except TypeError as exc:
-                    raise InvalidValueError(
-                        f"{action_owner} nested actions must be "
-                        "iterable."
-                    ) from exc
+                    if isinstance(
+                        branch_actions,
+                        (str, bytes),
+                    ):
+                        raise InvalidValueError(
+                            f"{action_owner} {branch_name} actions "
+                            "must be a sequence of AIR actions."
+                        )
 
-                self._validate_ordered_actions(
-                    actions=nested_actions,
-                    state_ids=state_ids,
-                    event_ids=event_ids,
-                    directive_ids=directive_ids,
-                    owner=f"{action_owner} when block",
-                    depth=depth + 1,
-                )
+                    try:
+                        branch_actions = tuple(
+                            branch_actions
+                        )
+                    except TypeError as exc:
+                        raise InvalidValueError(
+                            f"{action_owner} {branch_name} actions "
+                            "must be iterable."
+                        ) from exc
+
+                    self._validate_ordered_actions(
+                        actions=branch_actions,
+                        state_ids=state_ids,
+                        event_ids=event_ids,
+                        directive_ids=directive_ids,
+                        owner=(
+                            f"{action_owner} "
+                            f"{branch_name}"
+                        ),
+                        depth=depth + 1,
+                    )
+
                 continue
 
             raise InvalidValueError(
