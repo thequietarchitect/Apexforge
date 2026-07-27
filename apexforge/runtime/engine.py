@@ -452,45 +452,44 @@ class RuntimeEngine:
             # ----------------------------------------------------------
 
             if action_type == "AIRWhenAction":
-                condition_value = self._evaluate_expression(
+                condition_result = self._evaluate_expression(
                     action.condition,
                     candidate_state,
                 )
 
-                condition = self._require_boolean(
-                    condition_value,
-                    "when",
-                )
+                if type(condition_result) is not bool:
+                    raise RuntimeExpressionError(
+                        "AIRWhenAction condition must evaluate "
+                        "to bool; received "
+                        f"{type(condition_result).__name__}."
+                    )
+
+                if condition_result:
+                    branch_name = "when"
+                    branch_actions = tuple(
+                        getattr(action, "actions", ()) or ()
+                    )
+                else:
+                    branch_name = "otherwise"
+                    branch_actions = tuple(
+                        getattr(
+                            action,
+                            "otherwise_actions",
+                            (),
+                        ) or ()
+                    )
 
                 action_trace_steps.append(
                     TraceStep(
                         "when.evaluate",
-                        "evaluated when condition",
+                        "evaluated conditional action",
                         facts(
-                            action=action_index,
+                            branch=branch_name,
                             depth=depth,
-                            path=path.id,
-                            result=condition,
+                            result=condition_result,
                         ),
                     )
                 )
-
-                if not condition:
-                    action_trace_steps.append(
-                        TraceStep(
-                            "when.skip",
-                            (
-                                "skipped conditional "
-                                "action block"
-                            ),
-                            facts(
-                                action=action_index,
-                                depth=depth,
-                                path=path.id,
-                            ),
-                        )
-                    )
-                    continue
 
                 (
                     nested_state,
@@ -499,9 +498,7 @@ class RuntimeEngine:
                     nested_trace_steps,
                     next_event_index,
                 ) = self._execute_ordered_actions(
-                    actions=tuple(
-                        action.actions
-                    ),
+                    actions=branch_actions,
                     state=candidate_state,
                     directive=directive,
                     decision=decision,
