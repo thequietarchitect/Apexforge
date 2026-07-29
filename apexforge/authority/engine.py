@@ -1,21 +1,44 @@
-from dataclasses import dataclass
-from typing import Protocol
+"""Explicit ApexForge authority-policy evaluation."""
 
-from authority.model import AuthorityGrant
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Iterable, Protocol, Tuple
+
+from authority.model import AuthorityCheck, AuthorityGrant
 
 
 class AuthorityPolicy(Protocol):
-    def allows(self, check) -> bool:
+    """Runtime policy interface consumed by RuntimeEngine."""
+
+    def allows(
+        self,
+        check: AuthorityCheck,
+    ) -> bool:
         ...
 
 
 @dataclass(frozen=True)
 class AuthorityEngine:
-    grants: tuple[AuthorityGrant, ...]
+    """Deterministic, deny-by-default authority engine."""
+
+    grants: Tuple[AuthorityGrant, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "grants",
+            tuple(sorted(tuple(self.grants))),
+        )
 
     @classmethod
-    def from_grants(cls, grants: tuple[AuthorityGrant, ...]):
-        return cls(grants=grants)
+    def from_grants(
+        cls,
+        grants: Iterable[AuthorityGrant],
+    ) -> "AuthorityEngine":
+        return cls(
+            grants=tuple(grants),
+        )
 
     def check(
         self,
@@ -24,14 +47,32 @@ class AuthorityEngine:
         resource: str = "",
     ) -> bool:
         for grant in self.grants:
-            if grant.name == principal:
-                return capability in grant.capabilities
+            if grant.principal != principal:
+                continue
+
+            if grant.capability not in (
+                capability,
+                "*",
+            ):
+                continue
+
+            if grant.resource not in (
+                "",
+                "*",
+                resource,
+            ):
+                continue
+
+            return True
 
         return False
 
-    def allows(self, check) -> bool:
+    def allows(
+        self,
+        check: AuthorityCheck,
+    ) -> bool:
         return self.check(
             principal=check.principal,
             capability=check.capability,
-            resource=getattr(check, "resource", ""),
+            resource=check.resource,
         )

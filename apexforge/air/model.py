@@ -11,6 +11,7 @@ from typing import Literal, Optional, Tuple, TYPE_CHECKING, Union
 
 from air.expressions import AIRExpression
 from air.types import as_tuple, is_int
+from authority.model import AuthorityCheck, AuthorityGrant, Principal
 
 
 FactValue = Union[
@@ -140,24 +141,8 @@ class AIRProgram:
     directives: tuple[AIRDirective, ...]
     requirements: tuple[DirectiveRequirement, ...]
     authorities: tuple[DirectiveAuthority, ...] = ()
-    principals: tuple[AIRPrincipal, ...] = ()
+    principals: tuple[Principal, ...] = ()
     roles: tuple[AIRRole, ...] = ()
-
-
-@dataclass(frozen=True, order=True)
-class Principal:
-    id: str
-    display_name: str = ""
-    roles: tuple[str, ...] = ()
-    authorities: tuple[PrincipalAuthority, ...] = ()
-
-
-@dataclass(frozen=True, order=True)
-class AuthorityCheck:
-    id: str
-    principal: str
-    capability: str
-    resource: str
 
 
 @dataclass(frozen=True)

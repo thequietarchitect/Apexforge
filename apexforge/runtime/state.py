@@ -19,6 +19,28 @@ class StateSnapshot:
     cells: Tuple[StateCell, ...] = ()
 
     @classmethod
+    def from_mapping(
+        cls,
+        values: dict[str, int],
+    ) -> "StateSnapshot":
+        return cls(
+            cells=tuple(
+                StateCell(
+                    key=key,
+                    value=value,
+                )
+                for key, value in values.items()
+            )
+        )
+
+    def get_int(
+        self,
+        key: str,
+        default: int = 0,
+    ) -> int:
+        ...
+
+    @classmethod
     def from_program_initials(cls, program) -> "StateSnapshot":
         return cls(tuple(StateCell(state.id, state.initial) for state in program.states))
 

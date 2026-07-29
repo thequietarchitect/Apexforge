@@ -14,12 +14,11 @@ from air.model import (
     StateDefinition,
     DirectiveRequirement,
     DirectiveAuthority,
-    Principal,
     AIRWhenAction,
     facts,
 )
 from air.types import AIR_VERSION
-from authority.model import AuthorityCheck
+from authority.model import AuthorityCheck, Principal
 from causality.model import CausalDecision, CausalPath, DirectiveInvocation
 from language.parser import (
     AddActionNode,
