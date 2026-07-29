@@ -7,17 +7,18 @@ concerns belong here.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal,Union
-from typing import TYPE_CHECKING, Tuple
-from typing import Literal, Tuple
+from typing import Literal, Optional, Tuple, TYPE_CHECKING, Union
 
 from air.expressions import AIRExpression
-from air.types import AIR_VERSION, Primitive, StateOperation, as_tuple, is_int
+from air.types import as_tuple, is_int
 
-FactValue = Union[str,
-                  int,
-                  bool,
-                  AIRExpression,]
+
+FactValue = Union[
+    str,
+    int,
+    bool,
+    AIRExpression,
+]
 
 
 if TYPE_CHECKING:
@@ -30,11 +31,24 @@ class Fact:
     value: FactValue
 
 
-def sort_facts(items) -> Tuple[Fact, ...]:
-    return tuple(sorted(as_tuple(items), key=lambda fact: (fact.key, type(fact.value).__name__, repr(fact.value))))
+def sort_facts(
+    items,
+) -> Tuple[Fact, ...]:
+    return tuple(
+        sorted(
+            as_tuple(items),
+            key=lambda fact: (
+                fact.key,
+                type(fact.value).__name__,
+                repr(fact.value),
+            ),
+        )
+    )
 
 
-def facts(**values: FactValue) -> tuple[Fact, ...]:
+def facts(
+    **values: FactValue,
+) -> tuple[Fact, ...]:
     return tuple(
         Fact(
             key=name,
@@ -42,6 +56,7 @@ def facts(**values: FactValue) -> tuple[Fact, ...]:
         )
         for name, value in values.items()
     )
+
 
 @dataclass(frozen=True, order=True)
 class StateDefinition:
@@ -53,7 +68,10 @@ class StateDefinition:
 @dataclass(frozen=True, order=True)
 class StateAssignment:
     state: str
-    operation: Literal["set_int", "add_int"]
+    operation: Literal[
+        "set_int",
+        "add_int",
+    ]
     value: AIRExpression
 
 
@@ -68,8 +86,14 @@ class EventEmission:
     event: str
     facts: Tuple[Fact, ...] = ()
 
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "facts", sort_facts(self.facts))
+    def __post_init__(
+        self,
+    ) -> None:
+        object.__setattr__(
+            self,
+            "facts",
+            sort_facts(self.facts),
+        )
 
 
 @dataclass(frozen=True)
@@ -80,8 +104,14 @@ class EventRecord:
     principal: str
     facts: Tuple[Fact, ...] = ()
 
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "facts", sort_facts(self.facts))
+    def __post_init__(
+        self,
+    ) -> None:
+        object.__setattr__(
+            self,
+            "facts",
+            sort_facts(self.facts),
+        )
 
 
 @dataclass(frozen=True)
@@ -93,30 +123,22 @@ class AIRDirective:
     causal_decisions: Tuple[str, ...]
     order: AIRExpression = 0
 
-def validate_assignment_shape(assignment: "StateAssignment") -> bool:
-    return (
-        assignment.operation in ("set_int", "add_int")
-        and type(assignment.value) is int
-    )
-
-
-def validate_state_definition_shape(state: "StateDefinition") -> bool:
-    return state.value_type == "int" and type(state.initial) is int
 
 @dataclass(frozen=True)
 class DirectiveRequirement:
     capability: str
-    principal: str | None = None
+    principal: Optional[str] = None
+
 
 @dataclass(frozen=True)
 class AIRProgram:
     version: str
-    states: tuple["StateDefinition", ...]
-    events: tuple["EventDefinition", ...]
-    authority_checks: tuple["AuthorityCheck", ...]
-    causal_decisions: tuple["CausalDecision", ...]
-    directives: tuple["AIRDirective", ...]
-    requirements:tuple[DirectiveRequirement, ...]
+    states: tuple[StateDefinition, ...]
+    events: tuple[EventDefinition, ...]
+    authority_checks: tuple[AuthorityCheck, ...]
+    causal_decisions: tuple[CausalDecision, ...]
+    directives: tuple[AIRDirective, ...]
+    requirements: tuple[DirectiveRequirement, ...]
     authorities: tuple[DirectiveAuthority, ...] = ()
     principals: tuple[AIRPrincipal, ...] = ()
     roles: tuple[AIRRole, ...] = ()
@@ -126,7 +148,7 @@ class AIRProgram:
 class Principal:
     id: str
     display_name: str = ""
-    roles: tuple[str,...] = ()
+    roles: tuple[str, ...] = ()
     authorities: tuple[PrincipalAuthority, ...] = ()
 
 
@@ -136,31 +158,6 @@ class AuthorityCheck:
     principal: str
     capability: str
     resource: str
-
-
-@dataclass(frozen=True, order=True)
-class CausalDecision:
-    id: str
-    cause: str
-    paths: tuple
-    policy: Literal["max_weight"] = "max_weight"
-
-@dataclass(frozen=True)
-class DirectiveInvocation:
-    target: str
-    id: str
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "principals", tuple(sorted(as_tuple(self.principals), key=lambda item: item.id)))
-        object.__setattr__(self, "states", tuple(sorted(as_tuple(self.states), key=lambda item: item.id)))
-        object.__setattr__(self, "events", tuple(sorted(as_tuple(self.events), key=lambda item: item.id)))
-        object.__setattr__(self, "authority_checks", tuple(sorted(as_tuple(self.authority_checks), key=lambda item: item.id)))
-        object.__setattr__(self, "causal_decisions", tuple(sorted(as_tuple(self.causal_decisions), key=lambda item: item.id)))
-        object.__setattr__(
-            self,
-            "directives",
-            tuple(sorted(as_tuple(self.directives), key=lambda directive: (directive.order, directive.id))),
-        )
 
 
 @dataclass(frozen=True)
@@ -174,53 +171,60 @@ class VerificationResult:
     diagnostics: Tuple["Diagnostic", ...]
 
     @property
-    def ok(self) -> bool:
-        return not any(diagnostic.is_error for diagnostic in self.diagnostics)
+    def ok(
+        self,
+    ) -> bool:
+        return not any(
+            diagnostic.is_error
+            for diagnostic in self.diagnostics
+        )
 
-    def require_verified(self) -> VerifiedAIRProgram:
+    def require_verified(
+        self,
+    ) -> VerifiedAIRProgram:
         if not self.ok:
-            rendered = "\n".join(f"{diagnostic.code}: {diagnostic.message}" for diagnostic in self.diagnostics)
+            rendered = "\n".join(
+                f"{diagnostic.code}: "
+                f"{diagnostic.message}"
+                for diagnostic in self.diagnostics
+            )
 
-            raise ValueError(f"AIR verification failed:\n{rendered}")
+            raise ValueError(
+                "AIR verification failed:\n"
+                f"{rendered}"
+            )
 
-        return VerifiedAIRProgram(self.program)
-
-
-def validate_state_definition_shape(state: StateDefinition) -> bool:
-    return state.value_type == "int" and is_int(state.initial)
-
-
-def validate_assignment_shape(assignment: StateAssignment) -> bool:
-    return assignment.operation in ("set_int", "add_int") and is_int(assignment.value)
-"""Causal AIR model objects."""
-
-@dataclass(frozen=True)
-class DirectiveInvocation:
-    target: str
-    id: str
-
-@dataclass(frozen=True)
-class CausalPath:
-    id: str
-    weight: AIRExpression
-    assignments: tuple
-    emits: tuple
-    invocations: tuple = ()
-    effects: tuple = ()
-    rationale: str = ""
-    actions: tuple[object, ...] = ()
+        return VerifiedAIRProgram(
+            self.program
+        )
 
 
-@dataclass(frozen=True, order=True)
-class CausalDecision:
-    id: str
-    cause: str
-    paths: Tuple[CausalPath, ...]
-    policy: Literal["max_weight"] = "max_weight"
+def validate_state_definition_shape(
+    state: StateDefinition,
+) -> bool:
+    return (
+        state.value_type == "int"
+        and is_int(state.initial)
+    )
+
+
+def validate_assignment_shape(
+    assignment: StateAssignment,
+) -> bool:
+    return (
+        assignment.operation
+        in (
+            "set_int",
+            "add_int",
+        )
+        and is_int(assignment.value)
+    )
+
 
 @dataclass(frozen=True)
 class DirectiveAuthority:
     name: str
+
 
 @dataclass(frozen=True)
 class PrincipalAuthorityNode:
@@ -230,21 +234,34 @@ class PrincipalAuthorityNode:
 @dataclass(frozen=True)
 class PrincipalNode:
     name: str
-    authorities: tuple[PrincipalAuthorityNode, ...]
+    authorities: tuple[
+        PrincipalAuthorityNode,
+        ...,
+    ]
+
 
 @dataclass(frozen=True)
 class PrincipalAuthority:
     name: str
 
+
 @dataclass(frozen=True)
 class PrincipalRole:
     name: str
 
+
 @dataclass(frozen=True)
 class AIRPrincipal:
     name: str
-    authorities: tuple[PrincipalAuthority, ...]
-    roles: tuple[PrincipalRole, ...] = ()
+    authorities: tuple[
+        PrincipalAuthority,
+        ...,
+    ]
+    roles: tuple[
+        PrincipalRole,
+        ...,
+    ] = ()
+
 
 @dataclass(frozen=True)
 class AIRRoleAuthority:
@@ -254,10 +271,29 @@ class AIRRoleAuthority:
 @dataclass(frozen=True)
 class AIRRole:
     name: str
-    authorities: tuple[AIRRoleAuthority, ...]
+    authorities: tuple[
+        AIRRoleAuthority,
+        ...,
+    ]
+
 
 @dataclass(frozen=True)
 class AIRWhenAction:
     condition: AIRExpression
     actions: tuple[object, ...]
-    otherwise_actions: tuple[object, ...] = ()
+    otherwise_actions: tuple[
+        object,
+        ...,
+    ] = ()
+
+
+# Backward-compatible re-exports.
+#
+# These classes are defined only in causality.model. Importing them here keeps
+# older ``from air.model import ...`` call sites working without creating a
+# second Python class identity.
+from causality.model import (  # noqa: E402
+    CausalDecision,
+    CausalPath,
+    DirectiveInvocation,
+)

@@ -208,7 +208,7 @@ def compile_actions(
         ):
             compiled_actions.append(
                 DirectiveInvocation(
-                    directive=action.target,
+                    target=action.target,
                 )
             )
             continue
@@ -284,14 +284,17 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                 state_ids=state_ids,
                 event_ids=event_ids,
             )
+
+            # Preserve AFP-P1 compatibility without flattening
+            # conditional actions.
             assignments = tuple(
-            action
-            for action in ordered_actions
-            if isinstance(
-                action,
-                StateAssignment,
+                action
+                for action in ordered_actions
+                if isinstance(
+                    action,
+                    StateAssignment,
+                )
             )
-        )
 
             emits = tuple(
                 action
@@ -311,35 +314,7 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                 )
             )
 
-        # Preserve AFP-P1 compatibility without flattening conditional actions.
-        assignments = tuple(
-            action
-                for action in ordered_actions
-                    if isinstance(
-                    action,
-                    StateAssignment,
-                )
-            )
-
-        emits = tuple(
-            action
-                for action in ordered_actions
-                    if isinstance(
-                        action,
-                        EventEmission,
-                    )
-                )
-
-        invocations = tuple(
-            action
-                for action in ordered_actions
-                    if isinstance(
-                        action,
-                        DirectiveInvocation,
-                    )
-                )
-
-        paths.append(
+            paths.append(
                 CausalPath(
                     id=f"path:{path.name}",
                     weight=path.weight,
@@ -352,15 +327,14 @@ def compile_directive(node: DirectiveNode) -> AIRProgram:
                 )
             )
 
-    causal_decisions.append(
-        CausalDecision(
-            id=f"cause:{cause.name}",
-            cause=cause.name,
-            policy="max_weight",
-            paths=tuple(paths),
+        causal_decisions.append(
+            CausalDecision(
+                id=f"cause:{cause.name}",
+                cause=cause.name,
+                policy="max_weight",
+                paths=tuple(paths),
+            )
         )
-    )
-
 
     requirements = tuple(
         DirectiveRequirement(
