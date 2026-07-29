@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Any, Mapping, Optional, Tuple
+from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from air.ids import event_record_id
 from air.model import EventRecord, VerifiedAIRProgram, facts
@@ -17,7 +17,7 @@ from air.expressions import (
     AIRIdentifierReference,
     AIRUnaryExpression,
     AIRBinaryExpression,
-    )
+)
 
 from causality.engine import CausalEngine
 
@@ -29,6 +29,10 @@ from runtime.diagnostics import (
     append_diagnostic,
 )
 from runtime.state import StateDelta, StateSnapshot
+
+
+MAX_CONDITIONAL_DEPTH = 64
+MAX_INVOCATION_DEPTH = 32
 
 
 class RuntimeExpressionError(RuntimeError):
@@ -47,6 +51,28 @@ class ExecutionResult:
         return not any(d.is_error for d in self.diagnostics)
 
 
+@dataclass(frozen=True)
+class _ActionExecution:
+    ok: bool
+    state: StateSnapshot
+    assignments: Tuple[Any, ...]
+    events: Tuple[EventRecord, ...]
+    effects: Tuple[Any, ...]
+    trace_steps: Tuple[TraceStep, ...]
+    next_event_index: int
+
+
+@dataclass(frozen=True)
+class _DirectiveExecution:
+    ok: bool
+    state: StateSnapshot
+    assignments: Tuple[Any, ...]
+    events: Tuple[EventRecord, ...]
+    effects: Tuple[Any, ...]
+    trace_steps: Tuple[TraceStep, ...]
+    next_event_index: int
+
+
 class RuntimeEngine:
     def __init__(
         self,
@@ -58,7 +84,14 @@ class RuntimeEngine:
         self,
         verified: VerifiedAIRProgram,
         context: ExecutionContext,
+        entry_directives: Optional[Sequence[str]] = None,
     ) -> ExecutionResult:
+        """Execute verified AIR.
+
+        ``entry_directives`` selects explicit root directives for a linked,
+        multi-directive program. ``None`` preserves AFP-P1/AFP-P2 behavior by
+        executing every directive in program order.
+        """
 
         if not isinstance(verified, VerifiedAIRProgram):
             raise TypeError(
@@ -69,208 +102,57 @@ class RuntimeEngine:
 
         diagnostics: list[Diagnostic] = []
         trace_steps: list[TraceStep] = []
-
-        assignments = []
-        events = []
-        effects = []
+        assignments: list[Any] = []
+        events: list[EventRecord] = []
+        effects: list[Any] = []
 
         checks = index_by_id(program.authority_checks)
         decisions = index_by_id(program.causal_decisions)
+        directives = index_by_id(program.directives)
+
+        roots = self._resolve_entry_directives(
+            entry_directives=entry_directives,
+            directives=directives,
+            program_directives=tuple(program.directives),
+        )
 
         working_state = context.state
+        next_event_index = 0
 
         trace_steps.append(
             TraceStep(
                 "runtime.start",
                 "started AIR execution",
-                facts(version=program.version),
+                facts(
+                    version=program.version,
+                    roots=len(roots),
+                ),
             )
         )
 
-        for directive in program.directives:
-
-            trace_steps.append(
-                TraceStep(
-                    "directive.start",
-                    "entered directive",
-                    facts(
-                        directive=directive.id,
-                        name=directive.name,
-                        principal=directive.principal,
-                    ),
-                )
+        for directive in roots:
+            outcome = self._execute_directive(
+                directive=directive,
+                state=working_state,
+                checks=checks,
+                decisions=decisions,
+                directives=directives,
+                context=context,
+                diagnostics=diagnostics,
+                invocation_stack=(),
+                event_index=next_event_index,
             )
 
-            denied = False
+            trace_steps.extend(outcome.trace_steps)
 
-            for check_id in directive.authority_checks:
-
-                check = checks[check_id]
-                allowed = context.authority.allows(check)
-
-                trace_steps.append(
-                    TraceStep(
-                        "authority.check",
-                        "evaluated authority check",
-                        facts(
-                            allowed=allowed,
-                            capability=check.capability,
-                            check=check.id,
-                            principal=check.principal,
-                            resource=check.resource,
-                        ),
-                    )
-                )
-
-                if not allowed:
-                    denied = True
-
-                    append_diagnostic(
-                        diagnostics,
-                        "error",
-                        "RUN001",
-                        (
-                            f"authority denied: "
-                            f"{check.principal} lacks "
-                            f"{check.capability} on "
-                            f"{check.resource}"
-                        ),
-                        directive.id,
-                    )
-
-            if denied:
-                trace_steps.append(
-                    TraceStep(
-                        "directive.skip",
-                        "skipped directive after authority denial",
-                        facts(directive=directive.id),
-                    )
-                )
+            if not outcome.ok:
                 continue
 
-            for decision_id in directive.causal_decisions:
-
-                decision = decisions[decision_id]
-
-                selection = self._causality.select_path(
-                    decision
-                )
-
-                selected = selection.path
-
-                trace_steps.extend(
-                    selection.trace_steps
-                )
-
-                ordered_actions = tuple(
-                    getattr(
-                        selected,
-                        "actions",
-                        (),
-                    ) or ()
-                )
-
-                # AFP-P1 compatibility: older paths do not possess an
-                # ordered action stream. Reconstruct the legacy order.
-                if not ordered_actions:
-                    ordered_actions = (
-                        tuple(
-                            getattr(
-                                selected,
-                                "assignments",
-                                (),
-                            ) or ()
-                        )
-                        + tuple(
-                            getattr(
-                                selected,
-                                "emits",
-                                (),
-                            ) or ()
-                        )
-                        + tuple(
-                            getattr(
-                                selected,
-                                "invocations",
-                                (),
-                            ) or ()
-                        )
-                    )
-
-                try:
-                    (
-                        candidate_state,
-                        evaluated_assignments,
-                        evaluated_events,
-                        action_trace_steps,
-                        _,
-                    ) = self._execute_ordered_actions(
-                        actions=ordered_actions,
-                        state=working_state,
-                        directive=directive,
-                        decision=decision,
-                        path=selected,
-                        event_index=0,
-                        depth=0,
-                    )
-
-                except RuntimeExpressionError as exc:
-                    append_diagnostic(
-                        diagnostics,
-                        "error",
-                        "RUN002",
-                        str(exc),
-                        selected.id,
-                    )
-
-                    trace_steps.append(
-                        TraceStep(
-                            "expression.error",
-                            (
-                                "failed to evaluate selected "
-                                "path expression"
-                            ),
-                            facts(
-                                path=selected.id,
-                                error=str(exc),
-                            ),
-                        )
-                    )
-                    continue
-
-                # Commit only after the complete ordered path succeeds.
-                working_state = candidate_state
-
-                assignments.extend(
-                    evaluated_assignments
-                )
-
-                events.extend(
-                    evaluated_events
-                )
-
-                trace_steps.extend(
-                    action_trace_steps
-                )
-
-                effects.extend(
-                    selected.effects
-                )
-
-                for effect in selected.effects:
-                    trace_steps.append(
-                        TraceStep(
-                            "effect.intent",
-                            (
-                                "queued host effect intent "
-                                "without executing it"
-                            ),
-                            facts(
-                                effect=effect.id,
-                                effect_type=effect.effect_type,
-                            ),
-                        )
-                    )
+            working_state = outcome.state
+            next_event_index = outcome.next_event_index
+            assignments.extend(outcome.assignments)
+            events.extend(outcome.events)
+            effects.extend(outcome.effects)
 
         delta = StateDelta(
             tuple(assignments),
@@ -292,10 +174,339 @@ class RuntimeEngine:
         return ExecutionResult(
             delta=delta,
             trace=Trace(tuple(trace_steps)),
-            diagnostics=tuple(
-                sorted(diagnostics)
-            ),
+            diagnostics=tuple(sorted(diagnostics)),
             final_state=working_state,
+        )
+
+    def _resolve_entry_directives(
+        self,
+        entry_directives: Optional[Sequence[str]],
+        directives: Mapping[str, Any],
+        program_directives: Tuple[Any, ...],
+    ) -> Tuple[Any, ...]:
+        if entry_directives is None:
+            return program_directives
+
+        if isinstance(entry_directives, str):
+            references = (entry_directives,)
+        else:
+            references = tuple(entry_directives)
+
+        resolved = []
+        seen: set[str] = set()
+
+        for reference in references:
+            directive = self._resolve_directive_reference(
+                reference,
+                directives,
+            )
+
+            if directive.id in seen:
+                raise ValueError(
+                    "duplicate entry directive: "
+                    f"{directive.id}"
+                )
+
+            seen.add(directive.id)
+            resolved.append(directive)
+
+        return tuple(resolved)
+
+    def _resolve_directive_reference(
+        self,
+        reference: str,
+        directives: Mapping[str, Any],
+    ) -> Any:
+        if not isinstance(reference, str) or not reference:
+            raise RuntimeExpressionError(
+                "directive reference must be a non-empty string"
+            )
+
+        if reference in directives:
+            return directives[reference]
+
+        canonical = (
+            reference
+            if reference.startswith("directive:")
+            else f"directive:{reference}"
+        )
+
+        if canonical in directives:
+            return directives[canonical]
+
+        raise RuntimeExpressionError(
+            f"undefined directive invocation target {reference!r}"
+        )
+
+    def _execute_directive(
+        self,
+        directive: Any,
+        state: StateSnapshot,
+        checks: Mapping[str, Any],
+        decisions: Mapping[str, Any],
+        directives: Mapping[str, Any],
+        context: ExecutionContext,
+        diagnostics: list[Diagnostic],
+        invocation_stack: Tuple[str, ...],
+        event_index: int,
+    ) -> _DirectiveExecution:
+        start_event_index = event_index
+        trace_steps: list[TraceStep] = []
+
+        if directive.id in invocation_stack:
+            cycle = invocation_stack + (directive.id,)
+            rendered_cycle = " -> ".join(cycle)
+
+            append_diagnostic(
+                diagnostics,
+                "error",
+                "RUN003",
+                f"directive invocation cycle detected: {rendered_cycle}",
+                directive.id,
+            )
+
+            trace_steps.append(
+                TraceStep(
+                    "directive.invoke.cycle",
+                    "rejected cyclic directive invocation",
+                    facts(
+                        directive=directive.id,
+                        cycle=rendered_cycle,
+                    ),
+                )
+            )
+
+            return _DirectiveExecution(
+                ok=False,
+                state=state,
+                assignments=(),
+                events=(),
+                effects=(),
+                trace_steps=tuple(trace_steps),
+                next_event_index=start_event_index,
+            )
+
+        if len(invocation_stack) >= MAX_INVOCATION_DEPTH:
+            append_diagnostic(
+                diagnostics,
+                "error",
+                "RUN004",
+                (
+                    "directive invocation depth exceeds runtime limit "
+                    f"of {MAX_INVOCATION_DEPTH}"
+                ),
+                directive.id,
+            )
+
+            trace_steps.append(
+                TraceStep(
+                    "directive.invoke.depth",
+                    "rejected over-depth directive invocation",
+                    facts(
+                        directive=directive.id,
+                        depth=len(invocation_stack),
+                    ),
+                )
+            )
+
+            return _DirectiveExecution(
+                ok=False,
+                state=state,
+                assignments=(),
+                events=(),
+                effects=(),
+                trace_steps=tuple(trace_steps),
+                next_event_index=start_event_index,
+            )
+
+        active_stack = invocation_stack + (directive.id,)
+
+        trace_steps.append(
+            TraceStep(
+                "directive.start",
+                "entered directive",
+                facts(
+                    directive=directive.id,
+                    name=directive.name,
+                    principal=directive.principal,
+                    depth=len(invocation_stack),
+                ),
+            )
+        )
+
+        denied = False
+
+        for check_id in directive.authority_checks:
+            check = checks[check_id]
+            allowed = context.authority.allows(check)
+
+            trace_steps.append(
+                TraceStep(
+                    "authority.check",
+                    "evaluated authority check",
+                    facts(
+                        allowed=allowed,
+                        capability=check.capability,
+                        check=check.id,
+                        principal=check.principal,
+                        resource=check.resource,
+                    ),
+                )
+            )
+
+            if not allowed:
+                denied = True
+                append_diagnostic(
+                    diagnostics,
+                    "error",
+                    "RUN001",
+                    (
+                        f"authority denied: {check.principal} lacks "
+                        f"{check.capability} on {check.resource}"
+                    ),
+                    directive.id,
+                )
+
+        if denied:
+            trace_steps.append(
+                TraceStep(
+                    "directive.skip",
+                    "skipped directive after authority denial",
+                    facts(directive=directive.id),
+                )
+            )
+
+            return _DirectiveExecution(
+                ok=False,
+                state=state,
+                assignments=(),
+                events=(),
+                effects=(),
+                trace_steps=tuple(trace_steps),
+                next_event_index=start_event_index,
+            )
+
+        candidate_state = state
+        evaluated_assignments: list[Any] = []
+        evaluated_events: list[EventRecord] = []
+        evaluated_effects: list[Any] = []
+        next_event_index = event_index
+
+        for decision_id in directive.causal_decisions:
+            decision = decisions[decision_id]
+            selection = self._causality.select_path(decision)
+            selected = selection.path
+            trace_steps.extend(selection.trace_steps)
+
+            ordered_actions = tuple(
+                getattr(selected, "actions", ()) or ()
+            )
+
+            if not ordered_actions:
+                ordered_actions = (
+                    tuple(getattr(selected, "assignments", ()) or ())
+                    + tuple(getattr(selected, "emits", ()) or ())
+                    + tuple(getattr(selected, "invocations", ()) or ())
+                )
+
+            try:
+                action_result = self._execute_ordered_actions(
+                    actions=ordered_actions,
+                    state=candidate_state,
+                    directive=directive,
+                    decision=decision,
+                    path=selected,
+                    checks=checks,
+                    decisions=decisions,
+                    directives=directives,
+                    context=context,
+                    diagnostics=diagnostics,
+                    invocation_stack=active_stack,
+                    event_index=next_event_index,
+                    depth=0,
+                )
+            except RuntimeExpressionError as exc:
+                append_diagnostic(
+                    diagnostics,
+                    "error",
+                    "RUN002",
+                    str(exc),
+                    selected.id,
+                )
+
+                trace_steps.append(
+                    TraceStep(
+                        "expression.error",
+                        "failed to evaluate selected path expression",
+                        facts(
+                            path=selected.id,
+                            error=str(exc),
+                        ),
+                    )
+                )
+
+                return _DirectiveExecution(
+                    ok=False,
+                    state=state,
+                    assignments=(),
+                    events=(),
+                    effects=(),
+                    trace_steps=tuple(trace_steps),
+                    next_event_index=start_event_index,
+                )
+
+            trace_steps.extend(action_result.trace_steps)
+
+            if not action_result.ok:
+                return _DirectiveExecution(
+                    ok=False,
+                    state=state,
+                    assignments=(),
+                    events=(),
+                    effects=(),
+                    trace_steps=tuple(trace_steps),
+                    next_event_index=start_event_index,
+                )
+
+            candidate_state = action_result.state
+            next_event_index = action_result.next_event_index
+            evaluated_assignments.extend(action_result.assignments)
+            evaluated_events.extend(action_result.events)
+            evaluated_effects.extend(action_result.effects)
+
+            evaluated_effects.extend(selected.effects)
+
+            for effect in selected.effects:
+                trace_steps.append(
+                    TraceStep(
+                        "effect.intent",
+                        "queued host effect intent without executing it",
+                        facts(
+                            effect=effect.id,
+                            effect_type=effect.effect_type,
+                        ),
+                    )
+                )
+
+        trace_steps.append(
+            TraceStep(
+                "directive.finish",
+                "finished directive",
+                facts(
+                    directive=directive.id,
+                    depth=len(invocation_stack),
+                ),
+            )
+        )
+
+        return _DirectiveExecution(
+            ok=True,
+            state=candidate_state,
+            assignments=tuple(evaluated_assignments),
+            events=tuple(evaluated_events),
+            effects=tuple(evaluated_effects),
+            trace_steps=tuple(trace_steps),
+            next_event_index=next_event_index,
         )
 
     def _execute_ordered_actions(
@@ -305,41 +516,33 @@ class RuntimeEngine:
         directive: Any,
         decision: Any,
         path: Any,
+        checks: Mapping[str, Any],
+        decisions: Mapping[str, Any],
+        directives: Mapping[str, Any],
+        context: ExecutionContext,
+        diagnostics: list[Diagnostic],
+        invocation_stack: Tuple[str, ...],
         event_index: int = 0,
         depth: int = 0,
-    ) -> Tuple[
-        StateSnapshot,
-        Tuple[Any, ...],
-        Tuple[EventRecord, ...],
-        Tuple[TraceStep, ...],
-        int,
-    ]:
-        """
-        Execute an ordered AIR action stream recursively.
+    ) -> _ActionExecution:
+        """Execute one ordered action stream transactionally."""
 
-        All changes are applied to a candidate snapshot. The caller commits
-        that snapshot only after the entire path completes successfully.
-        """
-
-        if depth > 64:
+        if depth > MAX_CONDITIONAL_DEPTH:
             raise RuntimeExpressionError(
-                "conditional nesting exceeds runtime limit of 64"
+                "conditional nesting exceeds runtime limit of "
+                f"{MAX_CONDITIONAL_DEPTH}"
             )
 
+        start_event_index = event_index
         candidate_state = state
-
-        evaluated_assignments = []
-        evaluated_events = []
-        action_trace_steps = []
-
+        evaluated_assignments: list[Any] = []
+        evaluated_events: list[EventRecord] = []
+        evaluated_effects: list[Any] = []
+        action_trace_steps: list[TraceStep] = []
         next_event_index = event_index
 
         for action_index, action in enumerate(actions):
             action_type = type(action).__name__
-
-            # ----------------------------------------------------------
-            # State assignment
-            # ----------------------------------------------------------
 
             if action_type == "StateAssignment":
                 evaluated = self._evaluate_assignment(
@@ -348,15 +551,10 @@ class RuntimeEngine:
                 )
 
                 candidate_state = candidate_state.apply(
-                    StateDelta(
-                        (evaluated,)
-                    )
+                    StateDelta((evaluated,))
                 )
 
-                evaluated_assignments.append(
-                    evaluated
-                )
-
+                evaluated_assignments.append(evaluated)
                 action_trace_steps.append(
                     TraceStep(
                         "state.delta",
@@ -371,10 +569,6 @@ class RuntimeEngine:
                     )
                 )
                 continue
-
-            # ----------------------------------------------------------
-            # Event emission
-            # ----------------------------------------------------------
 
             if action_type == "EventEmission":
                 evaluated_facts = self._evaluate_facts(
@@ -397,11 +591,7 @@ class RuntimeEngine:
                 )
 
                 next_event_index += 1
-
-                evaluated_events.append(
-                    event
-                )
-
+                evaluated_events.append(event)
                 action_trace_steps.append(
                     TraceStep(
                         "event.emit",
@@ -414,42 +604,89 @@ class RuntimeEngine:
                 )
                 continue
 
-            # ----------------------------------------------------------
-            # Directive invocation
-            # ----------------------------------------------------------
-
             if action_type == "DirectiveInvocation":
-                target = getattr(
-                    action,
-                    "target",
-                    None,
-                )
+                target_reference = getattr(action, "target", None)
 
-                if target is None:
-                    target = getattr(
+                if target_reference is None:
+                    target_reference = getattr(
                         action,
                         "directive",
                         None,
                     )
 
+                target = self._resolve_directive_reference(
+                    target_reference,
+                    directives,
+                )
+
                 action_trace_steps.append(
                     TraceStep(
-                        "directive.invoke",
-                        (
-                            "visited directive invocation "
-                            "action"
-                        ),
+                        "directive.invoke.start",
+                        "started directive invocation",
                         facts(
-                            directive=str(target),
+                            caller=directive.id,
+                            target=target.id,
+                            path=path.id,
+                            action=action_index,
+                        ),
+                    )
+                )
+
+                invoked = self._execute_directive(
+                    directive=target,
+                    state=candidate_state,
+                    checks=checks,
+                    decisions=decisions,
+                    directives=directives,
+                    context=context,
+                    diagnostics=diagnostics,
+                    invocation_stack=invocation_stack,
+                    event_index=next_event_index,
+                )
+
+                action_trace_steps.extend(invoked.trace_steps)
+
+                if not invoked.ok:
+                    action_trace_steps.append(
+                        TraceStep(
+                            "directive.invoke.abort",
+                            "aborted directive invocation transaction",
+                            facts(
+                                caller=directive.id,
+                                target=target.id,
+                                path=path.id,
+                            ),
+                        )
+                    )
+
+                    return _ActionExecution(
+                        ok=False,
+                        state=state,
+                        assignments=(),
+                        events=(),
+                        effects=(),
+                        trace_steps=tuple(action_trace_steps),
+                        next_event_index=start_event_index,
+                    )
+
+                candidate_state = invoked.state
+                next_event_index = invoked.next_event_index
+                evaluated_assignments.extend(invoked.assignments)
+                evaluated_events.extend(invoked.events)
+                evaluated_effects.extend(invoked.effects)
+
+                action_trace_steps.append(
+                    TraceStep(
+                        "directive.invoke.finish",
+                        "finished directive invocation",
+                        facts(
+                            caller=directive.id,
+                            target=target.id,
                             path=path.id,
                         ),
                     )
                 )
                 continue
-
-            # ----------------------------------------------------------
-            # Conditional action
-            # ----------------------------------------------------------
 
             if action_type == "AIRWhenAction":
                 condition_result = self._evaluate_expression(
@@ -459,9 +696,8 @@ class RuntimeEngine:
 
                 if type(condition_result) is not bool:
                     raise RuntimeExpressionError(
-                        "AIRWhenAction condition must evaluate "
-                        "to bool; received "
-                        f"{type(condition_result).__name__}."
+                        "AIRWhenAction condition must evaluate to bool; "
+                        f"received {type(condition_result).__name__}."
                     )
 
                 if condition_result:
@@ -472,11 +708,7 @@ class RuntimeEngine:
                 else:
                     branch_name = "otherwise"
                     branch_actions = tuple(
-                        getattr(
-                            action,
-                            "otherwise_actions",
-                            (),
-                        ) or ()
+                        getattr(action, "otherwise_actions", ()) or ()
                     )
 
                 action_trace_steps.append(
@@ -491,35 +723,40 @@ class RuntimeEngine:
                     )
                 )
 
-                (
-                    nested_state,
-                    nested_assignments,
-                    nested_events,
-                    nested_trace_steps,
-                    next_event_index,
-                ) = self._execute_ordered_actions(
+                nested = self._execute_ordered_actions(
                     actions=branch_actions,
                     state=candidate_state,
                     directive=directive,
                     decision=decision,
                     path=path,
+                    checks=checks,
+                    decisions=decisions,
+                    directives=directives,
+                    context=context,
+                    diagnostics=diagnostics,
+                    invocation_stack=invocation_stack,
                     event_index=next_event_index,
                     depth=depth + 1,
                 )
 
-                candidate_state = nested_state
+                action_trace_steps.extend(nested.trace_steps)
 
-                evaluated_assignments.extend(
-                    nested_assignments
-                )
+                if not nested.ok:
+                    return _ActionExecution(
+                        ok=False,
+                        state=state,
+                        assignments=(),
+                        events=(),
+                        effects=(),
+                        trace_steps=tuple(action_trace_steps),
+                        next_event_index=start_event_index,
+                    )
 
-                evaluated_events.extend(
-                    nested_events
-                )
-
-                action_trace_steps.extend(
-                    nested_trace_steps
-                )
+                candidate_state = nested.state
+                next_event_index = nested.next_event_index
+                evaluated_assignments.extend(nested.assignments)
+                evaluated_events.extend(nested.events)
+                evaluated_effects.extend(nested.effects)
                 continue
 
             raise RuntimeExpressionError(
@@ -527,12 +764,14 @@ class RuntimeEngine:
                 f"{action_type!r}"
             )
 
-        return (
-            candidate_state,
-            tuple(evaluated_assignments),
-            tuple(evaluated_events),
-            tuple(action_trace_steps),
-            next_event_index,
+        return _ActionExecution(
+            ok=True,
+            state=candidate_state,
+            assignments=tuple(evaluated_assignments),
+            events=tuple(evaluated_events),
+            effects=tuple(evaluated_effects),
+            trace_steps=tuple(action_trace_steps),
+            next_event_index=next_event_index,
         )
 
     def _evaluate_assignment(
@@ -885,8 +1124,8 @@ class RuntimeEngine:
         if callable(get_int):
             for candidate in candidates:
                 value = get_int(
-                    candidate,
-                    sentinel,
+                    name,
+                    0,
                 )
 
                 if value is not sentinel:
