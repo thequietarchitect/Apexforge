@@ -23,7 +23,8 @@ verified, versioned, and backend-neutral.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Literal, Union, Any, Mapping
+from effects.model import EffectIntent
 
 
 AIR_VERSION = "0.1"

@@ -8,11 +8,12 @@ may safely re-export these classes for AFP-P1 compatibility.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Tuple, TYPE_CHECKING
+from typing import Literal, Optional, Tuple, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
     from air.model import EventEmission, StateAssignment
+    from effects.model import EffectIntent
 
 
 @dataclass(frozen=True, init=False)
@@ -79,7 +80,7 @@ class CausalPath:
     assignments: Tuple["StateAssignment", ...] = ()
     emits: Tuple["EventEmission", ...] = ()
     invocations: Tuple[DirectiveInvocation, ...] = ()
-    effects: Tuple[Any, ...] = ()
+    effects: Tuple["EffectIntent", ...] = ()
     rationale: str = ""
     actions: Tuple[object, ...] = ()
 
