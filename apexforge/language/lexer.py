@@ -1,25 +1,70 @@
-"""ApexForge language lexer."""
+"ApexForge language lexer with source provenance."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
+
+from language.diagnostics import BuildDiagnostic
+from language.source import SourceSpan, SourceText
 
 
 @dataclass(frozen=True)
 class Token:
     kind: str
     value: str
+    span: Optional[SourceSpan] = None
 
 
-SYMBOLS = {
+class LexError(SyntaxError):
+    """Source-aware ApexForge lexical failure."""
+
+    def __init__(self, diagnostic: BuildDiagnostic) -> None:
+        self.diagnostic = diagnostic
+        super().__init__(diagnostic.render())
+
+
+KEYWORDS = {
+    "directive": "DIRECTIVE",
+    "workflow": "WORKFLOW",
+    "authority": "AUTHORITY",
+    "capability": "CAPABILITY",
+    "state": "STATE",
+    "event": "EVENT",
+    "cause": "CAUSE",
+    "path": "PATH",
+    "add": "ADD",
+    "emit": "EMIT",
+    "message": "MESSAGE",
+    "invoke": "INVOKE",
+    "requires": "REQUIRES",
+    "extends": "EXTENDS",
+    "principal": "PRINCIPAL",
+    "role": "ROLE",
+    "set": "SET",
+    "when": "WHEN",
+    "otherwise": "OTHERWISE",
+    "and": "AND",
+    "or": "OR",
+    "not": "NOT",
+    "true": "TRUE",
+    "false": "FALSE",
+}
+
+
+TWO_CHARACTER_TOKENS = {
+    "==": "EQEQ",
+    "!=": "NE",
+    "<=": "LTE",
+    ">=": "GTE",
+}
+
+
+ONE_CHARACTER_TOKENS = {
     "{": "LBRACE",
     "}": "RBRACE",
     "=": "EQUAL",
     "@": "AT",
-}
-
-one_character_expressions = {
     "+": "PLUS",
     "-": "MINUS",
     "*": "STAR",
@@ -27,80 +72,59 @@ one_character_expressions = {
     "%": "PERCENT",
     "(": "LPAREN",
     ")": "RPAREN",
-    "<": "LESS",
     "<": "LT",
-    "AND": "and",
-    "OR": "or",
-    "NOT": "not",
-    }
+    ">": "GT",
+}
 
-two_character_expressions = {
-    "==": "EQUAL_EQUAL",
-    "!=": "BANG_EQUAL",
-    "==": "EQEQ",         
-    "!=": "NE",
-    "<=": "LESS_EQUAL",
-    "<=": "LTE",
-    ">": "GREATER",
-    ">": "GT",       "GT": ">",
-    ">=": "GREATER_EQUAL",
-    ">=": "GTE",
-    }
 
-EXPRESSIONS = {**one_character_expressions, **two_character_expressions,}
+def _lex_error(
+    source_text: SourceText,
+    *,
+    code: str,
+    message: str,
+    start: int,
+    end: int,
+) -> LexError:
+    return LexError(
+        BuildDiagnostic(
+            severity="error",
+            code=code,
+            message=message,
+            stage="lex",
+            span=source_text.span(start, end),
+        )
+    )
 
-KEYWORDS = (
-    "directive",
-    "workflow",
-    "authority",
-    "capability",
-    "state",
-    "event",
-    "cause",
-    "path",
-    "add",
-    "emit",
-    "message",
-    "invoke",
-    "requires",
-    "extends",
-    "principal",
-    "role",
-    "set",
-    "when",
-    "otherwise",
-)
 
 def scan_string(
     source: str,
     opening_quote_index: int,
-):
-    """
-    Read a quoted string and return:
+    *,
+    source_name: str = "<memory>",
+) -> tuple[str, int]:
+    """Read a quoted string and return its decoded value and end offset."""
 
-        (decoded_value, index_after_closing_quote)
-    """
-
+    source_text = SourceText(source_name, source)
     i = opening_quote_index + 1
-    characters = []
+    characters: list[str] = []
 
     while i < len(source):
         current = source[i]
 
-        # Closing quotation mark
         if current == '"':
             return "".join(characters), i + 1
 
-        # Escape sequence
         if current == "\\":
             if i + 1 >= len(source):
-                raise SyntaxError(
-                    "Unterminated escape sequence "
-                    "inside string literal"
+                raise _lex_error(
+                    source_text,
+                    code="APX-LEX-002",
+                    message="Unterminated escape sequence inside string literal.",
+                    start=i,
+                    end=len(source),
                 )
 
             escaped = source[i + 1]
-
             escape_values = {
                 "n": "\n",
                 "r": "\r",
@@ -110,26 +134,42 @@ def scan_string(
             }
 
             if escaped not in escape_values:
-                raise SyntaxError(
-                    "Unsupported escape sequence: "
-                    f"\\{escaped}"
+                raise _lex_error(
+                    source_text,
+                    code="APX-LEX-003",
+                    message=f"Unsupported escape sequence \\{escaped}.",
+                    start=i,
+                    end=min(i + 2, len(source)),
                 )
 
-            characters.append(
-                escape_values[escaped]
-            )
-
+            characters.append(escape_values[escaped])
             i += 2
             continue
 
         characters.append(current)
         i += 1
 
-    raise SyntaxError(
-        "Unterminated string literal"
+    raise _lex_error(
+        source_text,
+        code="APX-LEX-004",
+        message="Unterminated string literal.",
+        start=opening_quote_index,
+        end=len(source),
     )
 
-def lex(source: str) -> List[Token]:
+
+def lex(
+    source: str,
+    *,
+    source_name: str = "<memory>",
+) -> List[Token]:
+    if not isinstance(source, str):
+        raise TypeError(
+            "ApexForge lex source must be a string; "
+            f"received {type(source).__name__}."
+        )
+
+    source_text = SourceText(source_name, source)
     tokens: List[Token] = []
     i = 0
 
@@ -141,58 +181,47 @@ def lex(source: str) -> List[Token]:
             continue
 
         if char == '"':
+            start = i
             value, i = scan_string(
                 source,
-                i,
-        )
-
+                start,
+                source_name=source_name,
+            )
             tokens.append(
                 Token(
                     kind="STRING",
                     value=value,
-        )
-    )
+                    span=source_text.span(start, i),
+                )
+            )
             continue
 
-        two_character = source[i:i + 2]
-
-        if two_character in two_character_expressions:
+        two_character = source[i : i + 2]
+        if two_character in TWO_CHARACTER_TOKENS:
             tokens.append(
                 Token(
-                    kind=two_character_expressions[
-                    two_character
-                ],
+                    kind=TWO_CHARACTER_TOKENS[two_character],
                     value=two_character,
+                    span=source_text.span(i, i + 2),
+                )
             )
-        )
-
             i += 2
             continue
 
-        if char in one_character_expressions:
+        if char in ONE_CHARACTER_TOKENS:
             tokens.append(
                 Token(
-                    kind=one_character_expressions[
-                    char
-                ],
+                    kind=ONE_CHARACTER_TOKENS[char],
                     value=char,
+                    span=source_text.span(i, i + 1),
+                )
             )
-        )
-
-            i += 1
-            continue
-
-        if char in SYMBOLS:
-            tokens.append(Token(SYMBOLS[char], char))
             i += 1
             continue
 
         if char.isdigit():
             start = i
-            while (
-                i < len(source)
-                and source[i].isdigit()
-            ):
+            while i < len(source) and source[i].isdigit():
                 i += 1
 
             number_text = source[start:i]
@@ -200,6 +229,7 @@ def lex(source: str) -> List[Token]:
                 Token(
                     kind="NUMBER",
                     value=number_text,
+                    span=source_text.span(start, i),
                 )
             )
             continue
@@ -212,16 +242,35 @@ def lex(source: str) -> List[Token]:
                 i += 1
 
             value = source[start:i]
-
-            if value in KEYWORDS:
-                tokens.append(Token(value.upper(), value))
-            else:
-                tokens.append(Token("IDENT", value))
-
+            kind = KEYWORDS.get(value, "IDENT")
+            tokens.append(
+                Token(
+                    kind=kind,
+                    value=value,
+                    span=source_text.span(start, i),
+                )
+            )
             continue
 
-        raise SyntaxError(f"Unexpected character: {char}")
+        raise _lex_error(
+            source_text,
+            code="APX-LEX-001",
+            message=f"Unexpected character {char!r}.",
+            start=i,
+            end=i + 1,
+        )
 
-
-    tokens.append(Token("EOF", ""))
+    eof_span = source_text.span(len(source), len(source))
+    tokens.append(Token("EOF", "", eof_span))
     return tokens
+
+
+__all__ = (
+    "KEYWORDS",
+    "LexError",
+    "ONE_CHARACTER_TOKENS",
+    "TWO_CHARACTER_TOKENS",
+    "Token",
+    "lex",
+    "scan_string",
+)

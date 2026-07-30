@@ -1,15 +1,21 @@
-"""ApexForge language parser.
-
-This parser supports the AFP-P1 declaration model plus AFP-P2 expressions,
-explicit ``set`` reassignment, and nested ``when`` action blocks.
-"""
+"""ApexForge recursive-descent parser with source-aware AST spans."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from typing import Optional, Sequence
 
+from language.diagnostics import BuildDiagnostic
 from language.lexer import Token, lex
+from language.source import SourceSpan, cover_spans
+
+
+class ParseError(SyntaxError):
+    """Source-aware ApexForge parse failure."""
+
+    def __init__(self, diagnostic: BuildDiagnostic) -> None:
+        self.diagnostic = diagnostic
+        super().__init__(diagnostic.render())
 
 
 # ============================================================================
@@ -24,27 +30,32 @@ class ExpressionNode:
 @dataclass(frozen=True)
 class IntegerLiteralNode(ExpressionNode):
     value: int
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class StringLiteralNode(ExpressionNode):
     value: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class BooleanLiteralNode(ExpressionNode):
     value: bool
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class IdentifierNode(ExpressionNode):
     name: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class UnaryExpressionNode(ExpressionNode):
     operator: str
     operand: ExpressionNode
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
@@ -52,51 +63,60 @@ class BinaryExpressionNode(ExpressionNode):
     left: ExpressionNode
     operator: str
     right: ExpressionNode
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class StateNode:
     name: str
     initial: ExpressionNode
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class EventNode:
     name: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class AddActionNode:
     state_name: str
     value: ExpressionNode
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class SetActionNode:
     state_name: str
     expression: ExpressionNode
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class EmitActionNode:
     event_name: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class MessageActionNode:
     expression: ExpressionNode
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class InvokeActionNode:
     target: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class WhenActionNode:
     condition: ExpressionNode
     actions: tuple[object, ...]
-    otherwise_actions: tuple[object] = ()
+    otherwise_actions: tuple[object, ...] = ()
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
@@ -104,22 +124,26 @@ class PathNode:
     name: str
     weight: int
     actions: tuple[object, ...]
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class CauseNode:
     name: str
     paths: tuple[PathNode, ...]
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class RequirementNode:
     capability: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class DirectiveAuthorityNode:
     name: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
@@ -130,22 +154,26 @@ class DirectiveNode:
     causes: tuple[CauseNode, ...]
     requirements: tuple[RequirementNode, ...] = ()
     authorities: tuple[DirectiveAuthorityNode, ...] = ()
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class WorkflowInvokeNode:
     target: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class WorkflowNode:
     name: str
     invocations: tuple[WorkflowInvokeNode, ...]
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class CapabilityNode:
     name: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
@@ -153,27 +181,32 @@ class AuthorityNode:
     name: str
     capabilities: tuple[CapabilityNode, ...]
     extends: Optional[str] = None
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class PrincipalAuthorityNode:
     name: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class RoleAuthorityNode:
     name: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class RoleNode:
     name: str
     authorities: tuple[RoleAuthorityNode, ...]
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
 class PrincipalRoleNode:
     name: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
@@ -181,11 +214,22 @@ class PrincipalNode:
     name: str
     authorities: tuple[PrincipalAuthorityNode, ...]
     roles: tuple[PrincipalRoleNode, ...]
+    span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
 # ============================================================================
 # Parser
 # ============================================================================
+
+
+def _span_of(value: object) -> Optional[SourceSpan]:
+    if isinstance(value, Token):
+        return value.span
+    return getattr(value, "span", None)
+
+
+def _cover(first: object, second: object) -> Optional[SourceSpan]:
+    return cover_spans(_span_of(first), _span_of(second))
 
 
 class Parser:
@@ -223,75 +267,100 @@ class Parser:
     _LEFT_PAREN_KINDS = ("LPAREN", "LPAR")
     _RIGHT_PAREN_KINDS = ("RPAREN", "RPAR")
 
-    def __init__(self, tokens: Sequence[Token]):
-        self.tokens = tokens
+    def __init__(
+        self,
+        tokens: Sequence[Token],
+        *,
+        source_name: str = "<memory>",
+    ) -> None:
+        self.tokens = tuple(tokens)
+        if not self.tokens:
+            raise ValueError("Parser requires at least an EOF token.")
         self.index = 0
+        self.source_name = source_name
 
     def current(self) -> Token:
         return self.tokens[self.index]
 
+    def _raise(
+        self,
+        *,
+        code: str,
+        message: str,
+        token: Optional[Token] = None,
+    ) -> None:
+        selected = token or self.current()
+        raise ParseError(
+            BuildDiagnostic(
+                severity="error",
+                code=code,
+                message=message,
+                stage="parse",
+                span=selected.span,
+            )
+        )
+
     def consume(self, expected_kind: str) -> Token:
         token = self.current()
-
         if token.kind != expected_kind:
-            raise SyntaxError(
-                f"Expected {expected_kind}, got {token.kind} "
-                f"at token index {self.index}."
+            self._raise(
+                code="APX-PARSE-001",
+                message=(
+                    f"Expected token {expected_kind}, got {token.kind} "
+                    f"with value {token.value!r}."
+                ),
+                token=token,
             )
-
         self.index += 1
         return token
 
     def consume_any(self, *expected_kinds: str) -> Token:
         token = self.current()
-
         if token.kind not in expected_kinds:
             expected = " or ".join(expected_kinds)
-            raise SyntaxError(
-                f"Expected {expected}, got {token.kind} "
-                f"at token index {self.index}."
+            self._raise(
+                code="APX-PARSE-001",
+                message=(
+                    f"Expected token {expected}, got {token.kind} "
+                    f"with value {token.value!r}."
+                ),
+                token=token,
             )
-
         self.index += 1
         return token
 
     def match(self, *kinds: str) -> Optional[Token]:
         if self.current().kind not in kinds:
             return None
-
         token = self.current()
         self.index += 1
         return token
 
     def parse(self) -> object:
         kind = self.current().kind
-
         if kind == "DIRECTIVE":
             return self.parse_directive()
-
         if kind == "WORKFLOW":
             return self.parse_workflow()
-
         if kind == "AUTHORITY":
             return self.parse_authority()
-
         if kind == "PRINCIPAL":
             return self.parse_principal()
-
         if kind == "ROLE":
             return self.parse_role()
 
-        raise SyntaxError(
-            f"Unexpected top-level token {kind!r} "
-            f"at token index {self.index}."
+        self._raise(
+            code="APX-PARSE-002",
+            message=f"Unexpected top-level token {kind!r}.",
         )
+        raise AssertionError("unreachable")
 
     # ======================================================================
     # Top-level declarations
     # ======================================================================
 
     def parse_directive(self) -> DirectiveNode:
-        self.consume("DIRECTIVE")
+        start = self.consume("DIRECTIVE")
         name = self.consume("IDENT").value
         self.consume("LBRACE")
 
@@ -303,41 +372,45 @@ class Parser:
 
         while self.current().kind != "RBRACE":
             kind = self.current().kind
-
+            if kind == "EOF":
+                self._raise(
+                    code="APX-PARSE-003",
+                    message=f"Unterminated directive {name!r}; expected RBRACE.",
+                )
             if kind == "STATE":
                 states.append(self.parse_state())
                 continue
-
             if kind == "EVENT":
                 events.append(self.parse_event())
                 continue
-
             if kind == "CAUSE":
                 causes.append(self.parse_cause())
                 continue
-
             if kind == "AUTHORITY":
-                self.consume("AUTHORITY")
-                authority_name = self.consume("IDENT").value
+                authority_start = self.consume("AUTHORITY")
+                authority_name = self.consume("IDENT")
                 authorities.append(
-                    DirectiveAuthorityNode(name=authority_name)
+                    DirectiveAuthorityNode(
+                        name=authority_name.value,
+                        span=_cover(authority_start, authority_name),
+                    )
                 )
                 continue
-
             if kind == "REQUIRES":
                 requirements.append(self.parse_requirement())
                 continue
 
             token = self.current()
-            raise SyntaxError(
-                "Unexpected token inside directive: "
-                f"kind={token.kind!r}, "
-                f"value={token.value!r}, "
-                f"index={self.index}"
+            self._raise(
+                code="APX-PARSE-003",
+                message=(
+                    "Unexpected token inside directive: "
+                    f"kind={token.kind!r}, value={token.value!r}."
+                ),
+                token=token,
             )
 
-        self.consume("RBRACE")
-
+        closing = self.consume("RBRACE")
         return DirectiveNode(
             name=name,
             states=tuple(states),
@@ -345,33 +418,35 @@ class Parser:
             causes=tuple(causes),
             requirements=tuple(requirements),
             authorities=tuple(authorities),
+            span=_cover(start, closing),
         )
 
     def parse_workflow(self) -> WorkflowNode:
-        self.consume("WORKFLOW")
+        start = self.consume("WORKFLOW")
         name = self.consume("IDENT").value
         self.consume("LBRACE")
-
         invocations: list[WorkflowInvokeNode] = []
 
         while self.current().kind != "RBRACE":
-            self.consume("INVOKE")
-            target = self.consume("IDENT").value
+            invoke_start = self.consume("INVOKE")
+            target = self.consume("IDENT")
             invocations.append(
-                WorkflowInvokeNode(target=target)
+                WorkflowInvokeNode(
+                    target=target.value,
+                    span=_cover(invoke_start, target),
+                )
             )
 
-        self.consume("RBRACE")
-
+        closing = self.consume("RBRACE")
         return WorkflowNode(
             name=name,
             invocations=tuple(invocations),
+            span=_cover(start, closing),
         )
 
     def parse_authority(self) -> AuthorityNode:
-        self.consume("AUTHORITY")
+        start = self.consume("AUTHORITY")
         name = self.consume("IDENT").value
-
         extends: Optional[str] = None
 
         if self.current().kind == "EXTENDS":
@@ -379,97 +454,90 @@ class Parser:
             extends = self.consume("IDENT").value
 
         self.consume("LBRACE")
-
         capabilities: list[CapabilityNode] = []
 
         while self.current().kind != "RBRACE":
-            if self.current().kind != "CAPABILITY":
-                raise SyntaxError(
-                    "Expected CAPABILITY or RBRACE, got "
-                    f"{self.current().kind} at token index {self.index}."
-                )
-
-            self.consume("CAPABILITY")
-            capability_name = self.consume("IDENT").value
+            capability_start = self.consume("CAPABILITY")
+            capability_name = self.consume("IDENT")
             capabilities.append(
-                CapabilityNode(name=capability_name)
+                CapabilityNode(
+                    name=capability_name.value,
+                    span=_cover(capability_start, capability_name),
+                )
             )
 
-        self.consume("RBRACE")
-
+        closing = self.consume("RBRACE")
         return AuthorityNode(
             name=name,
             capabilities=tuple(capabilities),
             extends=extends,
+            span=_cover(start, closing),
         )
 
     def parse_role(self) -> RoleNode:
-        self.consume("ROLE")
+        start = self.consume("ROLE")
         name = self.consume("IDENT").value
         self.consume("LBRACE")
-
         authorities: list[RoleAuthorityNode] = []
 
         while self.current().kind != "RBRACE":
-            kind = self.current().kind
-
-            if kind != "AUTHORITY":
-                raise SyntaxError(
-                    f"Unexpected role token {kind!r}. "
-                    "Expected AUTHORITY."
-                )
-
-            self.consume("AUTHORITY")
-            authority_name = self.consume("IDENT").value
+            authority_start = self.consume("AUTHORITY")
+            authority_name = self.consume("IDENT")
             authorities.append(
-                RoleAuthorityNode(name=authority_name)
+                RoleAuthorityNode(
+                    name=authority_name.value,
+                    span=_cover(authority_start, authority_name),
+                )
             )
 
-        self.consume("RBRACE")
-
+        closing = self.consume("RBRACE")
         return RoleNode(
             name=name,
             authorities=tuple(authorities),
+            span=_cover(start, closing),
         )
 
     def parse_principal(self) -> PrincipalNode:
-        self.consume("PRINCIPAL")
+        start = self.consume("PRINCIPAL")
         name = self.consume("IDENT").value
         self.consume("LBRACE")
-
         authorities: list[PrincipalAuthorityNode] = []
         roles: list[PrincipalRoleNode] = []
 
         while self.current().kind != "RBRACE":
             kind = self.current().kind
-
             if kind == "AUTHORITY":
-                self.consume("AUTHORITY")
-                authority_name = self.consume("IDENT").value
+                item_start = self.consume("AUTHORITY")
+                item_name = self.consume("IDENT")
                 authorities.append(
-                    PrincipalAuthorityNode(name=authority_name)
+                    PrincipalAuthorityNode(
+                        name=item_name.value,
+                        span=_cover(item_start, item_name),
+                    )
                 )
                 continue
-
             if kind == "ROLE":
-                self.consume("ROLE")
-                role_name = self.consume("IDENT").value
+                item_start = self.consume("ROLE")
+                item_name = self.consume("IDENT")
                 roles.append(
-                    PrincipalRoleNode(name=role_name)
+                    PrincipalRoleNode(
+                        name=item_name.value,
+                        span=_cover(item_start, item_name),
+                    )
                 )
                 continue
 
-            raise SyntaxError(
-                f"Unexpected principal token {kind!r} "
-                f"at token index {self.index}."
+            self._raise(
+                code="APX-PARSE-003",
+                message=f"Unexpected principal token {kind!r}.",
             )
 
-        self.consume("RBRACE")
-
+        closing = self.consume("RBRACE")
         return PrincipalNode(
             name=name,
             authorities=tuple(authorities),
             roles=tuple(roles),
+            span=_cover(start, closing),
         )
 
     # ======================================================================
@@ -477,61 +545,68 @@ class Parser:
     # ======================================================================
 
     def parse_state(self) -> StateNode:
-        self.consume("STATE")
+        start = self.consume("STATE")
         name = self.consume("IDENT").value
         self.consume("EQUAL")
         initial = self.parse_expression()
-
-        return StateNode(
-            name=name,
-            initial=initial,
-        )
+        return StateNode(name=name, initial=initial, span=_cover(start, initial))
 
     def parse_event(self) -> EventNode:
-        self.consume("EVENT")
-        name = self.consume("IDENT").value
-        return EventNode(name=name)
+        start = self.consume("EVENT")
+        name = self.consume("IDENT")
+        return EventNode(name=name.value, span=_cover(start, name))
 
     def parse_requirement(self) -> RequirementNode:
-        self.consume("REQUIRES")
-        capability = self.consume("IDENT").value
-        return RequirementNode(capability=capability)
+        start = self.consume("REQUIRES")
+        capability = self.consume("IDENT")
+        return RequirementNode(
+            capability=capability.value,
+            span=_cover(start, capability),
+        )
 
     def parse_cause(self) -> CauseNode:
-        self.consume("CAUSE")
+        start = self.consume("CAUSE")
         name = self.consume("IDENT").value
         self.consume("LBRACE")
-
         paths: list[PathNode] = []
 
         while self.current().kind != "RBRACE":
+            if self.current().kind == "EOF":
+                self._raise(
+                    code="APX-PARSE-003",
+                    message=f"Unterminated cause {name!r}; expected RBRACE.",
+                )
             paths.append(self.parse_path())
 
-        self.consume("RBRACE")
-
+        closing = self.consume("RBRACE")
         return CauseNode(
             name=name,
             paths=tuple(paths),
+            span=_cover(start, closing),
         )
 
     def parse_path(self) -> PathNode:
-        self.consume("PATH")
+        start = self.consume("PATH")
         name = self.consume("IDENT").value
         self.consume("AT")
         weight = int(self.consume("NUMBER").value)
         self.consume("LBRACE")
-
         actions: list[object] = []
 
         while self.current().kind != "RBRACE":
+            if self.current().kind == "EOF":
+                self._raise(
+                    code="APX-PARSE-003",
+                    message=f"Unterminated path {name!r}; expected RBRACE.",
+                )
             actions.append(self.parse_action())
 
-        self.consume("RBRACE")
-
+        closing = self.consume("RBRACE")
         return PathNode(
             name=name,
             weight=weight,
             actions=tuple(actions),
+            span=_cover(start, closing),
         )
 
     # ======================================================================
@@ -540,116 +615,105 @@ class Parser:
 
     def parse_action(self) -> object:
         kind = self.current().kind
-
         if kind == "ADD":
             return self.parse_add()
-
         if kind == "SET":
             return self.parse_set()
-
         if kind == "EMIT":
             return self.parse_emit()
-
         if kind == "MESSAGE":
             return self.parse_message()
-
         if kind == "INVOKE":
             return self.parse_invoke()
-
         if kind == "WHEN":
             return self.parse_when()
 
         token = self.current()
-        raise SyntaxError(
-            "Unexpected path action: "
-            f"kind={token.kind!r}, "
-            f"value={token.value!r}, "
-            f"index={self.index}"
+        self._raise(
+            code="APX-PARSE-005",
+            message=(
+                "Unexpected path action: "
+                f"kind={token.kind!r}, value={token.value!r}."
+            ),
+            token=token,
         )
+        raise AssertionError("unreachable")
 
     def parse_add(self) -> AddActionNode:
-        self.consume("ADD")
+        start = self.consume("ADD")
         state_name = self.consume("IDENT").value
         value = self.parse_expression()
-
         return AddActionNode(
             state_name=state_name,
             value=value,
+            span=_cover(start, value),
         )
 
     def parse_set(self) -> SetActionNode:
-        self.consume("SET")
+        start = self.consume("SET")
         state_name = self.consume("IDENT").value
         self.consume("EQUAL")
         expression = self.parse_expression()
-
         return SetActionNode(
             state_name=state_name,
             expression=expression,
+            span=_cover(start, expression),
         )
 
     def parse_emit(self) -> EmitActionNode:
-        self.consume("EMIT")
-        event_name = self.consume("IDENT").value
-        return EmitActionNode(event_name=event_name)
+        start = self.consume("EMIT")
+        event_name = self.consume("IDENT")
+        return EmitActionNode(
+            event_name=event_name.value,
+            span=_cover(start, event_name),
+        )
 
     def parse_message(self) -> MessageActionNode:
-        self.consume("MESSAGE")
+        start = self.consume("MESSAGE")
         expression = self.parse_expression()
-        return MessageActionNode(expression=expression)
+        return MessageActionNode(
+            expression=expression,
+            span=_cover(start, expression),
+        )
 
     def parse_invoke(self) -> InvokeActionNode:
-        self.consume("INVOKE")
-        target = self.consume("IDENT").value
-        return InvokeActionNode(target=target)
+        start = self.consume("INVOKE")
+        target = self.consume("IDENT")
+        return InvokeActionNode(
+            target=target.value,
+            span=_cover(start, target),
+        )
 
-    def parse_when(
-        self,
-        ) -> WhenActionNode:
-        self.consume("WHEN")
-
+    def parse_when(self) -> WhenActionNode:
+        start = self.consume("WHEN")
         condition = self.parse_expression()
-
         self.consume("LBRACE")
-
         actions: list[object] = []
 
         while self.current().kind != "RBRACE":
-            actions.append(
-                self.parse_action()
-            )
+            actions.append(self.parse_action())
 
-        self.consume("RBRACE")
-
+        final_token = self.consume("RBRACE")
         otherwise_actions: list[object] = []
 
         if self.match("OTHERWISE") is not None:
             self.consume("LBRACE")
-
             while self.current().kind != "RBRACE":
-                otherwise_actions.append(
-                    self.parse_action()
-                )
-
-            self.consume("RBRACE")
+                otherwise_actions.append(self.parse_action())
+            final_token = self.consume("RBRACE")
 
         return WhenActionNode(
             condition=condition,
             actions=tuple(actions),
-            otherwise_actions=tuple(
-                otherwise_actions
-            ),
+            otherwise_actions=tuple(otherwise_actions),
+            span=_cover(start, final_token),
         )
 
     def parse_authority_list(self) -> tuple[str, ...]:
         authorities: list[str] = []
-
         while self.current().kind != "RBRACE":
             self.consume("AUTHORITY")
-            authorities.append(
-                self.consume("IDENT").value
-            )
-
+            authorities.append(self.consume("IDENT").value)
         return tuple(authorities)
 
     # ======================================================================
@@ -657,26 +721,23 @@ class Parser:
     # ======================================================================
 
     def parse_expression(self) -> ExpressionNode:
-        result = self.parse_or()
-        return result
+        return self.parse_or()
 
     def parse_or(self) -> ExpressionNode:
         expression = self.parse_and()
-
         while self.current().kind == "OR":
-            self.consume("OR")
+            token = self.consume("OR")
             right = self.parse_and()
             expression = BinaryExpressionNode(
                 left=expression,
                 operator="or",
                 right=right,
+                span=_cover(expression, right),
             )
-
         return expression
 
     def parse_and(self) -> ExpressionNode:
         expression = self.parse_equality()
-
         while self.current().kind == "AND":
             self.consume("AND")
             right = self.parse_equality()
@@ -684,13 +745,12 @@ class Parser:
                 left=expression,
                 operator="and",
                 right=right,
+                span=_cover(expression, right),
             )
-
         return expression
 
     def parse_equality(self) -> ExpressionNode:
         expression = self.parse_comparison()
-
         while self.current().kind in self._EQUALITY_OPERATORS:
             token = self.current()
             self.index += 1
@@ -699,13 +759,12 @@ class Parser:
                 left=expression,
                 operator=self._EQUALITY_OPERATORS[token.kind],
                 right=right,
+                span=_cover(expression, right),
             )
-
         return expression
 
     def parse_comparison(self) -> ExpressionNode:
         expression = self.parse_term()
-
         while self.current().kind in self._COMPARISON_OPERATORS:
             token = self.current()
             self.index += 1
@@ -714,13 +773,12 @@ class Parser:
                 left=expression,
                 operator=self._COMPARISON_OPERATORS[token.kind],
                 right=right,
+                span=_cover(expression, right),
             )
-
         return expression
 
     def parse_term(self) -> ExpressionNode:
         expression = self.parse_factor()
-
         while self.current().kind in self._TERM_OPERATORS:
             token = self.current()
             self.index += 1
@@ -729,13 +787,12 @@ class Parser:
                 left=expression,
                 operator=self._TERM_OPERATORS[token.kind],
                 right=right,
+                span=_cover(expression, right),
             )
-
         return expression
 
     def parse_factor(self) -> ExpressionNode:
         expression = self.parse_unary()
-
         while self.current().kind in self._FACTOR_OPERATORS:
             token = self.current()
             self.index += 1
@@ -744,34 +801,22 @@ class Parser:
                 left=expression,
                 operator=self._FACTOR_OPERATORS[token.kind],
                 right=right,
+                span=_cover(expression, right),
             )
-
         return expression
 
     def parse_unary(self) -> ExpressionNode:
         kind = self.current().kind
-
-        if kind == "NOT":
-            self.consume("NOT")
+        if kind in {"NOT", "PLUS", "MINUS"}:
+            token = self.current()
+            self.index += 1
+            operator = {"NOT": "not", "PLUS": "+", "MINUS": "-"}[kind]
+            operand = self.parse_unary()
             return UnaryExpressionNode(
-                operator="not",
-                operand=self.parse_unary(),
+                operator=operator,
+                operand=operand,
+                span=_cover(token, operand),
             )
-
-        if kind == "PLUS":
-            self.consume("PLUS")
-            return UnaryExpressionNode(
-                operator="+",
-                operand=self.parse_unary(),
-            )
-
-        if kind == "MINUS":
-            self.consume("MINUS")
-            return UnaryExpressionNode(
-                operator="-",
-                operand=self.parse_unary(),
-            )
-
         return self.parse_primary()
 
     def parse_primary(self) -> ExpressionNode:
@@ -779,50 +824,43 @@ class Parser:
 
         if token.kind == "NUMBER":
             number = self.consume("NUMBER")
-            return IntegerLiteralNode(
-                value=int(number.value),
-            )
+            return IntegerLiteralNode(value=int(number.value), span=number.span)
 
         if token.kind == "STRING":
             string = self.consume("STRING")
-            return StringLiteralNode(
-                value=string.value,
-            )
+            return StringLiteralNode(value=string.value, span=string.span)
 
         if token.kind == "TRUE":
-            self.consume("TRUE")
-            return BooleanLiteralNode(value=True)
+            boolean = self.consume("TRUE")
+            return BooleanLiteralNode(value=True, span=boolean.span)
 
         if token.kind == "FALSE":
-            self.consume("FALSE")
-            return BooleanLiteralNode(value=False)
+            boolean = self.consume("FALSE")
+            return BooleanLiteralNode(value=False, span=boolean.span)
 
         if token.kind == "IDENT":
             identifier = self.consume("IDENT")
-
-            # Compatibility with lexers that still emit booleans as IDENT.
             if identifier.value == "true":
-                return BooleanLiteralNode(value=True)
-
+                return BooleanLiteralNode(value=True, span=identifier.span)
             if identifier.value == "false":
-                return BooleanLiteralNode(value=False)
-
-            return IdentifierNode(
-                name=identifier.value,
-            )
+                return BooleanLiteralNode(value=False, span=identifier.span)
+            return IdentifierNode(name=identifier.value, span=identifier.span)
 
         if token.kind in self._LEFT_PAREN_KINDS:
-            self.consume_any(*self._LEFT_PAREN_KINDS)
+            opening = self.consume_any(*self._LEFT_PAREN_KINDS)
             expression = self.parse_expression()
-            self.consume_any(*self._RIGHT_PAREN_KINDS)
-            return expression
+            closing = self.consume_any(*self._RIGHT_PAREN_KINDS)
+            return replace(expression, span=_cover(opening, closing))
 
-        raise SyntaxError(
-            "Expected expression, got "
-            f"kind={token.kind!r}, "
-            f"value={token.value!r}, "
-            f"index={self.index}"
+        self._raise(
+            code="APX-PARSE-004",
+            message=(
+                "Expected expression, got "
+                f"kind={token.kind!r}, value={token.value!r}."
+            ),
+            token=token,
         )
+        raise AssertionError("unreachable")
 
 
 # ============================================================================
@@ -830,14 +868,22 @@ class Parser:
 # ============================================================================
 
 
-def parse(source: str) -> object:
-    parser = Parser(lex(source))
+def parse(
+    source: str,
+    *,
+    source_name: str = "<memory>",
+) -> object:
+    parser = Parser(
+        lex(source, source_name=source_name),
+        source_name=source_name,
+    )
     node = parser.parse()
     parser.consume("EOF")
     return node
 
 
 __all__ = [
+    "ParseError",
     "ExpressionNode",
     "IntegerLiteralNode",
     "StringLiteralNode",
