@@ -1,4 +1,4 @@
-"""ApexForge multi-source project construction with AFP-P6 modules."""
+"""ApexForge multi-source project construction with AFP-P7 functions."""
 
 from __future__ import annotations
 
@@ -226,6 +226,77 @@ class ProjectLinkError(ProjectBuildError):
         )
 
 
+def _reference_source_entries(
+    source_map: SourceMap,
+    *,
+    kind: str,
+    reference: str,
+    prefix: str,
+) -> tuple[Any, ...]:
+    candidates = [reference]
+
+    if reference.startswith(prefix):
+        plain = reference[len(prefix):]
+        if plain:
+            candidates.append(plain)
+    else:
+        candidates.append(f"{prefix}{reference}")
+
+    matches: list[Any] = []
+    seen: set[tuple[object, ...]] = set()
+
+    for candidate in candidates:
+        for entry in source_map.find(
+            kind=kind,
+            reference=candidate,
+        ):
+            key = (
+                entry.air_id,
+                entry.span.source_name,
+                entry.span.start.offset,
+                entry.span.end.offset,
+            )
+            if key not in seen:
+                seen.add(key)
+                matches.append(entry)
+
+    return tuple(matches)
+
+
+def _validation_location(
+    entries: tuple[Any, ...],
+) -> tuple[Optional[SourceSpan], str, tuple[SourceSpan, ...]]:
+    if not entries:
+        return None, "", ()
+
+    primary = entries[0]
+    related: list[SourceSpan] = []
+    seen = {
+        (
+            primary.span.source_name,
+            primary.span.start.offset,
+            primary.span.end.offset,
+        )
+    }
+
+    for entry in entries[1:]:
+        key = (
+            entry.span.source_name,
+            entry.span.start.offset,
+            entry.span.end.offset,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        related.append(entry.span)
+
+    return (
+        primary.span,
+        primary.air_id,
+        tuple(related),
+    )
+
+
 class ProjectValidationError(ProjectBuildError):
     def __init__(
         self,
@@ -233,52 +304,115 @@ class ProjectValidationError(ProjectBuildError):
         *,
         source_map: SourceMap,
     ) -> None:
+        carried = diagnostics_from_exception(
+            cause
+        )
+
+        if carried:
+            super().__init__(
+                "Linked AIR project validation failed.",
+                diagnostics=carried,
+                cause=cause,
+            )
+            return
+
         message = str(
             cause
         )
-        span: Optional[SourceSpan] = None
-        air_id = ""
         code = "APX-VALIDATE-999"
+        entries: tuple[Any, ...] = ()
 
         invocation_match = re.search(
             r"invokes undefined directive\s+'([^']+)'",
             message,
         )
+        undefined_function_match = re.search(
+            r"calls undefined function\s+'([^']+)'",
+            message,
+        )
+        arity_match = re.search(
+            r"calls function\s+'([^']+)'\s+with\s+"
+            r"\d+\s+argument\(s\);\s+expected\s+\d+",
+            message,
+        )
+        recursion_match = re.search(
+            r"Recursive function cycle detected:\s*(.+?)\.?$",
+            message,
+        )
 
         if invocation_match is not None:
-            target = invocation_match.group(
-                1
-            )
-            matches = source_map.find(
+            entries = _reference_source_entries(
+                source_map,
                 kind="directive_invocation",
-                reference=target,
+                reference=invocation_match.group(1),
+                prefix="directive:",
             )
-
-            if (
-                not matches
-                and target.startswith(
-                    "directive:"
-                )
-            ):
-                matches = source_map.find(
-                    kind="directive_invocation",
-                    reference=target[
-                        len(
-                            "directive:"
-                        ):
-                    ],
-                )
-
-            if matches:
-                span = matches[
-                    0
-                ].span
-                air_id = matches[
-                    0
-                ].air_id
-
             code = "APX-VALIDATE-002"
 
+        elif undefined_function_match is not None:
+            entries = _reference_source_entries(
+                source_map,
+                kind="function_call",
+                reference=undefined_function_match.group(1),
+                prefix="function:",
+            )
+            code = "APX-VALIDATE-003"
+
+        elif arity_match is not None:
+            entries = _reference_source_entries(
+                source_map,
+                kind="function_call",
+                reference=arity_match.group(1),
+                prefix="function:",
+            )
+            code = "APX-VALIDATE-004"
+
+        elif recursion_match is not None:
+            cycle_names = tuple(
+                name.strip()
+                for name in recursion_match.group(1).rstrip(".").split("->")
+                if name.strip()
+            )
+            collected: list[Any] = []
+
+            for name in cycle_names:
+                declaration_matches = source_map.find(
+                    kind="function",
+                    reference=name,
+                )
+                if not declaration_matches and name.startswith(
+                    "function:"
+                ):
+                    declaration_matches = source_map.find(
+                        kind="function",
+                        reference=name[len("function:"):],
+                    )
+                collected.extend(declaration_matches[:1])
+
+            entries = tuple(collected)
+            code = "APX-VALIDATE-005"
+
+        else:
+            function_owner = re.search(
+                r"[Ff]unction\s+'([^']+)'",
+                message,
+            )
+            if function_owner is not None:
+                function_reference = function_owner.group(1)
+                plain_reference = (
+                    function_reference[len("function:"):]
+                    if function_reference.startswith("function:")
+                    else function_reference
+                )
+                entries = source_map.find(
+                    kind="function",
+                    reference=plain_reference,
+                )
+                code = "APX-VALIDATE-006"
+
+        span, air_id, related_spans = _validation_location(
+            entries
+        )
         diagnostic = BuildDiagnostic(
             severity="error",
             code=code,
@@ -286,6 +420,7 @@ class ProjectValidationError(ProjectBuildError):
             stage="validate",
             span=span,
             air_id=air_id,
+            related_spans=related_spans,
         )
 
         super().__init__(

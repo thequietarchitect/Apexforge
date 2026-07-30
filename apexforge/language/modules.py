@@ -12,6 +12,7 @@ ApexForge top-level declaration:
 
 Module headers are masked, not removed, before ordinary lexing. Masking
 preserves every source offset, line, and column used by AFP-P5 diagnostics.
+AFP-P7 extends direct-import visibility from directives to pure functions.
 """
 
 from __future__ import annotations
@@ -796,11 +797,12 @@ def validate_module_visibility(
     graph: ModuleGraph,
     compiled_by_module: dict[str, object],
 ) -> None:
-    """Require invocation targets to be local or directly imported.
+    """Require directive and function targets to be directly visible.
 
-    AIR identifiers remain globally unique in AFP-P6. Modules establish
-    dependency ownership and visibility; namespace-qualified AIR IDs are a
-    later compatibility milestone.
+    AIR identifiers remain globally unique. Modules establish dependency
+    ownership and direct-import visibility for both behavioral directives and
+    AFP-P7 pure functions. Undefined targets remain RuntimeValidator
+    responsibility after linking.
     """
 
     if not isinstance(
@@ -826,27 +828,42 @@ def validate_module_visibility(
             None,
         )
 
-        for directive in tuple(
-            getattr(
-                program,
-                "directives",
-                (),
-            )
-            or ()
+        for attribute in (
+            "directives",
+            "functions",
         ):
-            identifier = getattr(
-                directive,
-                "id",
-                "",
-            )
+            for definition in tuple(
+                getattr(
+                    program,
+                    attribute,
+                    (),
+                )
+                or ()
+            ):
+                identifier = getattr(
+                    definition,
+                    "id",
+                    "",
+                )
 
-            if isinstance(
-                identifier,
-                str,
-            ) and identifier:
-                definition_owner[
-                    identifier
-                ] = module_name
+                if isinstance(
+                    identifier,
+                    str,
+                ) and identifier:
+                    definition_owner[
+                        identifier
+                    ] = module_name
+
+    reference_specs = {
+        "directive_invocation": (
+            "directive:",
+            "invokes",
+        ),
+        "function_call": (
+            "function:",
+            "calls",
+        ),
+    }
 
     for module_name in graph.order:
         artifact = compiled_by_module[
@@ -873,13 +890,19 @@ def validate_module_visibility(
         }
 
         for entry in entries:
-            if getattr(
+            kind = getattr(
                 entry,
                 "kind",
                 "",
-            ) != "directive_invocation":
+            )
+            spec = reference_specs.get(
+                kind
+            )
+
+            if spec is None:
                 continue
 
+            prefix, verb = spec
             reference = getattr(
                 entry,
                 "reference",
@@ -895,9 +918,9 @@ def validate_module_visibility(
             target_id = (
                 reference
                 if reference.startswith(
-                    "directive:"
+                    prefix
                 )
-                else f"directive:{reference}"
+                else f"{prefix}{reference}"
             )
             owner = definition_owner.get(
                 target_id
@@ -915,7 +938,7 @@ def validate_module_visibility(
                     _diagnostic(
                         code="APX-MODULE-008",
                         message=(
-                            f"Module {module_name!r} invokes "
+                            f"Module {module_name!r} {verb} "
                             f"{target_id!r} from module {owner!r} "
                             "without directly importing it."
                         ),

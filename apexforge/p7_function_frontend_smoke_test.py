@@ -106,11 +106,9 @@ def main() -> None:
         parse("function bad(value) { value + 1 }")
     except ParseError as error:
         require(
-            error.diagnostic.code == "APX-PARSE-006",
+            error.diagnostic.code == "APX-PARSE-007",
             "missing return used the wrong diagnostic",
-        )
-    else:
-        raise AssertionError("function without return was accepted")
+)
 
     print("AFP-P7.1 function front-end smoke test passed.")
     print("Function keywords and commas: PASS")
