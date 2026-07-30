@@ -1270,12 +1270,69 @@ class RuntimeEngine:
             )
         )
 
+        active_frame = frame
+
         try:
+            for binding_index, binding in enumerate(
+                tuple(
+                    getattr(function, "local_bindings", ()) or ()
+                )
+            ):
+                local_name = getattr(binding, "name", None)
+
+                if not isinstance(local_name, str) or not local_name.strip():
+                    raise RuntimeExpressionError(
+                        f"function '{function.id}' contains an invalid "
+                        f"local binding at index {binding_index}",
+                        trace_steps=tuple(trace_steps),
+                    )
+
+                if not hasattr(binding, "expression"):
+                    raise RuntimeExpressionError(
+                        f"function '{function.id}' local "
+                        f"'{local_name}' has no expression",
+                        trace_steps=tuple(trace_steps),
+                    )
+
+                local_value = self._evaluate_expression(
+                    getattr(binding, "expression"),
+                    state,
+                    functions=functions,
+                    frame=active_frame,
+                    call_stack=nested_stack,
+                    trace_steps=trace_steps,
+                )
+
+                try:
+                    active_frame = active_frame.with_binding(
+                        local_name,
+                        local_value,
+                    )
+                except ValueError as exc:
+                    raise RuntimeExpressionError(
+                        str(exc),
+                        trace_steps=tuple(trace_steps),
+                    ) from exc
+
+                trace_steps.append(
+                    TraceStep(
+                        "function.local.bind",
+                        "bound immutable function local",
+                        facts(
+                            depth=active_frame.depth,
+                            function=function.id,
+                            index=binding_index,
+                            local=local_name,
+                            value_type=type(local_value).__name__,
+                        ),
+                    )
+                )
+
             value = self._evaluate_expression(
                 function.return_expression,
                 state,
                 functions=functions,
-                frame=frame,
+                frame=active_frame,
                 call_stack=nested_stack,
                 trace_steps=trace_steps,
             )

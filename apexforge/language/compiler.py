@@ -39,6 +39,7 @@ from language.parser import (
     UnaryExpressionNode,
     BinaryExpressionNode,
     CallExpressionNode,
+    LetNode,
     FunctionNode,
     RoleNode,
     SetActionNode,
@@ -54,7 +55,7 @@ from air.expressions import (
     AIRBinaryExpression,
     AIRCallExpression,
 )
-from air.functions import AIRFunction, AIRParameter
+from air.functions import AIRFunction, AIRLocalBinding, AIRParameter
 from language.source import SourceSpan
 
 
@@ -646,7 +647,7 @@ def _compile_directive_with_map(
 def _compile_function_with_map(
     node: FunctionNode,
 ) -> CompiledSource:
-    """Compile one P7.1 pure function into an independently linkable AIR unit."""
+    """Compile one pure function into an independently linkable AIR unit."""
 
     function_id = f"function:{node.name}"
     entries: list[SourceMapEntry] = []
@@ -659,17 +660,17 @@ def _compile_function_with_map(
     )
 
     parameter_names = tuple(parameter.name for parameter in node.parameters)
-    duplicate_names = tuple(
+    duplicate_parameters = tuple(
         name
         for name in dict.fromkeys(parameter_names)
         if parameter_names.count(name) > 1
     )
-    if duplicate_names:
+    if duplicate_parameters:
         raise _compile_error(
             code="APX-COMPILE-008",
             message=(
                 f"Function {node.name!r} declares duplicate parameter "
-                f"{duplicate_names[0]!r}."
+                f"{duplicate_parameters[0]!r}."
             ),
             node=node,
             air_id=function_id,
@@ -682,6 +683,50 @@ def _compile_function_with_map(
             node=parameter,
             kind="function_parameter",
             reference=parameter.name,
+        )
+
+    local_nodes = tuple(
+        getattr(node, "local_bindings", ()) or ()
+    )
+    local_names = tuple(binding.name for binding in local_nodes)
+    duplicate_locals = tuple(
+        name
+        for name in dict.fromkeys(local_names)
+        if local_names.count(name) > 1
+    )
+
+    if duplicate_locals:
+        raise _compile_error(
+            code="APX-COMPILE-009",
+            message=(
+                f"Function {node.name!r} declares duplicate local "
+                f"{duplicate_locals[0]!r}."
+            ),
+            node=node,
+            air_id=function_id,
+        )
+
+    shadowed = tuple(
+        name for name in local_names if name in set(parameter_names)
+    )
+    if shadowed:
+        raise _compile_error(
+            code="APX-COMPILE-010",
+            message=(
+                f"Function {node.name!r} local {shadowed[0]!r} "
+                "cannot shadow a parameter."
+            ),
+            node=node,
+            air_id=function_id,
+        )
+
+    for index, binding in enumerate(local_nodes):
+        _append_source_entry(
+            entries,
+            air_id=f"local:{node.name}:{index}",
+            node=binding,
+            kind="function_local",
+            reference=binding.name,
         )
 
     program = AIRProgram(
@@ -707,6 +752,15 @@ def _compile_function_with_map(
                     node.return_statement.expression
                 ),
                 order=0,
+                local_bindings=tuple(
+                    AIRLocalBinding(
+                        name=binding.name,
+                        expression=compile_expression(
+                            binding.expression
+                        ),
+                    )
+                    for binding in local_nodes
+                ),
             ),
         ),
     )

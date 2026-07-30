@@ -52,6 +52,7 @@ KEYWORDS = {
     # AFP-P7.1 pure-function core.
     "function": "FUNCTION",
     "return": "RETURN",
+    "let": "LET",
 }
 
 

@@ -80,6 +80,13 @@ class ParameterNode:
 
 
 @dataclass(frozen=True)
+class LetNode:
+    name: str
+    expression: ExpressionNode
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+
+
+@dataclass(frozen=True)
 class ReturnNode:
     expression: ExpressionNode
     span: Optional[SourceSpan] = field(default=None, compare=False)
@@ -90,6 +97,8 @@ class FunctionNode:
     name: str
     parameters: tuple[ParameterNode, ...]
     return_statement: ReturnNode
+    # Added after the P7.1 fields for positional-constructor compatibility.
+    local_bindings: tuple[LetNode, ...] = ()
     span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
@@ -389,7 +398,7 @@ class Parser:
     # ======================================================================
 
     def parse_function(self) -> FunctionNode:
-        """Parse a P7.1 pure function with one return expression."""
+        """Parse a pure function with ordered immutable local bindings."""
 
         start = self.consume("FUNCTION")
         name = self.consume("IDENT")
@@ -411,12 +420,27 @@ class Parser:
         self.consume_any(*self._RIGHT_PAREN_KINDS)
         self.consume("LBRACE")
 
+        local_bindings: list[LetNode] = []
+
+        while self.current().kind == "LET":
+            binding_start = self.consume("LET")
+            binding_name = self.consume("IDENT")
+            self.consume("EQUAL")
+            expression = self.parse_expression()
+            local_bindings.append(
+                LetNode(
+                    name=binding_name.value,
+                    expression=expression,
+                    span=_cover(binding_start, expression),
+                )
+            )
+
         if self.current().kind != "RETURN":
             self._raise(
                 code="APX-PARSE-006",
                 message=(
-                    f"Function {name.value!r} must contain exactly one "
-                    "return expression in AFP-P7.1."
+                    f"Function {name.value!r} must end with a return "
+                    "expression after any let bindings."
                 ),
             )
 
@@ -432,6 +456,7 @@ class Parser:
             name=name.value,
             parameters=tuple(parameters),
             return_statement=return_statement,
+            local_bindings=tuple(local_bindings),
             span=_cover(start, closing),
         )
 
@@ -987,6 +1012,7 @@ __all__ = [
     "BinaryExpressionNode",
     "CallExpressionNode",
     "ParameterNode",
+    "LetNode",
     "ReturnNode",
     "FunctionNode",
     "StateNode",

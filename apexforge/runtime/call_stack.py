@@ -130,6 +130,38 @@ class CallFrame:
             depth=depth,
         )
 
+    def with_binding(
+        self,
+        name: str,
+        value: Any,
+    ) -> "CallFrame":
+        """Return a new frame extended by one immutable local binding."""
+
+        normalized_name = name.strip() if isinstance(name, str) else ""
+
+        if not normalized_name:
+            raise ValueError(
+                "CallFrame.with_binding name must be a non-empty string."
+            )
+
+        if any(
+            binding.name == normalized_name
+            for binding in self.bindings
+        ):
+            raise ValueError(
+                f"duplicate call-frame binding {normalized_name!r}."
+            )
+
+        return type(self)(
+            function_id=self.function_id,
+            function_name=self.function_name,
+            bindings=(
+                self.bindings
+                + (LocalBinding(normalized_name, value),)
+            ),
+            depth=self.depth,
+        )
+
     def try_resolve(
         self,
         name: str,

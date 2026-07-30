@@ -292,7 +292,7 @@ class RuntimeValidator:
         functions: Iterable[Any],
         function_index: Mapping[str, Any],
     ) -> None:
-        """Validate linked P7 pure-function declarations and their call graph."""
+        """Validate pure functions, ordered locals, and their call graph."""
 
         function_values = tuple(functions)
         orders: set[int] = set()
@@ -319,7 +319,7 @@ class RuntimeValidator:
                 getattr(function, "parameters", ()) or ()
             )
             parameter_names: list[str] = []
-            seen_parameters: set[str] = set()
+            visible_names: set[str] = set()
 
             for index, parameter in enumerate(parameters):
                 parameter_name = self._required_string(
@@ -329,14 +329,52 @@ class RuntimeValidator:
                     ),
                 )
 
-                if parameter_name in seen_parameters:
+                if parameter_name in visible_names:
                     raise DuplicateDefinitionError(
                         f"Function '{function_id}' declares duplicate "
                         f"parameter '{parameter_name}'."
                     )
 
-                seen_parameters.add(parameter_name)
+                visible_names.add(parameter_name)
                 parameter_names.append(parameter_name)
+
+            local_bindings = tuple(
+                getattr(function, "local_bindings", ()) or ()
+            )
+
+            for index, binding in enumerate(local_bindings):
+                local_name = self._required_string(
+                    getattr(binding, "name", None),
+                    description=(
+                        f"function '{function_id}' local[{index}] name"
+                    ),
+                )
+
+                if local_name in visible_names:
+                    raise DuplicateDefinitionError(
+                        f"Function '{function_id}' local '{local_name}' "
+                        "duplicates or shadows an existing binding."
+                    )
+
+                if not hasattr(binding, "expression"):
+                    raise InvalidValueError(
+                        f"Function '{function_id}' local '{local_name}' "
+                        "is missing its expression."
+                    )
+
+                # A local may reference parameters and earlier locals, but not
+                # itself or a later declaration.
+                self._validate_expression(
+                    getattr(binding, "expression"),
+                    state_ids=set(),
+                    owner=(
+                        f"function '{function_id}' local "
+                        f"'{local_name}' expression"
+                    ),
+                    local_names=frozenset(visible_names),
+                    allow_state_references=False,
+                )
+                visible_names.add(local_name)
 
             if not hasattr(function, "return_expression"):
                 raise InvalidValueError(
@@ -358,14 +396,11 @@ class RuntimeValidator:
 
             orders.add(order)
 
-            # P7 pure functions are closed over their immutable parameters.
-            # State must be passed explicitly by the caller rather than read as
-            # hidden global input.
             self._validate_expression(
                 getattr(function, "return_expression"),
                 state_ids=set(),
                 owner=f"function '{function_id}' return expression",
-                local_names=frozenset(parameter_names),
+                local_names=frozenset(visible_names),
                 allow_state_references=False,
             )
 
@@ -388,7 +423,15 @@ class RuntimeValidator:
                 getattr(function, "id", None),
                 description="function id",
             )
-            raw_targets = self._collect_function_call_targets(
+            raw_targets = tuple(
+                target
+                for binding in tuple(
+                    getattr(function, "local_bindings", ()) or ()
+                )
+                for target in self._collect_function_call_targets(
+                    getattr(binding, "expression", None)
+                )
+            ) + self._collect_function_call_targets(
                 getattr(function, "return_expression"),
             )
             resolved_targets: list[str] = []
@@ -1554,7 +1597,7 @@ class RuntimeValidator:
                 )
 
             raise UndefinedReferenceError(
-                f"{owner} references undefined function parameter "
+                f"{owner} references undefined function-local identifier "
                 f"'{reference}'."
             )
 
