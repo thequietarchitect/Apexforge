@@ -41,6 +41,9 @@ from language.parser import (
     CallExpressionNode,
     LetNode,
     FunctionNode,
+    FunctionWhenNode,
+    LetNode,
+    ReturnNode,
     RoleNode,
     SetActionNode,
     parse,
@@ -55,7 +58,13 @@ from air.expressions import (
     AIRBinaryExpression,
     AIRCallExpression,
 )
-from air.functions import AIRFunction, AIRLocalBinding, AIRParameter
+from air.functions import (
+    AIRFunction,
+    AIRFunctionReturn,
+    AIRFunctionWhen,
+    AIRLocalBinding,
+    AIRParameter,
+)
 from language.source import SourceSpan
 
 
@@ -644,6 +653,93 @@ def _compile_directive_with_map(
     return CompiledSource(program=program, source_map=SourceMap(tuple(entries)))
 
 
+def _compile_function_statements(
+    statements: tuple[object, ...],
+    *,
+    function_name: str,
+    entries: list[SourceMapEntry],
+    scope: str = "body",
+) -> tuple[object, ...]:
+    """Compile one ordered pure-function statement stream recursively."""
+
+    compiled: list[object] = []
+
+    for index, statement in enumerate(statements):
+        statement_scope = f"{scope}:{index}"
+
+        if isinstance(statement, LetNode):
+            air_id = f"local:{function_name}:{statement_scope}"
+            compiled.append(
+                AIRLocalBinding(
+                    name=statement.name,
+                    expression=compile_expression(statement.expression),
+                )
+            )
+            _append_source_entry(
+                entries,
+                air_id=air_id,
+                node=statement,
+                kind="function_local",
+                reference=statement.name,
+            )
+            continue
+
+        if isinstance(statement, ReturnNode):
+            air_id = f"return:{function_name}:{statement_scope}"
+            compiled.append(
+                AIRFunctionReturn(
+                    expression=compile_expression(statement.expression),
+                )
+            )
+            _append_source_entry(
+                entries,
+                air_id=air_id,
+                node=statement,
+                kind="function_return",
+                reference=function_name,
+            )
+            continue
+
+        if isinstance(statement, FunctionWhenNode):
+            air_id = f"function_when:{function_name}:{statement_scope}"
+            compiled.append(
+                AIRFunctionWhen(
+                    condition=compile_expression(statement.condition),
+                    actions=_compile_function_statements(
+                        statement.actions,
+                        function_name=function_name,
+                        entries=entries,
+                        scope=f"{statement_scope}:when",
+                    ),
+                    otherwise_actions=_compile_function_statements(
+                        statement.otherwise_actions,
+                        function_name=function_name,
+                        entries=entries,
+                        scope=f"{statement_scope}:otherwise",
+                    ),
+                )
+            )
+            _append_source_entry(
+                entries,
+                air_id=air_id,
+                node=statement,
+                kind="function_conditional",
+                reference=function_name,
+            )
+            continue
+
+        raise _compile_error(
+            code="APX-COMPILE-011",
+            message=(
+                "Unsupported pure-function statement "
+                f"{type(statement).__module__}.{type(statement).__name__}."
+            ),
+            node=statement,
+        )
+
+    return tuple(compiled)
+
+
 def _compile_function_with_map(
     node: FunctionNode,
 ) -> CompiledSource:
@@ -685,6 +781,8 @@ def _compile_function_with_map(
             reference=parameter.name,
         )
 
+    # Retain the P7.2A compile-time checks for the leading-local compatibility
+    # projection. Full branch-local scope validation belongs to RuntimeValidator.
     local_nodes = tuple(
         getattr(node, "local_bindings", ()) or ()
     )
@@ -720,14 +818,15 @@ def _compile_function_with_map(
             air_id=function_id,
         )
 
-    for index, binding in enumerate(local_nodes):
-        _append_source_entry(
-            entries,
-            air_id=f"local:{node.name}:{index}",
-            node=binding,
-            kind="function_local",
-            reference=binding.name,
-        )
+    body_nodes = tuple(getattr(node, "body", ()) or ())
+    if not body_nodes:
+        body_nodes = local_nodes + (node.return_statement,)
+
+    compiled_body = _compile_function_statements(
+        body_nodes,
+        function_name=node.name,
+        entries=entries,
+    )
 
     program = AIRProgram(
         version=AIR_VERSION,
@@ -755,12 +854,11 @@ def _compile_function_with_map(
                 local_bindings=tuple(
                     AIRLocalBinding(
                         name=binding.name,
-                        expression=compile_expression(
-                            binding.expression
-                        ),
+                        expression=compile_expression(binding.expression),
                     )
                     for binding in local_nodes
                 ),
+                body=compiled_body,
             ),
         ),
     )

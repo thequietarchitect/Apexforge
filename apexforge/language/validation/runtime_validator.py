@@ -38,6 +38,13 @@ from typing import Any, Iterable, Mapping, Sequence
 from air.model import AIRProgram, VerifiedAIRProgram
 
 
+class _LegacyFunctionReturn:
+    """Internal adapter for P7.1 AIRFunction.return_expression."""
+
+    def __init__(self, expression: Any) -> None:
+        self.expression = expression
+
+
 # ============================================================================
 # Validation errors
 # ============================================================================
@@ -292,7 +299,7 @@ class RuntimeValidator:
         functions: Iterable[Any],
         function_index: Mapping[str, Any],
     ) -> None:
-        """Validate pure functions, ordered locals, and their call graph."""
+        """Validate pure-function statements, scope, returns, and calls."""
 
         function_values = tuple(functions)
         orders: set[int] = set()
@@ -312,13 +319,11 @@ class RuntimeValidator:
                 raise DuplicateDefinitionError(
                     f"Duplicate function name '{function_name}'."
                 )
-
             names.add(function_name)
 
             parameters = tuple(
                 getattr(function, "parameters", ()) or ()
             )
-            parameter_names: list[str] = []
             visible_names: set[str] = set()
 
             for index, parameter in enumerate(parameters):
@@ -334,87 +339,183 @@ class RuntimeValidator:
                         f"Function '{function_id}' declares duplicate "
                         f"parameter '{parameter_name}'."
                     )
-
                 visible_names.add(parameter_name)
-                parameter_names.append(parameter_name)
-
-            local_bindings = tuple(
-                getattr(function, "local_bindings", ()) or ()
-            )
-
-            for index, binding in enumerate(local_bindings):
-                local_name = self._required_string(
-                    getattr(binding, "name", None),
-                    description=(
-                        f"function '{function_id}' local[{index}] name"
-                    ),
-                )
-
-                if local_name in visible_names:
-                    raise DuplicateDefinitionError(
-                        f"Function '{function_id}' local '{local_name}' "
-                        "duplicates or shadows an existing binding."
-                    )
-
-                if not hasattr(binding, "expression"):
-                    raise InvalidValueError(
-                        f"Function '{function_id}' local '{local_name}' "
-                        "is missing its expression."
-                    )
-
-                # A local may reference parameters and earlier locals, but not
-                # itself or a later declaration.
-                self._validate_expression(
-                    getattr(binding, "expression"),
-                    state_ids=set(),
-                    owner=(
-                        f"function '{function_id}' local "
-                        f"'{local_name}' expression"
-                    ),
-                    local_names=frozenset(visible_names),
-                    allow_state_references=False,
-                )
-                visible_names.add(local_name)
-
-            if not hasattr(function, "return_expression"):
-                raise InvalidValueError(
-                    f"Function '{function_id}' is missing its return expression."
-                )
 
             order = getattr(function, "order", 0)
-
             if isinstance(order, bool) or not isinstance(order, int):
                 raise InvalidValueError(
                     f"Function '{function_id}' order must be an integer; "
                     f"received {type(order).__name__}."
                 )
-
             if order in orders:
                 raise DuplicateDefinitionError(
                     f"Duplicate function order '{order}'."
                 )
-
             orders.add(order)
 
-            self._validate_expression(
-                getattr(function, "return_expression"),
-                state_ids=set(),
-                owner=f"function '{function_id}' return expression",
-                local_names=frozenset(visible_names),
-                allow_state_references=False,
+            body = self._function_body(function)
+            definitely_returns = self._validate_function_statements(
+                statements=body,
+                visible_names=frozenset(visible_names),
+                function_id=function_id,
+                owner=f"function '{function_id}' body",
+                depth=0,
             )
+
+            if not definitely_returns:
+                raise InvalidValueError(
+                    f"Function '{function_id}' does not return on every "
+                    "reachable control-flow path."
+                )
 
         self._validate_function_call_graph(
             functions=function_values,
             function_index=function_index,
         )
 
+    def _function_body(
+        self,
+        function: Any,
+    ) -> tuple[Any, ...]:
+        body = tuple(getattr(function, "body", ()) or ())
+        if body:
+            return body
+
+        legacy = tuple(
+            getattr(function, "local_bindings", ()) or ()
+        )
+        if not hasattr(function, "return_expression"):
+            raise InvalidValueError(
+                f"Function '{getattr(function, 'id', '<unknown>')}' is "
+                "missing its return expression."
+            )
+
+        return_expression = getattr(function, "return_expression")
+        if return_expression is None:
+            raise InvalidValueError(
+                f"Function '{getattr(function, 'id', '<unknown>')}' is "
+                "missing its return expression."
+            )
+
+        # Lightweight compatibility object so older P7.1 AIR validates through
+        # the same statement pipeline without importing air.functions.
+        return legacy + (_LegacyFunctionReturn(return_expression),)
+
+    def _validate_function_statements(
+        self,
+        *,
+        statements: Sequence[Any],
+        visible_names: frozenset[str],
+        function_id: str,
+        owner: str,
+        depth: int,
+    ) -> bool:
+        if depth > 64:
+            raise InvalidValueError(
+                f"{owner} exceeds the maximum function conditional "
+                "nesting depth of 64."
+            )
+
+        current_names = set(visible_names)
+        definitely_returns = False
+
+        for index, statement in enumerate(tuple(statements)):
+            statement_owner = f"{owner} statement[{index}]"
+            statement_type = type(statement).__name__
+
+            if statement_type == "AIRLocalBinding":
+                local_name = self._required_string(
+                    getattr(statement, "name", None),
+                    description=f"{statement_owner} local name",
+                )
+                if local_name in current_names:
+                    raise DuplicateDefinitionError(
+                        f"Function '{function_id}' local '{local_name}' "
+                        "duplicates or shadows an existing binding."
+                    )
+                if not hasattr(statement, "expression"):
+                    raise InvalidValueError(
+                        f"{statement_owner} local '{local_name}' is missing "
+                        "its expression."
+                    )
+                self._validate_expression(
+                    getattr(statement, "expression"),
+                    state_ids=set(),
+                    owner=f"{statement_owner} expression",
+                    local_names=frozenset(current_names),
+                    allow_state_references=False,
+                )
+                current_names.add(local_name)
+                continue
+
+            if statement_type in {"AIRFunctionReturn", "_LegacyFunctionReturn"}:
+                if not hasattr(statement, "expression"):
+                    raise InvalidValueError(
+                        f"{statement_owner} return is missing its expression."
+                    )
+                self._validate_expression(
+                    getattr(statement, "expression"),
+                    state_ids=set(),
+                    owner=f"{statement_owner} return expression",
+                    local_names=frozenset(current_names),
+                    allow_state_references=False,
+                )
+                definitely_returns = True
+                continue
+
+            if statement_type == "AIRFunctionWhen":
+                if not hasattr(statement, "condition"):
+                    raise InvalidValueError(
+                        f"{statement_owner} conditional is missing its "
+                        "condition."
+                    )
+                self._validate_expression(
+                    getattr(statement, "condition"),
+                    state_ids=set(),
+                    owner=f"{statement_owner} condition",
+                    local_names=frozenset(current_names),
+                    allow_state_references=False,
+                )
+
+                true_returns = self._validate_function_statements(
+                    statements=tuple(
+                        getattr(statement, "actions", ()) or ()
+                    ),
+                    visible_names=frozenset(current_names),
+                    function_id=function_id,
+                    owner=f"{statement_owner} when block",
+                    depth=depth + 1,
+                )
+                otherwise_actions = tuple(
+                    getattr(statement, "otherwise_actions", ()) or ()
+                )
+                false_returns = False
+                if otherwise_actions:
+                    false_returns = self._validate_function_statements(
+                        statements=otherwise_actions,
+                        visible_names=frozenset(current_names),
+                        function_id=function_id,
+                        owner=f"{statement_owner} otherwise block",
+                        depth=depth + 1,
+                    )
+
+                if true_returns and false_returns:
+                    definitely_returns = True
+                continue
+
+            raise InvalidValueError(
+                f"{statement_owner} has unsupported pure-function "
+                f"statement type '{statement_type}'."
+            )
+
+        return definitely_returns
+
     def _validate_function_call_graph(
         self,
         functions: Sequence[Any],
         function_index: Mapping[str, Any],
     ) -> None:
-        """Reject direct and indirect recursion for the P7.1 pure-function core."""
+        """Reject direct and indirect recursion across full function bodies."""
 
         graph: dict[str, tuple[str, ...]] = {}
 
@@ -423,16 +524,8 @@ class RuntimeValidator:
                 getattr(function, "id", None),
                 description="function id",
             )
-            raw_targets = tuple(
-                target
-                for binding in tuple(
-                    getattr(function, "local_bindings", ()) or ()
-                )
-                for target in self._collect_function_call_targets(
-                    getattr(binding, "expression", None)
-                )
-            ) + self._collect_function_call_targets(
-                getattr(function, "return_expression"),
+            raw_targets = self._collect_function_statement_call_targets(
+                self._function_body(function)
             )
             resolved_targets: list[str] = []
 
@@ -441,14 +534,8 @@ class RuntimeValidator:
                     target,
                     function_index,
                 )
-
-                # Undefined targets are already diagnosed by expression
-                # validation. Keep this guard so malformed future call nodes do
-                # not corrupt cycle analysis.
-                if resolved is None:
-                    continue
-
-                resolved_targets.append(resolved)
+                if resolved is not None:
+                    resolved_targets.append(resolved)
 
             graph[function_id] = tuple(resolved_targets)
 
@@ -459,15 +546,11 @@ class RuntimeValidator:
         def visit(function_id: str) -> None:
             if function_id in visited:
                 return
-
             if function_id in active:
                 cycle_start = stack.index(function_id)
                 cycle = stack[cycle_start:] + [function_id]
                 rendered = " -> ".join(
-                    self._function_display_name(
-                        identifier,
-                        function_index,
-                    )
+                    self._function_display_name(identifier, function_index)
                     for identifier in cycle
                 )
                 raise InvalidValueError(
@@ -476,10 +559,8 @@ class RuntimeValidator:
 
             active.add(function_id)
             stack.append(function_id)
-
             for target_id in graph.get(function_id, ()):
                 visit(target_id)
-
             stack.pop()
             active.remove(function_id)
             visited.add(function_id)
@@ -497,18 +578,49 @@ class RuntimeValidator:
                 ),
             )
         )
-
         for function_id in ordered_ids:
             visit(function_id)
+
+    def _collect_function_statement_call_targets(
+        self,
+        statements: Sequence[Any],
+    ) -> tuple[str, ...]:
+        targets: tuple[str, ...] = ()
+
+        for statement in tuple(statements):
+            statement_type = type(statement).__name__
+            if statement_type == "AIRLocalBinding":
+                targets += self._collect_function_call_targets(
+                    getattr(statement, "expression", None)
+                )
+                continue
+            if statement_type in {"AIRFunctionReturn", "_LegacyFunctionReturn"}:
+                targets += self._collect_function_call_targets(
+                    getattr(statement, "expression", None)
+                )
+                continue
+            if statement_type == "AIRFunctionWhen":
+                targets += self._collect_function_call_targets(
+                    getattr(statement, "condition", None)
+                )
+                targets += self._collect_function_statement_call_targets(
+                    tuple(getattr(statement, "actions", ()) or ())
+                )
+                targets += self._collect_function_statement_call_targets(
+                    tuple(
+                        getattr(statement, "otherwise_actions", ()) or ()
+                    )
+                )
+
+        return targets
 
     def _collect_function_call_targets(
         self,
         expression: Any,
     ) -> tuple[str, ...]:
-        """Return call targets in deterministic left-to-right expression order."""
+        """Return call targets in deterministic expression evaluation order."""
 
         expression_type = type(expression).__name__
-
         if expression_type in {
             "AIRIntegerLiteral",
             "AIRStringLiteral",
@@ -516,12 +628,10 @@ class RuntimeValidator:
             "AIRIdentifierReference",
         }:
             return ()
-
         if expression_type == "AIRUnaryExpression":
             return self._collect_function_call_targets(
                 getattr(expression, "operand"),
             )
-
         if expression_type == "AIRBinaryExpression":
             return (
                 self._collect_function_call_targets(
@@ -531,7 +641,6 @@ class RuntimeValidator:
                     getattr(expression, "right"),
                 )
             )
-
         if expression_type == "AIRCallExpression":
             target = self._required_string(
                 getattr(expression, "target", None),
@@ -547,9 +656,6 @@ class RuntimeValidator:
                 )
             )
             return (target,) + nested
-
-        # Expression validation produces the authoritative unsupported-type
-        # diagnostic before call-graph construction reaches this branch.
         return ()
 
     def _function_display_name(
@@ -559,13 +665,10 @@ class RuntimeValidator:
     ) -> str:
         function = function_index.get(function_id)
         name = getattr(function, "name", None)
-
         if isinstance(name, str) and name.strip():
             return name.strip()
-
         if function_id.startswith("function:"):
             return function_id[len("function:"):]
-
         return function_id
 
     # ======================================================================

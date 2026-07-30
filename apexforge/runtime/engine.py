@@ -85,6 +85,13 @@ class _DirectiveExecution:
     next_event_index: int
 
 
+@dataclass(frozen=True)
+class _FunctionBodyExecution:
+    returned: bool
+    value: Any
+    frame: CallFrame
+
+
 class RuntimeEngine:
     def __init__(
         self,
@@ -1273,69 +1280,84 @@ class RuntimeEngine:
         active_frame = frame
 
         try:
-            for binding_index, binding in enumerate(
-                tuple(
-                    getattr(function, "local_bindings", ()) or ()
+            body = tuple(getattr(function, "body", ()) or ())
+
+            if body:
+                body_result = self._execute_function_statements(
+                    statements=body,
+                    state=state,
+                    functions=functions,
+                    frame=active_frame,
+                    call_stack=nested_stack,
+                    trace_steps=trace_steps,
+                    depth=0,
                 )
-            ):
-                local_name = getattr(binding, "name", None)
 
-                if not isinstance(local_name, str) or not local_name.strip():
+                if not body_result.returned:
                     raise RuntimeExpressionError(
-                        f"function '{function.id}' contains an invalid "
-                        f"local binding at index {binding_index}",
+                        f"function '{function.id}' completed without return",
                         trace_steps=tuple(trace_steps),
                     )
 
-                if not hasattr(binding, "expression"):
-                    raise RuntimeExpressionError(
-                        f"function '{function.id}' local "
-                        f"'{local_name}' has no expression",
-                        trace_steps=tuple(trace_steps),
+                value = body_result.value
+            else:
+                # Backward-compatible P7.1/P7.2A execution path.
+                for binding_index, binding in enumerate(
+                    tuple(
+                        getattr(function, "local_bindings", ()) or ()
+                    )
+                ):
+                    local_name = getattr(binding, "name", None)
+                    if not isinstance(local_name, str) or not local_name.strip():
+                        raise RuntimeExpressionError(
+                            f"function '{function.id}' contains an invalid "
+                            f"local binding at index {binding_index}",
+                            trace_steps=tuple(trace_steps),
+                        )
+                    local_value = self._evaluate_expression(
+                        getattr(binding, "expression"),
+                        state,
+                        functions=functions,
+                        frame=active_frame,
+                        call_stack=nested_stack,
+                        trace_steps=trace_steps,
+                    )
+                    active_frame = active_frame.with_binding(
+                        local_name,
+                        local_value,
+                    )
+                    trace_steps.append(
+                        TraceStep(
+                            "function.local.bind",
+                            "bound immutable function local",
+                            facts(
+                                depth=active_frame.depth,
+                                function=function.id,
+                                index=binding_index,
+                                local=local_name,
+                                value_type=type(local_value).__name__,
+                            ),
+                        )
                     )
 
-                local_value = self._evaluate_expression(
-                    getattr(binding, "expression"),
+                return_expression = getattr(
+                    function,
+                    "return_expression",
+                    None,
+                )
+                if return_expression is None:
+                    raise RuntimeExpressionError(
+                        f"function '{function.id}' has no return expression",
+                        trace_steps=tuple(trace_steps),
+                    )
+                value = self._evaluate_expression(
+                    return_expression,
                     state,
                     functions=functions,
                     frame=active_frame,
                     call_stack=nested_stack,
                     trace_steps=trace_steps,
                 )
-
-                try:
-                    active_frame = active_frame.with_binding(
-                        local_name,
-                        local_value,
-                    )
-                except ValueError as exc:
-                    raise RuntimeExpressionError(
-                        str(exc),
-                        trace_steps=tuple(trace_steps),
-                    ) from exc
-
-                trace_steps.append(
-                    TraceStep(
-                        "function.local.bind",
-                        "bound immutable function local",
-                        facts(
-                            depth=active_frame.depth,
-                            function=function.id,
-                            index=binding_index,
-                            local=local_name,
-                            value_type=type(local_value).__name__,
-                        ),
-                    )
-                )
-
-            value = self._evaluate_expression(
-                function.return_expression,
-                state,
-                functions=functions,
-                frame=active_frame,
-                call_stack=nested_stack,
-                trace_steps=trace_steps,
-            )
         except RuntimeExpressionError as exc:
             trace_steps.append(
                 TraceStep(
@@ -1367,6 +1389,159 @@ class RuntimeEngine:
         )
 
         return value
+
+    def _execute_function_statements(
+        self,
+        *,
+        statements: Tuple[Any, ...],
+        state: StateSnapshot,
+        functions: Mapping[str, Any],
+        frame: CallFrame,
+        call_stack: CallStack,
+        trace_steps: list[TraceStep],
+        depth: int,
+    ) -> _FunctionBodyExecution:
+        """Execute immutable pure-function statements in lexical scope."""
+
+        if depth > MAX_CONDITIONAL_DEPTH:
+            raise RuntimeExpressionError(
+                "function conditional nesting exceeds runtime limit of "
+                f"{MAX_CONDITIONAL_DEPTH}",
+                trace_steps=tuple(trace_steps),
+            )
+
+        active_frame = frame
+
+        for statement_index, statement in enumerate(tuple(statements)):
+            statement_type = type(statement).__name__
+
+            if statement_type == "AIRLocalBinding":
+                local_name = getattr(statement, "name", None)
+                if not isinstance(local_name, str) or not local_name.strip():
+                    raise RuntimeExpressionError(
+                        "function body contains an invalid local binding",
+                        trace_steps=tuple(trace_steps),
+                    )
+                local_value = self._evaluate_expression(
+                    getattr(statement, "expression"),
+                    state,
+                    functions=functions,
+                    frame=active_frame,
+                    call_stack=call_stack,
+                    trace_steps=trace_steps,
+                )
+                try:
+                    active_frame = active_frame.with_binding(
+                        local_name,
+                        local_value,
+                    )
+                except ValueError as exc:
+                    raise RuntimeExpressionError(
+                        str(exc),
+                        trace_steps=tuple(trace_steps),
+                    ) from exc
+                trace_steps.append(
+                    TraceStep(
+                        "function.local.bind",
+                        "bound immutable function local",
+                        facts(
+                            depth=active_frame.depth,
+                            function=active_frame.function_id,
+                            index=statement_index,
+                            local=local_name,
+                            value_type=type(local_value).__name__,
+                        ),
+                    )
+                )
+                continue
+
+            if statement_type == "AIRFunctionReturn":
+                value = self._evaluate_expression(
+                    getattr(statement, "expression"),
+                    state,
+                    functions=functions,
+                    frame=active_frame,
+                    call_stack=call_stack,
+                    trace_steps=trace_steps,
+                )
+                trace_steps.append(
+                    TraceStep(
+                        "function.return",
+                        "returned from pure function body",
+                        facts(
+                            depth=active_frame.depth,
+                            function=active_frame.function_id,
+                            value_type=type(value).__name__,
+                        ),
+                    )
+                )
+                return _FunctionBodyExecution(
+                    returned=True,
+                    value=value,
+                    frame=active_frame,
+                )
+
+            if statement_type == "AIRFunctionWhen":
+                condition = self._evaluate_expression(
+                    getattr(statement, "condition"),
+                    state,
+                    functions=functions,
+                    frame=active_frame,
+                    call_stack=call_stack,
+                    trace_steps=trace_steps,
+                )
+                if type(condition) is not bool:
+                    raise RuntimeExpressionError(
+                        "pure-function when condition must evaluate to bool; "
+                        f"received {type(condition).__name__}",
+                        trace_steps=tuple(trace_steps),
+                    )
+                branch_name = "when" if condition else "otherwise"
+                branch = tuple(
+                    getattr(
+                        statement,
+                        "actions" if condition else "otherwise_actions",
+                        (),
+                    ) or ()
+                )
+                trace_steps.append(
+                    TraceStep(
+                        "function.when.evaluate",
+                        "evaluated pure-function conditional",
+                        facts(
+                            branch=branch_name,
+                            depth=depth,
+                            function=active_frame.function_id,
+                            result=condition,
+                        ),
+                    )
+                )
+                branch_result = self._execute_function_statements(
+                    statements=branch,
+                    state=state,
+                    functions=functions,
+                    frame=active_frame,
+                    call_stack=call_stack,
+                    trace_steps=trace_steps,
+                    depth=depth + 1,
+                )
+                if branch_result.returned:
+                    return branch_result
+                # Branch locals are lexical and therefore do not escape when
+                # the selected branch falls through.
+                continue
+
+            raise RuntimeExpressionError(
+                "unsupported pure-function statement type "
+                f"{statement_type!r}",
+                trace_steps=tuple(trace_steps),
+            )
+
+        return _FunctionBodyExecution(
+            returned=False,
+            value=None,
+            frame=active_frame,
+        )
 
     def _resolve_function_reference(
         self,

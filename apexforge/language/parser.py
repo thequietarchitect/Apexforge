@@ -93,12 +93,22 @@ class ReturnNode:
 
 
 @dataclass(frozen=True)
+class FunctionWhenNode:
+    condition: ExpressionNode
+    actions: tuple[object, ...]
+    otherwise_actions: tuple[object, ...] = ()
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+
+
+@dataclass(frozen=True)
 class FunctionNode:
     name: str
     parameters: tuple[ParameterNode, ...]
+    # Compatibility projection for P7.1/P7.2A consumers. For a conditional
+    # function this is the first source-order return statement.
     return_statement: ReturnNode
-    # Added after the P7.1 fields for positional-constructor compatibility.
     local_bindings: tuple[LetNode, ...] = ()
+    body: tuple[object, ...] = ()
     span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
@@ -398,7 +408,7 @@ class Parser:
     # ======================================================================
 
     def parse_function(self) -> FunctionNode:
-        """Parse a pure function with ordered immutable local bindings."""
+        """Parse an ordered pure-function statement body."""
 
         start = self.consume("FUNCTION")
         name = self.consume("IDENT")
@@ -419,46 +429,145 @@ class Parser:
 
         self.consume_any(*self._RIGHT_PAREN_KINDS)
         self.consume("LBRACE")
+        body = self._parse_function_statement_block(
+            owner=f"function {name.value!r}",
+        )
+        closing = self.consume("RBRACE")
 
-        local_bindings: list[LetNode] = []
-
-        while self.current().kind == "LET":
-            binding_start = self.consume("LET")
-            binding_name = self.consume("IDENT")
-            self.consume("EQUAL")
-            expression = self.parse_expression()
-            local_bindings.append(
-                LetNode(
-                    name=binding_name.value,
-                    expression=expression,
-                    span=_cover(binding_start, expression),
-                )
-            )
-
-        if self.current().kind != "RETURN":
+        first_return = self._first_function_return(body)
+        if first_return is None:
             self._raise(
                 code="APX-PARSE-006",
                 message=(
-                    f"Function {name.value!r} must end with a return "
-                    "expression after any let bindings."
+                    f"Function {name.value!r} must contain at least one "
+                    "return statement."
                 ),
+                token=closing,
             )
 
-        return_start = self.consume("RETURN")
-        expression = self.parse_expression()
-        return_statement = ReturnNode(
-            expression=expression,
-            span=_cover(return_start, expression),
-        )
-        closing = self.consume("RBRACE")
+        leading_locals: list[LetNode] = []
+        for statement in body:
+            if not isinstance(statement, LetNode):
+                break
+            leading_locals.append(statement)
 
         return FunctionNode(
             name=name.value,
             parameters=tuple(parameters),
-            return_statement=return_statement,
-            local_bindings=tuple(local_bindings),
+            return_statement=first_return,
+            local_bindings=tuple(leading_locals),
+            body=body,
             span=_cover(start, closing),
         )
+
+    def _parse_function_statement_block(
+        self,
+        *,
+        owner: str,
+    ) -> tuple[object, ...]:
+        statements: list[object] = []
+
+        while self.current().kind != "RBRACE":
+            if self.current().kind == "EOF":
+                self._raise(
+                    code="APX-PARSE-003",
+                    message=f"Unterminated {owner}; expected RBRACE.",
+                )
+
+            statements.append(
+                self._parse_function_statement(owner=owner)
+            )
+
+        return tuple(statements)
+
+    def _parse_function_statement(
+        self,
+        *,
+        owner: str,
+    ) -> object:
+        kind = self.current().kind
+
+        if kind == "LET":
+            binding_start = self.consume("LET")
+            binding_name = self.consume("IDENT")
+            self.consume("EQUAL")
+            expression = self.parse_expression()
+            return LetNode(
+                name=binding_name.value,
+                expression=expression,
+                span=_cover(binding_start, expression),
+            )
+
+        if kind == "RETURN":
+            return_start = self.consume("RETURN")
+            expression = self.parse_expression()
+            return ReturnNode(
+                expression=expression,
+                span=_cover(return_start, expression),
+            )
+
+        if kind == "WHEN":
+            return self._parse_function_when(owner=owner)
+
+        token = self.current()
+        self._raise(
+            code="APX-PARSE-007",
+            message=(
+                f"Unexpected pure-function statement inside {owner}: "
+                f"kind={token.kind!r}, value={token.value!r}."
+            ),
+            token=token,
+        )
+        raise AssertionError("unreachable")
+
+    def _parse_function_when(
+        self,
+        *,
+        owner: str,
+    ) -> FunctionWhenNode:
+        start = self.consume("WHEN")
+        condition = self.parse_expression()
+        self.consume("LBRACE")
+        actions = self._parse_function_statement_block(
+            owner=f"{owner} when block",
+        )
+        final_token = self.consume("RBRACE")
+        otherwise_actions: tuple[object, ...] = ()
+
+        if self.match("OTHERWISE") is not None:
+            self.consume("LBRACE")
+            otherwise_actions = self._parse_function_statement_block(
+                owner=f"{owner} otherwise block",
+            )
+            final_token = self.consume("RBRACE")
+
+        return FunctionWhenNode(
+            condition=condition,
+            actions=actions,
+            otherwise_actions=otherwise_actions,
+            span=_cover(start, final_token),
+        )
+
+    def _first_function_return(
+        self,
+        statements: tuple[object, ...],
+    ) -> Optional[ReturnNode]:
+        for statement in statements:
+            if isinstance(statement, ReturnNode):
+                return statement
+
+            if isinstance(statement, FunctionWhenNode):
+                nested = self._first_function_return(statement.actions)
+                if nested is not None:
+                    return nested
+
+                nested = self._first_function_return(
+                    statement.otherwise_actions
+                )
+                if nested is not None:
+                    return nested
+
+        return None
 
     def parse_directive(self) -> DirectiveNode:
         start = self.consume("DIRECTIVE")
@@ -1014,6 +1123,7 @@ __all__ = [
     "ParameterNode",
     "LetNode",
     "ReturnNode",
+    "FunctionWhenNode",
     "FunctionNode",
     "StateNode",
     "EventNode",
