@@ -41,6 +41,7 @@ from language.parser import (
     BinaryExpressionNode,
     CallExpressionNode,
     FunctionNode,
+    TypeParameterNode,
     FunctionWhenNode,
     LetNode,
     ReturnNode,
@@ -72,6 +73,7 @@ from type_system.inference import (
     TypeInferenceError,
     infer_expression_type,
 )
+from type_system.generics import TypeIdentity, resolve_type
 from type_system.model import (
     ApexType,
     BOOL,
@@ -247,8 +249,8 @@ def _compile_type_annotation(
     *,
     owner: str,
     node: object,
-    default: Optional[ApexType] = None,
-) -> Optional[ApexType]:
+    default: Optional[TypeIdentity] = None,
+) -> Optional[TypeIdentity]:
     """Normalize one optional AST type annotation for AIR storage."""
 
     if annotation is None:
@@ -257,7 +259,7 @@ def _compile_type_annotation(
     apex_type = getattr(annotation, "apex_type", None)
 
     try:
-        return resolve_builtin_type(apex_type)
+        return resolve_type(apex_type)
     except (TypeError, ValueError) as exc:
         raise _compile_error(
             code="APX-COMPILE-014",
@@ -352,10 +354,10 @@ def _expression_call_targets(
 def _infer_source_expression_type(
     node: ExpressionNode,
     *,
-    identifiers: Mapping[str, Optional[ApexType]],
+    identifiers: Mapping[str, Optional[TypeIdentity]],
     functions: Mapping[str, FunctionSignature],
     deferred_identifiers: frozenset[str] = frozenset(),
-) -> Optional[ApexType]:
+) -> Optional[TypeIdentity]:
     """Infer one source expression or defer it to linked-program checking.
 
     A call is deferred when its external signature is absent or incomplete.
@@ -408,12 +410,12 @@ def _infer_source_expression_type(
 def _require_source_expression_type(
     node: ExpressionNode,
     *,
-    expected: ApexType,
+    expected: TypeIdentity,
     owner: str,
-    identifiers: Mapping[str, Optional[ApexType]],
+    identifiers: Mapping[str, Optional[TypeIdentity]],
     functions: Mapping[str, FunctionSignature],
     deferred_identifiers: frozenset[str] = frozenset(),
-) -> Optional[ApexType]:
+) -> Optional[TypeIdentity]:
     actual = _infer_source_expression_type(
         node,
         identifiers=identifiers,
@@ -596,9 +598,9 @@ def _type_check_function_statements(
     statements: tuple[object, ...],
     *,
     function_name: str,
-    identifiers: Mapping[str, Optional[ApexType]],
+    identifiers: Mapping[str, Optional[TypeIdentity]],
     deferred_identifiers: frozenset[str],
-    expected_return: Optional[ApexType],
+    expected_return: Optional[TypeIdentity],
     functions: Mapping[str, FunctionSignature],
 ) -> None:
     """Type-check one lexical pure-function statement stream."""
@@ -728,6 +730,14 @@ def _type_check_function(
                     for parameter in node.parameters
                 ),
                 return_type=return_type,
+                type_parameters=tuple(
+                    parameter.apex_type
+                    for parameter in getattr(
+                        node,
+                        "type_parameters",
+                        (),
+                    )
+                ),
             ),
         )
 
@@ -769,6 +779,12 @@ def compile_expression(node: ExpressionNode) -> AIRExpression:
             arguments=tuple(
                 compile_expression(argument)
                 for argument in node.arguments
+            ),
+            type_arguments=tuple(
+                annotation.apex_type
+                for annotation in tuple(
+                    getattr(node, "type_arguments", ()) or ()
+                )
             ),
         )
 
@@ -1653,6 +1669,17 @@ def _compile_function_with_map(
             air_id=function_id,
         )
 
+    for index, type_parameter in enumerate(
+        tuple(getattr(node, "type_parameters", ()) or ())
+    ):
+        _append_source_entry(
+            entries,
+            air_id=f"type_parameter:{node.name}:{index}",
+            node=type_parameter,
+            kind="function_type_parameter",
+            reference=type_parameter.name,
+        )
+
     for index, parameter in enumerate(node.parameters):
         _append_source_entry(
             entries,
@@ -1765,6 +1792,12 @@ def _compile_function_with_map(
                     getattr(node, "return_type", None),
                     owner=f"Function {node.name!r} return",
                     node=node,
+                ),
+                type_parameters=tuple(
+                    type_parameter.apex_type
+                    for type_parameter in tuple(
+                        getattr(node, "type_parameters", ()) or ()
+                    )
                 ),
             ),
         ),

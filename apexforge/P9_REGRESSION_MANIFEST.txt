@@ -1,0 +1,38 @@
+AFP-P9.8 FINAL REGRESSION MANIFEST
+
+Run from:
+  C:\Users\Owner\source\repos\ApexForge
+
+P9 completion gate:
+  py .\apexforge\p9_final_integration_smoke_test.py
+
+P9 regressions:
+  py .\apexforge\p9_generic_lowering_smoke_test.py
+  py .\apexforge\p9_linked_specialization_closure_smoke_test.py
+  py .\apexforge\p9_generic_specialization_smoke_test.py
+  py .\apexforge\p9_generic_constraints_smoke_test.py
+  py .\apexforge\p9_explicit_type_arguments_smoke_test.py
+  py .\apexforge\p9_generic_call_inference_smoke_test.py
+  py .\apexforge\p9_generic_declaration_smoke_test.py
+
+P8 regressions:
+  py .\apexforge\p8_float_literal_smoke_test.py
+  py .\apexforge\p8_linked_type_closure_smoke_test.py
+  py .\apexforge\p8_typed_state_semantics_smoke_test.py
+  py .\apexforge\p8_compiler_type_checking_smoke_test.py
+  py .\apexforge\p8_expression_type_inference_smoke_test.py
+  py .\apexforge\p8_typed_air_smoke_test.py
+  py .\apexforge\p8_typed_syntax_smoke_test.py
+
+P7 regressions:
+  py .\apexforge\p7_function_linking_validation_smoke_test.py
+  py .\apexforge\p7_function_runtime_smoke_test.py
+  py .\apexforge\p7_function_frontend_smoke_test.py
+
+Freeze criteria:
+  1. Every command exits successfully.
+  2. The final integration smoke reports all thirteen PASS lines.
+  3. No executable lowered function retains a type variable.
+  4. No executable lowered call retains explicit type arguments.
+  5. Specialization and lowering output remain input-order independent.
+  6. Original generic declarations remain present for traceability.

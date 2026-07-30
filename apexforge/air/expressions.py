@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from type_system.generics import GenericTypeLike, resolve_type
+
 
 class AIRExpression:
     """Base class for verified, runtime-evaluable AIR expressions."""
@@ -55,3 +57,17 @@ class AIRCallExpression(AIRExpression):
 
     target: str
     arguments: tuple[AIRExpression, ...] = ()
+    # Runtime-erased metadata appended for constructor compatibility.
+    type_arguments: tuple[GenericTypeLike, ...] = ()
+
+    def __post_init__(self) -> None:
+        if type(self.type_arguments) is not tuple:
+            raise TypeError(
+                "AIRCallExpression.type_arguments must be a tuple; "
+                f"received {type(self.type_arguments).__name__}."
+            )
+        object.__setattr__(
+            self,
+            "type_arguments",
+            tuple(resolve_type(value_type) for value_type in self.type_arguments),
+        )

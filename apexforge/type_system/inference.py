@@ -1,4 +1,4 @@
-"""Canonical AFP-P8 expression type inference over AIR.
+"""Canonical AFP-P8/P9.5 expression type inference over AIR.
 
 This module determines the language-level type produced by an AIR expression.
 It does not parse source, evaluate expressions, perform implicit conversions,
@@ -21,15 +21,30 @@ from air.expressions import (
     AIRStringLiteral,
     AIRUnaryExpression,
 )
+from type_system.constraints import NUMERIC
+from type_system.generics import (
+    ApexTypeVariable,
+    GenericTypeLike,
+    TypeIdentity,
+    resolve_type,
+    type_satisfies_constraint,
+)
 from type_system.model import (
     ApexType,
     BOOL,
     FLOAT,
     INT,
     STRING,
-    TypeLike,
     VOID,
     resolve_builtin_type,
+)
+from type_system.substitution import (
+    GenericSubstitution,
+    GenericSubstitutionConflict,
+)
+from type_system.specialization import (
+    GenericSpecialization,
+    GenericSpecializationKey,
 )
 
 
@@ -63,8 +78,9 @@ class FunctionSignature:
     """One immutable callable type signature."""
 
     name: str
-    parameter_types: tuple[Optional[TypeLike], ...]
-    return_type: Optional[TypeLike]
+    parameter_types: tuple[Optional[GenericTypeLike], ...]
+    return_type: Optional[GenericTypeLike]
+    type_parameters: tuple[ApexTypeVariable, ...] = ()
 
     def __post_init__(self) -> None:
         if type(self.name) is not str:
@@ -80,20 +96,69 @@ class FunctionSignature:
                 f"received {type(self.parameter_types).__name__}."
             )
 
-        normalized_parameters: list[Optional[ApexType]] = []
+        normalized_parameters: list[Optional[TypeIdentity]] = []
         for parameter_type in self.parameter_types:
             normalized_parameters.append(
                 None
                 if parameter_type is None
-                else resolve_builtin_type(parameter_type)
+                else resolve_type(parameter_type)
             )
 
         normalized_return = (
             None
             if self.return_type is None
-            else resolve_builtin_type(self.return_type)
+            else resolve_type(self.return_type)
         )
 
+        normalized_type_parameters = tuple(self.type_parameters)
+        seen_type_parameters: set[str] = set()
+        for type_parameter in normalized_type_parameters:
+            if not isinstance(type_parameter, ApexTypeVariable):
+                raise TypeError(
+                    "FunctionSignature.type_parameters must contain "
+                    "ApexTypeVariable values."
+                )
+            if type_parameter.name in seen_type_parameters:
+                raise ValueError(
+                    f"Duplicate function type parameter "
+                    f"{type_parameter.name!r}."
+                )
+            if type_parameter.owner not in {
+                self.name,
+                f"function:{self.name}",
+            }:
+                raise ValueError(
+                    f"Function signature {self.name!r} contains type "
+                    f"parameter {type_parameter.name!r} owned by "
+                    f"{type_parameter.owner!r}."
+                )
+            seen_type_parameters.add(type_parameter.name)
+
+        declared_type_parameter_ids = {
+            id(type_parameter)
+            for type_parameter in normalized_type_parameters
+        }
+        for location, value_type in (
+            *(
+                (f"parameter[{index}]", parameter_type)
+                for index, parameter_type in enumerate(normalized_parameters)
+            ),
+            ("return", normalized_return),
+        ):
+            if (
+                isinstance(value_type, ApexTypeVariable)
+                and id(value_type) not in declared_type_parameter_ids
+            ):
+                raise ValueError(
+                    f"Function signature {self.name!r} {location} references "
+                    f"undeclared generic type {value_type}."
+                )
+
+        object.__setattr__(
+            self,
+            "type_parameters",
+            normalized_type_parameters,
+        )
         object.__setattr__(
             self,
             "parameter_types",
@@ -119,6 +184,9 @@ class FunctionSignature:
                 for parameter in function.parameters
             ),
             return_type=function.return_type,
+            type_parameters=tuple(
+                getattr(function, "type_parameters", ()) or ()
+            ),
         )
 
 
@@ -144,9 +212,9 @@ def signatures_from_air_functions(
 
 
 def _normalize_identifier_types(
-    identifiers: Mapping[str, Optional[TypeLike]],
-) -> dict[str, Optional[ApexType]]:
-    normalized: dict[str, Optional[ApexType]] = {}
+    identifiers: Mapping[str, Optional[GenericTypeLike]],
+) -> dict[str, Optional[TypeIdentity]]:
+    normalized: dict[str, Optional[TypeIdentity]] = {}
 
     for name, value_type in identifiers.items():
         if type(name) is not str or not name:
@@ -157,7 +225,7 @@ def _normalize_identifier_types(
         normalized[name] = (
             None
             if value_type is None
-            else resolve_builtin_type(value_type)
+            else resolve_type(value_type)
         )
 
     return normalized
@@ -176,14 +244,12 @@ def _raise(
 def _require_same_numeric_type(
     *,
     operator: str,
-    left_type: ApexType,
-    right_type: ApexType,
-) -> ApexType:
-    numeric_types = (INT, FLOAT)
-
+    left_type: TypeIdentity,
+    right_type: TypeIdentity,
+) -> TypeIdentity:
     if (
-        left_type in numeric_types
-        and right_type is left_type
+        right_type is left_type
+        and type_satisfies_constraint(left_type, NUMERIC)
     ):
         return left_type
 
@@ -197,12 +263,447 @@ def _require_same_numeric_type(
     raise AssertionError("unreachable")
 
 
+def _validate_generic_binding_constraints(
+    variable: ApexTypeVariable,
+    value_type: TypeIdentity,
+    *,
+    target: str,
+) -> None:
+    for constraint in variable.constraints:
+        if type_satisfies_constraint(value_type, constraint):
+            continue
+
+        _raise(
+            "APX-TYPE-021",
+            (
+                f"Generic function {target!r} type parameter {variable} "
+                f"requires constraint {constraint}; received {value_type}."
+            ),
+        )
+
+
+def infer_explicit_call_substitution(
+    signature: FunctionSignature,
+    type_arguments: Iterable[GenericTypeLike],
+    *,
+    target: Optional[str] = None,
+) -> GenericSubstitution:
+    """Bind a complete explicit type-argument list to one generic signature."""
+
+    if not isinstance(signature, FunctionSignature):
+        raise TypeError(
+            "infer_explicit_call_substitution requires FunctionSignature."
+        )
+
+    arguments = tuple(resolve_type(value_type) for value_type in tuple(type_arguments))
+    call_name = target or signature.name
+
+    if not signature.type_parameters:
+        _raise(
+            "APX-TYPE-019",
+            (
+                f"Function {call_name!r} is not generic and cannot receive "
+                "explicit type arguments."
+            ),
+        )
+
+    if len(arguments) != len(signature.type_parameters):
+        _raise(
+            "APX-TYPE-020",
+            (
+                f"Generic function {call_name!r} expects "
+                f"{len(signature.type_parameters)} type argument(s); "
+                f"received {len(arguments)}."
+            ),
+        )
+
+    substitution = GenericSubstitution()
+    for variable, value_type in zip(signature.type_parameters, arguments):
+        if value_type is VOID:
+            _raise(
+                "APX-TYPE-018",
+                (
+                    f"Generic function {call_name!r} cannot bind "
+                    f"{variable} to void."
+                ),
+            )
+        _validate_generic_binding_constraints(
+            variable,
+            value_type,
+            target=call_name,
+        )
+        substitution = substitution.bind(variable, value_type)
+    return substitution
+
+
+def _validate_substituted_call_arguments(
+    signature: FunctionSignature,
+    argument_types: tuple[Optional[TypeIdentity], ...],
+    substitution: GenericSubstitution,
+    *,
+    target: str,
+    require_complete: bool,
+) -> None:
+    """Check value arguments after generic parameters have been substituted."""
+
+    for index, (actual_type, declared_type) in enumerate(
+        zip(argument_types, signature.parameter_types)
+    ):
+        if declared_type is None:
+            if require_complete:
+                _raise(
+                    "APX-TYPE-007",
+                    f"Function {target!r} parameter {index} has no declared type.",
+                )
+            continue
+
+        expected_type = (
+            substitution.resolve(declared_type)
+            if isinstance(declared_type, ApexTypeVariable)
+            else declared_type
+        )
+        if isinstance(expected_type, ApexTypeVariable) and not substitution.contains(declared_type):
+            if require_complete:
+                _raise(
+                    "APX-TYPE-017",
+                    (
+                        f"Generic function {target!r} could not resolve "
+                        f"parameter type {declared_type}."
+                    ),
+                )
+            continue
+        if actual_type is None:
+            if require_complete:
+                _raise(
+                    "APX-TYPE-014",
+                    (
+                        f"Function {target!r} argument {index} must resolve "
+                        f"to {expected_type}, but its type is unknown."
+                    ),
+                )
+            continue
+        if actual_type is not expected_type:
+            _raise(
+                "APX-TYPE-008",
+                (
+                    f"Function {target!r} argument {index} expects "
+                    f"{expected_type}; received {actual_type}."
+                ),
+            )
+
+
+def infer_call_substitution(
+    signature: FunctionSignature,
+    argument_types: Iterable[Optional[TypeIdentity]],
+    *,
+    target: Optional[str] = None,
+    require_complete: bool = True,
+) -> GenericSubstitution:
+    """Infer one generic call's immutable type-variable substitution.
+
+    Concrete parameters retain AFP-P8 exact-type checking. A repeated generic
+    parameter must infer the same exact type identity from every occurrence.
+    """
+
+    if not isinstance(signature, FunctionSignature):
+        raise TypeError(
+            "infer_call_substitution requires FunctionSignature."
+        )
+
+    arguments = tuple(argument_types)
+    call_name = target or signature.name
+
+    if len(arguments) != len(signature.parameter_types):
+        _raise(
+            "APX-TYPE-006",
+            (
+                f"Function {call_name!r} expects "
+                f"{len(signature.parameter_types)} argument(s); "
+                f"received {len(arguments)}."
+            ),
+        )
+
+    substitution = GenericSubstitution()
+    structurally_inferable = {
+        parameter_type
+        for parameter_type in signature.parameter_types
+        if isinstance(parameter_type, ApexTypeVariable)
+    }
+
+    for index, (
+        actual_type,
+        expected_type,
+    ) in enumerate(
+        zip(
+            arguments,
+            signature.parameter_types,
+        )
+    ):
+        if expected_type is None:
+            if require_complete:
+                _raise(
+                    "APX-TYPE-007",
+                    (
+                        f"Function {call_name!r} parameter {index} "
+                        "has no declared type."
+                    ),
+                )
+            continue
+
+        if isinstance(expected_type, ApexTypeVariable):
+            if actual_type is None:
+                if require_complete:
+                    _raise(
+                        "APX-TYPE-014",
+                        (
+                            f"Generic function {call_name!r} argument {index} "
+                            f"must resolve in order to infer "
+                            f"{expected_type}; its type is unknown."
+                        ),
+                    )
+                continue
+
+            if actual_type is VOID:
+                _raise(
+                    "APX-TYPE-018",
+                    (
+                        f"Generic function {call_name!r} cannot bind "
+                        f"{expected_type} to void."
+                    ),
+                )
+
+            _validate_generic_binding_constraints(
+                expected_type,
+                actual_type,
+                target=call_name,
+            )
+
+            try:
+                substitution = substitution.bind(
+                    expected_type,
+                    actual_type,
+                )
+            except GenericSubstitutionConflict as error:
+                _raise(
+                    "APX-TYPE-016",
+                    (
+                        f"Generic function {call_name!r} infers type "
+                        f"parameter {expected_type} as both "
+                        f"{error.existing} and {error.incoming}; "
+                        f"conflict occurs at argument {index}."
+                    ),
+                )
+            continue
+
+        if actual_type is None:
+            if require_complete:
+                _raise(
+                    "APX-TYPE-014",
+                    (
+                        f"Function {call_name!r} argument {index} "
+                        f"must resolve to {expected_type}, but its type "
+                        "is unknown."
+                    ),
+                )
+            continue
+
+        if actual_type is not expected_type:
+            _raise(
+                "APX-TYPE-008",
+                (
+                    f"Function {call_name!r} argument {index} "
+                    f"expects {expected_type}; received {actual_type}."
+                ),
+            )
+
+    # Without explicit type arguments, every declared variable must occur in
+    # at least one parameter position. Otherwise no call-site evidence can
+    # ever determine it.
+    for type_parameter in signature.type_parameters:
+        if type_parameter not in structurally_inferable:
+            _raise(
+                "APX-TYPE-017",
+                (
+                    f"Generic function {call_name!r} cannot infer type "
+                    f"parameter {type_parameter} from its arguments."
+                ),
+            )
+
+    if require_complete:
+        unresolved = substitution.unresolved(
+            signature.type_parameters
+        )
+        if unresolved:
+            names = ", ".join(
+                str(variable)
+                for variable in unresolved
+            )
+            _raise(
+                "APX-TYPE-017",
+                (
+                    f"Generic function {call_name!r} could not infer "
+                    f"type parameter(s) {names}."
+                ),
+            )
+
+    return substitution
+
+
+def _resolve_call_return_type(
+    signature: FunctionSignature,
+    substitution: GenericSubstitution,
+    *,
+    target: str,
+    allow_unresolved: bool,
+) -> Optional[TypeIdentity]:
+    return_type = signature.return_type
+
+    if return_type is None:
+        if allow_unresolved:
+            return None
+        _raise(
+            "APX-TYPE-009",
+            (
+                f"Function {target!r} has no declared "
+                "return type."
+            ),
+        )
+
+    if isinstance(return_type, ApexTypeVariable):
+        if not substitution.contains(return_type):
+            if allow_unresolved:
+                return None
+            _raise(
+                "APX-TYPE-017",
+                (
+                    f"Generic function {target!r} could not infer "
+                    f"return type parameter {return_type}."
+                ),
+            )
+
+        return substitution.resolve(
+            return_type
+        )
+
+    return return_type
+
+
+def resolve_call_specialization(
+    signature: FunctionSignature,
+    argument_types: Iterable[Optional[TypeIdentity]],
+    *,
+    explicit_type_arguments: Iterable[GenericTypeLike] = (),
+    target: Optional[str] = None,
+    require_complete: bool = True,
+    require_closed: bool = False,
+) -> GenericSpecialization:
+    """Resolve one generic call into a canonical specialization record."""
+
+    if not isinstance(signature, FunctionSignature):
+        raise TypeError(
+            "resolve_call_specialization requires FunctionSignature."
+        )
+
+    call_name = target or signature.name
+    actual_types = tuple(argument_types)
+    explicit_arguments = tuple(explicit_type_arguments)
+
+    if not signature.type_parameters:
+        if explicit_arguments:
+            _raise(
+                "APX-TYPE-019",
+                (
+                    f"Function {call_name!r} is not generic and cannot "
+                    "receive explicit type arguments."
+                ),
+            )
+        _raise(
+            "APX-TYPE-022",
+            (
+                f"Function {call_name!r} is not generic and has no "
+                "specialization identity."
+            ),
+        )
+
+    if explicit_arguments:
+        substitution = infer_explicit_call_substitution(
+            signature,
+            explicit_arguments,
+            target=call_name,
+        )
+    else:
+        substitution = infer_call_substitution(
+            signature,
+            actual_types,
+            target=call_name,
+            require_complete=require_complete,
+        )
+
+    _validate_substituted_call_arguments(
+        signature,
+        actual_types,
+        substitution,
+        target=call_name,
+        require_complete=require_complete,
+    )
+
+    resolved_type_arguments: list[TypeIdentity] = []
+    for type_parameter in signature.type_parameters:
+        if substitution.contains(type_parameter):
+            resolved_type_arguments.append(
+                substitution.resolve(type_parameter)
+            )
+        else:
+            resolved_type_arguments.append(type_parameter)
+
+    resolved_parameters: list[Optional[TypeIdentity]] = []
+    for parameter_type in signature.parameter_types:
+        if parameter_type is None:
+            resolved_parameters.append(None)
+        elif isinstance(parameter_type, ApexTypeVariable):
+            resolved_parameters.append(
+                substitution.resolve(parameter_type)
+                if substitution.contains(parameter_type)
+                else parameter_type
+            )
+        else:
+            resolved_parameters.append(parameter_type)
+
+    resolved_return = _resolve_call_return_type(
+        signature,
+        substitution,
+        target=call_name,
+        allow_unresolved=not require_complete,
+    )
+
+    specialization = GenericSpecialization(
+        key=GenericSpecializationKey(
+            target=call_name,
+            type_arguments=tuple(resolved_type_arguments),
+        ),
+        parameter_types=tuple(resolved_parameters),
+        return_type=resolved_return,
+    )
+
+    if require_closed and not specialization.is_closed:
+        _raise(
+            "APX-TYPE-023",
+            (
+                f"Generic specialization {specialization.canonical_id!r} "
+                "is open and cannot be instantiated until every type "
+                "argument resolves to a built-in ApexForge type."
+            ),
+        )
+
+    return specialization
+
+
 def infer_expression_type(
     expression: AIRExpression,
     *,
-    identifiers: Optional[Mapping[str, Optional[TypeLike]]] = None,
+    identifiers: Optional[Mapping[str, Optional[GenericTypeLike]]] = None,
     functions: Optional[Mapping[str, FunctionSignature]] = None,
-) -> ApexType:
+) -> TypeIdentity:
     """Infer the canonical type produced by one AIR expression.
 
     AFP-P8 performs no implicit conversions. Numeric operands must therefore
@@ -233,9 +734,9 @@ def infer_expression_type(
 def _infer_expression_type(
     expression: AIRExpression,
     *,
-    identifiers: Mapping[str, Optional[ApexType]],
+    identifiers: Mapping[str, Optional[TypeIdentity]],
     functions: Mapping[str, FunctionSignature],
-) -> ApexType:
+) -> TypeIdentity:
     if isinstance(expression, AIRIntegerLiteral):
         return INT
 
@@ -275,7 +776,7 @@ def _infer_expression_type(
         )
 
         if expression.operator in {"+", "-"}:
-            if operand_type in {INT, FLOAT}:
+            if type_satisfies_constraint(operand_type, NUMERIC):
                 return operand_type
 
             _raise(
@@ -390,13 +891,8 @@ def _infer_expression_type(
 
     if isinstance(expression, AIRCallExpression):
         signature = functions.get(expression.target)
-
         if signature is None:
-            _raise(
-                "APX-TYPE-005",
-                f"Unknown function {expression.target!r}.",
-            )
-
+            _raise("APX-TYPE-005", f"Unknown function {expression.target!r}.")
         if len(expression.arguments) != len(signature.parameter_types):
             _raise(
                 "APX-TYPE-006",
@@ -406,28 +902,32 @@ def _infer_expression_type(
                     f"received {len(expression.arguments)}."
                 ),
             )
-
-        for index, (argument, expected_type) in enumerate(
-            zip(
-                expression.arguments,
-                signature.parameter_types,
+        argument_types = tuple(
+            _infer_expression_type(argument, identifiers=identifiers, functions=functions)
+            for argument in expression.arguments
+        )
+        explicit_type_arguments = tuple(getattr(expression, "type_arguments", ()) or ())
+        if explicit_type_arguments or signature.type_parameters:
+            specialization = resolve_call_specialization(
+                signature,
+                argument_types,
+                explicit_type_arguments=explicit_type_arguments,
+                target=expression.target,
+                require_complete=True,
             )
+            if specialization.return_type is None:
+                raise AssertionError(
+                    "strict generic specialization produced no return type"
+                )
+            return specialization.return_type
+        for index, (actual_type, expected_type) in enumerate(
+            zip(argument_types, signature.parameter_types)
         ):
             if expected_type is None:
                 _raise(
                     "APX-TYPE-007",
-                    (
-                        f"Function {expression.target!r} parameter "
-                        f"{index} has no declared type."
-                    ),
+                    f"Function {expression.target!r} parameter {index} has no declared type.",
                 )
-
-            actual_type = _infer_expression_type(
-                argument,
-                identifiers=identifiers,
-                functions=functions,
-            )
-
             if actual_type is not expected_type:
                 _raise(
                     "APX-TYPE-008",
@@ -436,16 +936,11 @@ def _infer_expression_type(
                         f"expects {expected_type}; received {actual_type}."
                     ),
                 )
-
         if signature.return_type is None:
             _raise(
                 "APX-TYPE-009",
-                (
-                    f"Function {expression.target!r} has no declared "
-                    "return type."
-                ),
+                f"Function {expression.target!r} has no declared return type.",
             )
-
         return signature.return_type
 
     _raise(
@@ -461,10 +956,10 @@ def _infer_expression_type(
 def infer_expression_type_partial(
     expression: object,
     *,
-    identifiers: Mapping[str, Optional[TypeLike]] = {},
+    identifiers: Mapping[str, Optional[GenericTypeLike]] = {},
     functions: Mapping[str, FunctionSignature] = {},
     require_complete_arguments: bool = False,
-) -> Optional[ApexType]:
+) -> Optional[TypeIdentity]:
     """Infer an AIR expression while preserving legacy unknown types.
 
     ``None`` represents a type that cannot be determined because a legacy
@@ -502,10 +997,10 @@ def infer_expression_type_partial(
 def _infer_expression_type_partial(
     expression: object,
     *,
-    identifiers: Mapping[str, Optional[ApexType]],
+    identifiers: Mapping[str, Optional[TypeIdentity]],
     functions: Mapping[str, FunctionSignature],
     require_complete_arguments: bool,
-) -> Optional[ApexType]:
+) -> Optional[TypeIdentity]:
     if type(expression) is int:
         return INT
     if type(expression) is bool:
@@ -571,10 +1066,10 @@ def _infer_expression_type_partial(
             "+",
             "-",
         }:
-            if operand_type in {
-                INT,
-                FLOAT,
-            }:
+            if type_satisfies_constraint(
+                operand_type,
+                NUMERIC,
+            ):
                 return operand_type
 
             _raise(
@@ -719,19 +1214,10 @@ def _infer_expression_type_partial(
         expression,
         AIRCallExpression,
     ):
-        signature = functions.get(
-            expression.target
-        )
-
+        signature = functions.get(expression.target)
         if signature is None:
-            _raise(
-                "APX-TYPE-005",
-                f"Unknown function {expression.target!r}.",
-            )
-
-        if len(expression.arguments) != len(
-            signature.parameter_types
-        ):
+            _raise("APX-TYPE-005", f"Unknown function {expression.target!r}.")
+        if len(expression.arguments) != len(signature.parameter_types):
             _raise(
                 "APX-TYPE-006",
                 (
@@ -740,28 +1226,27 @@ def _infer_expression_type_partial(
                     f"received {len(expression.arguments)}."
                 ),
             )
-
-        for index, (
-            argument,
-            expected_type,
-        ) in enumerate(
-            zip(
-                expression.arguments,
-                signature.parameter_types,
-            )
-        ):
-            actual_type = _infer_expression_type_partial(
-                argument,
-                identifiers=identifiers,
-                functions=functions,
+        argument_types = tuple(
+            _infer_expression_type_partial(
+                argument, identifiers=identifiers, functions=functions,
                 require_complete_arguments=require_complete_arguments,
             )
-
-            if (
-                expected_type is not None
-                and actual_type is not None
-                and actual_type is not expected_type
-            ):
+            for argument in expression.arguments
+        )
+        explicit_type_arguments = tuple(getattr(expression, "type_arguments", ()) or ())
+        if explicit_type_arguments or signature.type_parameters:
+            specialization = resolve_call_specialization(
+                signature,
+                argument_types,
+                explicit_type_arguments=explicit_type_arguments,
+                target=expression.target,
+                require_complete=require_complete_arguments,
+            )
+            return specialization.return_type
+        for index, (actual_type, expected_type) in enumerate(
+            zip(argument_types, signature.parameter_types)
+        ):
+            if expected_type is not None and actual_type is not None and actual_type is not expected_type:
                 _raise(
                     "APX-TYPE-008",
                     (
@@ -769,21 +1254,14 @@ def _infer_expression_type_partial(
                         f"expects {expected_type}; received {actual_type}."
                     ),
                 )
-
-            if (
-                require_complete_arguments
-                and expected_type is not None
-                and actual_type is None
-            ):
+            if require_complete_arguments and expected_type is not None and actual_type is None:
                 _raise(
                     "APX-TYPE-014",
                     (
-                        f"Function {expression.target!r} argument {index} "
-                        f"must resolve to {expected_type}, but its type "
-                        "is unknown."
+                        f"Function {expression.target!r} argument {index} must "
+                        f"resolve to {expected_type}, but its type is unknown."
                     ),
                 )
-
         return signature.return_type
 
     _raise(
@@ -799,7 +1277,10 @@ def _infer_expression_type_partial(
 __all__ = (
     "FunctionSignature",
     "TypeInferenceError",
+    "infer_call_substitution",
+    "infer_explicit_call_substitution",
     "infer_expression_type",
     "infer_expression_type_partial",
+    "resolve_call_specialization",
     "signatures_from_air_functions",
 )

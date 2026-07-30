@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from typing import Optional, Sequence
+from typing import Mapping, Optional, Sequence
 
 from language.diagnostics import BuildDiagnostic
 from language.lexer import Token, lex
 from language.source import SourceSpan, cover_spans
-from type_system.model import ApexType, resolve_builtin_type
+from type_system.constraints import (
+    ApexTypeConstraint,
+    resolve_type_constraint,
+)
+from type_system.generics import ApexTypeVariable, TypeIdentity
+from type_system.model import is_builtin_type, resolve_builtin_type
 
 
 class ParseError(SyntaxError):
@@ -78,16 +83,27 @@ class CallExpressionNode(ExpressionNode):
     target: str
     arguments: tuple[ExpressionNode, ...]
     span: Optional[SourceSpan] = field(default=None, compare=False)
+    # Appended so P7/P8/P9.1 positional constructors remain compatible.
+    type_arguments: tuple["TypeAnnotationNode", ...] = ()
 
 
 @dataclass(frozen=True)
 class TypeAnnotationNode:
-    apex_type: ApexType
+    apex_type: TypeIdentity
     span: Optional[SourceSpan] = field(default=None, compare=False)
 
     @property
     def name(self) -> str:
         return self.apex_type.name
+
+
+@dataclass(frozen=True)
+class TypeParameterNode:
+    name: str
+    apex_type: ApexTypeVariable
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+    # Appended so AFP-P9.1 through P9.3 positional constructors remain valid.
+    constraints: tuple[ApexTypeConstraint, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -129,6 +145,8 @@ class FunctionNode:
     body: tuple[object, ...] = ()
     span: Optional[SourceSpan] = field(default=None, compare=False)
     return_type: Optional[TypeAnnotationNode] = None
+    # Appended so all P7/P8 positional constructors remain compatible.
+    type_parameters: tuple[TypeParameterNode, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -344,6 +362,7 @@ class Parser:
             raise ValueError("Parser requires at least an EOF token.")
         self.index = 0
         self.source_name = source_name
+        self._active_type_parameters: dict[str, ApexTypeVariable] = {}
 
     def current(self) -> Token:
         return self.tokens[self.index]
@@ -427,35 +446,247 @@ class Parser:
     # Top-level declarations
     # ======================================================================
 
-    def parse_type_annotation(self) -> TypeAnnotationNode:
-        """Parse ``: TypeName`` and resolve its canonical P8 identity."""
+    def _resolve_type_token(
+        self,
+        token: Token,
+        type_parameters: Optional[Mapping[str, ApexTypeVariable]] = None,
+    ) -> TypeIdentity:
+        generic_scope = dict(type_parameters or {})
 
-        colon = self.consume("COLON")
-        type_name = self.consume("IDENT")
+        if token.value in generic_scope:
+            return generic_scope[token.value]
 
         try:
-            apex_type = resolve_builtin_type(type_name.value)
+            return resolve_builtin_type(token.value)
         except ValueError:
             self._raise(
                 code="APX-PARSE-008",
                 message=(
                     "Unknown ApexForge type "
-                    f"{type_name.value!r}."
+                    f"{token.value!r}."
                 ),
-                token=type_name,
+                token=token,
             )
             raise AssertionError("unreachable")
 
+    def parse_type_annotation(
+        self,
+        type_parameters: Optional[Mapping[str, ApexTypeVariable]] = None,
+    ) -> TypeAnnotationNode:
+        """Parse ``: TypeName`` within an optional generic function scope."""
+
+        colon = self.consume("COLON")
+        type_name = self.consume("IDENT")
+
         return TypeAnnotationNode(
-            apex_type=apex_type,
+            apex_type=self._resolve_type_token(type_name, type_parameters),
             span=_cover(colon, type_name),
         )
+
+    def _looks_like_explicit_type_argument_call(self) -> bool:
+        """Return whether the current ``<`` begins ``<T, U>(...)``."""
+
+        if self.current().kind != "LT":
+            return False
+
+        index = self.index + 1
+        if index >= len(self.tokens):
+            return False
+
+        if self.tokens[index].kind == "GT":
+            index += 1
+            return (
+                index < len(self.tokens)
+                and self.tokens[index].kind in self._LEFT_PAREN_KINDS
+            )
+
+        if self.tokens[index].kind != "IDENT":
+            return False
+        index += 1
+
+        while index < len(self.tokens):
+            kind = self.tokens[index].kind
+            if kind == "GT":
+                index += 1
+                return (
+                    index < len(self.tokens)
+                    and self.tokens[index].kind in self._LEFT_PAREN_KINDS
+                )
+            if kind != "COMMA":
+                return False
+            index += 1
+            if index < len(self.tokens) and self.tokens[index].kind == "GT":
+                index += 1
+                return (
+                    index < len(self.tokens)
+                    and self.tokens[index].kind in self._LEFT_PAREN_KINDS
+                )
+            if index >= len(self.tokens) or self.tokens[index].kind != "IDENT":
+                return False
+            index += 1
+        return False
+
+    def _parse_call_type_arguments(
+        self,
+    ) -> tuple[TypeAnnotationNode, ...]:
+        """Parse an explicit call type list such as ``<int, string>``."""
+
+        self.consume("LT")
+        if self.current().kind == "GT":
+            self._raise(
+                code="APX-PARSE-012",
+                message=(
+                    "Explicit generic calls must provide at least one "
+                    "type argument."
+                ),
+                token=self.current(),
+            )
+
+        arguments: list[TypeAnnotationNode] = []
+        while True:
+            token = self.consume("IDENT")
+            arguments.append(
+                TypeAnnotationNode(
+                    apex_type=self._resolve_type_token(
+                        token, self._active_type_parameters
+                    ),
+                    span=token.span,
+                )
+            )
+            if self.match("COMMA") is None:
+                break
+            if self.current().kind == "GT":
+                self._raise(
+                    code="APX-PARSE-013",
+                    message=(
+                        "Explicit generic call has a trailing comma in "
+                        "its type-argument list."
+                    ),
+                    token=self.current(),
+                )
+        self.consume("GT")
+        return tuple(arguments)
+
+    def _parse_type_parameters(
+        self,
+        *,
+        function_name: str,
+    ) -> tuple[TypeParameterNode, ...]:
+        """Parse ``<T, U>`` immediately after a function name."""
+
+        if self.current().kind != "LT":
+            return ()
+
+        start = self.consume("LT")
+        if self.current().kind == "GT":
+            self._raise(
+                code="APX-PARSE-009",
+                message=(
+                    f"Generic function {function_name!r} must declare at "
+                    "least one type parameter."
+                ),
+                token=self.current(),
+            )
+
+        owner = f"function:{function_name}"
+        declarations: list[TypeParameterNode] = []
+        names: set[str] = set()
+
+        while True:
+            token = self.consume("IDENT")
+            if token.value in names:
+                self._raise(
+                    code="APX-PARSE-009",
+                    message=(
+                        f"Generic function {function_name!r} declares "
+                        f"duplicate type parameter {token.value!r}."
+                    ),
+                    token=token,
+                )
+
+            if is_builtin_type(token.value):
+                self._raise(
+                    code="APX-PARSE-010",
+                    message=(
+                        f"Generic type parameter {token.value!r} cannot "
+                        "shadow a built-in ApexForge type."
+                    ),
+                    token=token,
+                )
+
+            constraints: tuple[ApexTypeConstraint, ...] = ()
+            declaration_span: object = token
+
+            if self.current().kind == "COLON":
+                self.consume("COLON")
+                constraint_token = self.consume("IDENT")
+                try:
+                    constraint = resolve_type_constraint(
+                        constraint_token.value
+                    )
+                except ValueError:
+                    self._raise(
+                        code="APX-PARSE-014",
+                        message=(
+                            "Unknown ApexForge generic constraint "
+                            f"{constraint_token.value!r}."
+                        ),
+                        token=constraint_token,
+                    )
+                    raise AssertionError("unreachable")
+
+                constraints = (constraint,)
+                declaration_span = _cover(token, constraint_token)
+
+            variable = ApexTypeVariable(
+                name=token.value,
+                owner=owner,
+                constraints=constraints,
+            )
+            declarations.append(
+                TypeParameterNode(
+                    name=token.value,
+                    apex_type=variable,
+                    span=getattr(declaration_span, "span", declaration_span),
+                    constraints=constraints,
+                )
+            )
+            names.add(token.value)
+
+            if self.match("COMMA") is None:
+                break
+            if self.current().kind == "GT":
+                self._raise(
+                    code="APX-PARSE-011",
+                    message=(
+                        f"Generic function {function_name!r} has a trailing "
+                        "comma in its type-parameter list."
+                    ),
+                    token=self.current(),
+                )
+
+        closing = self.consume("GT")
+        if declarations:
+            first = declarations[0]
+            last = declarations[-1]
+            # Preserve each declaration's precise identifier span; the list
+            # boundaries remain represented by the function span.
+            _ = (start, closing, first, last)
+
+        return tuple(declarations)
 
     def parse_function(self) -> FunctionNode:
         """Parse an ordered pure-function statement body."""
 
         start = self.consume("FUNCTION")
         name = self.consume("IDENT")
+        type_parameters = self._parse_type_parameters(
+            function_name=name.value,
+        )
+        type_parameter_scope = {
+            parameter.name: parameter.apex_type
+            for parameter in type_parameters
+        }
         self.consume_any(*self._LEFT_PAREN_KINDS)
 
         parameters: list[ParameterNode] = []
@@ -466,7 +697,7 @@ class Parser:
                 type_annotation: Optional[TypeAnnotationNode] = None
 
                 if self.current().kind == "COLON":
-                    type_annotation = self.parse_type_annotation()
+                    type_annotation = self.parse_type_annotation(type_parameter_scope)
 
                 parameters.append(
                     ParameterNode(
@@ -487,13 +718,19 @@ class Parser:
 
         return_type: Optional[TypeAnnotationNode] = None
         if self.current().kind == "COLON":
-            return_type = self.parse_type_annotation()
+            return_type = self.parse_type_annotation(type_parameter_scope)
 
-        self.consume("LBRACE")
-        body = self._parse_function_statement_block(
-            owner=f"function {name.value!r}",
-        )
-        closing = self.consume("RBRACE")
+        previous_type_parameters = self._active_type_parameters
+        self._active_type_parameters = dict(type_parameter_scope)
+
+        try:
+            self.consume("LBRACE")
+            body = self._parse_function_statement_block(
+                owner=f"function {name.value!r}",
+            )
+            closing = self.consume("RBRACE")
+        finally:
+            self._active_type_parameters = previous_type_parameters
 
         first_return = self._first_function_return(body)
         if first_return is None:
@@ -520,6 +757,7 @@ class Parser:
             body=body,
             span=_cover(start, closing),
             return_type=return_type,
+            type_parameters=type_parameters,
         )
 
     def _parse_function_statement_block(
@@ -1131,6 +1369,10 @@ class Parser:
             if identifier.value == "false":
                 return BooleanLiteralNode(value=False, span=identifier.span)
 
+            type_arguments: tuple[TypeAnnotationNode, ...] = ()
+            if self._looks_like_explicit_type_argument_call():
+                type_arguments = self._parse_call_type_arguments()
+
             if self.current().kind in self._LEFT_PAREN_KINDS:
                 self.consume_any(*self._LEFT_PAREN_KINDS)
                 arguments: list[ExpressionNode] = []
@@ -1146,6 +1388,7 @@ class Parser:
                     target=identifier.value,
                     arguments=tuple(arguments),
                     span=_cover(identifier, closing),
+                    type_arguments=type_arguments,
                 )
 
             return IdentifierNode(name=identifier.value, span=identifier.span)

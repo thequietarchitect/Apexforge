@@ -45,6 +45,12 @@ from type_system.inference import (
     TypeInferenceError,
     infer_expression_type_partial,
 )
+from type_system.generics import (
+    ApexTypeVariable,
+    TypeIdentity,
+    is_type_variable,
+    resolve_type,
+)
 from type_system.model import (
     ApexType,
     BOOL,
@@ -346,6 +352,37 @@ class RuntimeValidator:
                 )
             names.add(function_name)
 
+            type_parameters = tuple(
+                getattr(function, "type_parameters", ()) or ()
+            )
+            declared_type_parameters: list[ApexTypeVariable] = []
+            type_parameter_names: set[str] = set()
+
+            for index, type_parameter in enumerate(type_parameters):
+                if not isinstance(type_parameter, ApexTypeVariable):
+                    raise InvalidValueError(
+                        f"Function '{function_id}' type_parameter[{index}] "
+                        "must be an ApexTypeVariable."
+                    )
+                if type_parameter.name in type_parameter_names:
+                    raise DuplicateDefinitionError(
+                        f"Function '{function_id}' declares duplicate type "
+                        f"parameter '{type_parameter.name}'."
+                    )
+                if type_parameter.owner != function_id:
+                    raise InvalidValueError(
+                        f"Function '{function_id}' type parameter "
+                        f"'{type_parameter.name}' belongs to "
+                        f"{type_parameter.owner!r}."
+                    )
+                type_parameter_names.add(type_parameter.name)
+                declared_type_parameters.append(type_parameter)
+
+            declared_type_parameter_ids = {
+                id(type_parameter)
+                for type_parameter in declared_type_parameters
+            }
+
             parameters = tuple(
                 getattr(function, "parameters", ()) or ()
             )
@@ -365,6 +402,45 @@ class RuntimeValidator:
                         f"parameter '{parameter_name}'."
                     )
                 visible_names.add(parameter_name)
+
+                parameter_type = getattr(parameter, "value_type", None)
+                if parameter_type is not None:
+                    try:
+                        resolved_parameter_type = resolve_type(parameter_type)
+                    except (TypeError, ValueError) as exc:
+                        raise InvalidValueError(
+                            f"Function '{function_id}' parameter "
+                            f"'{parameter_name}' has invalid type metadata."
+                        ) from exc
+                    if (
+                        is_type_variable(resolved_parameter_type)
+                        and id(resolved_parameter_type)
+                        not in declared_type_parameter_ids
+                    ):
+                        raise UndefinedReferenceError(
+                            f"Function '{function_id}' parameter "
+                            f"'{parameter_name}' references undeclared generic "
+                            f"type {resolved_parameter_type}."
+                        )
+
+            return_type = getattr(function, "return_type", None)
+            if return_type is not None:
+                try:
+                    resolved_return_type = resolve_type(return_type)
+                except (TypeError, ValueError) as exc:
+                    raise InvalidValueError(
+                        f"Function '{function_id}' has invalid return type "
+                        "metadata."
+                    ) from exc
+                if (
+                    is_type_variable(resolved_return_type)
+                    and id(resolved_return_type)
+                    not in declared_type_parameter_ids
+                ):
+                    raise UndefinedReferenceError(
+                        f"Function '{function_id}' return type references "
+                        f"undeclared generic type {resolved_return_type}."
+                    )
 
             order = getattr(function, "order", 0)
             if isinstance(order, bool) or not isinstance(order, int):
@@ -1925,6 +2001,9 @@ class RuntimeValidator:
                         "return_type",
                         None,
                     ),
+                    type_parameters=tuple(
+                        getattr(function, "type_parameters", ()) or ()
+                    ),
                 )
             except (TypeError, ValueError) as exc:
                 raise InvalidValueError(
@@ -2023,10 +2102,10 @@ class RuntimeValidator:
         expression: Any,
         *,
         owner: str,
-        identifiers: Mapping[str, Optional[ApexType]],
+        identifiers: Mapping[str, Optional[TypeIdentity]],
         functions: Mapping[str, FunctionSignature],
         require_complete_arguments: bool,
-    ) -> Optional[ApexType]:
+    ) -> Optional[TypeIdentity]:
         try:
             return infer_expression_type_partial(
                 expression,
@@ -2062,7 +2141,7 @@ class RuntimeValidator:
         )
         identifiers: dict[
             str,
-            Optional[ApexType],
+            Optional[TypeIdentity],
         ] = {
             self._required_string(
                 getattr(parameter, "name", None),
@@ -2101,8 +2180,8 @@ class RuntimeValidator:
         statements: Sequence[Any],
         owner: str,
         function_name: str,
-        identifiers: Mapping[str, Optional[ApexType]],
-        expected_return: Optional[ApexType],
+        identifiers: Mapping[str, Optional[TypeIdentity]],
+        expected_return: Optional[TypeIdentity],
         functions: Mapping[str, FunctionSignature],
         require_complete: bool,
     ) -> None:
@@ -2609,6 +2688,31 @@ class RuntimeValidator:
                 raise UndefinedReferenceError(
                     f"{owner} calls undefined function '{target}'."
                 )
+
+            raw_type_arguments = getattr(
+                expression,
+                "type_arguments",
+                (),
+            )
+            if isinstance(raw_type_arguments, (str, bytes)):
+                raise InvalidValueError(
+                    f"{owner} function call type arguments must be a sequence "
+                    "of ApexForge types."
+                )
+            try:
+                type_arguments = tuple(raw_type_arguments or ())
+            except TypeError as exc:
+                raise InvalidValueError(
+                    f"{owner} function call type arguments must be iterable."
+                ) from exc
+            for index, value_type in enumerate(type_arguments):
+                try:
+                    resolve_type(value_type)
+                except (TypeError, ValueError) as exc:
+                    raise InvalidValueError(
+                        f"{owner} function call type argument[{index}] is not "
+                        "a valid ApexForge type identity."
+                    ) from exc
 
             raw_arguments = getattr(
                 expression,
