@@ -137,6 +137,15 @@ class RuntimeValidator:
             owner="directive",
         )
 
+        function_index = self._index_by_id(
+            getattr(program, "functions", ()),
+            owner="function",
+        )
+
+        # Expression validation uses this complete linked index so calls may
+        # resolve across separately compiled function and directive units.
+        self._function_index = function_index
+
         principal_index = self._index_by_id(
             getattr(program, "principals", ()),
             owner="principal",
@@ -155,6 +164,11 @@ class RuntimeValidator:
         # ------------------------------------------------------------------
         # Validate declaration contents and references.
         # ------------------------------------------------------------------
+
+        self._validate_functions(
+            functions=getattr(program, "functions", ()),
+            function_index=function_index,
+        )
 
         self._validate_states(
             states=getattr(program, "states", ()),
@@ -268,6 +282,248 @@ class RuntimeValidator:
             index[identifier] = value
 
         return index
+
+    # ======================================================================
+    # Pure functions
+    # ======================================================================
+
+    def _validate_functions(
+        self,
+        functions: Iterable[Any],
+        function_index: Mapping[str, Any],
+    ) -> None:
+        """Validate linked P7 pure-function declarations and their call graph."""
+
+        function_values = tuple(functions)
+        orders: set[int] = set()
+        names: set[str] = set()
+
+        for function in function_values:
+            function_id = self._required_string(
+                getattr(function, "id", None),
+                description="function id",
+            )
+            function_name = self._required_string(
+                getattr(function, "name", None),
+                description=f"function '{function_id}' name",
+            )
+
+            if function_name in names:
+                raise DuplicateDefinitionError(
+                    f"Duplicate function name '{function_name}'."
+                )
+
+            names.add(function_name)
+
+            parameters = tuple(
+                getattr(function, "parameters", ()) or ()
+            )
+            parameter_names: list[str] = []
+            seen_parameters: set[str] = set()
+
+            for index, parameter in enumerate(parameters):
+                parameter_name = self._required_string(
+                    getattr(parameter, "name", None),
+                    description=(
+                        f"function '{function_id}' parameter[{index}] name"
+                    ),
+                )
+
+                if parameter_name in seen_parameters:
+                    raise DuplicateDefinitionError(
+                        f"Function '{function_id}' declares duplicate "
+                        f"parameter '{parameter_name}'."
+                    )
+
+                seen_parameters.add(parameter_name)
+                parameter_names.append(parameter_name)
+
+            if not hasattr(function, "return_expression"):
+                raise InvalidValueError(
+                    f"Function '{function_id}' is missing its return expression."
+                )
+
+            order = getattr(function, "order", 0)
+
+            if isinstance(order, bool) or not isinstance(order, int):
+                raise InvalidValueError(
+                    f"Function '{function_id}' order must be an integer; "
+                    f"received {type(order).__name__}."
+                )
+
+            if order in orders:
+                raise DuplicateDefinitionError(
+                    f"Duplicate function order '{order}'."
+                )
+
+            orders.add(order)
+
+            # P7 pure functions are closed over their immutable parameters.
+            # State must be passed explicitly by the caller rather than read as
+            # hidden global input.
+            self._validate_expression(
+                getattr(function, "return_expression"),
+                state_ids=set(),
+                owner=f"function '{function_id}' return expression",
+                local_names=frozenset(parameter_names),
+                allow_state_references=False,
+            )
+
+        self._validate_function_call_graph(
+            functions=function_values,
+            function_index=function_index,
+        )
+
+    def _validate_function_call_graph(
+        self,
+        functions: Sequence[Any],
+        function_index: Mapping[str, Any],
+    ) -> None:
+        """Reject direct and indirect recursion for the P7.1 pure-function core."""
+
+        graph: dict[str, tuple[str, ...]] = {}
+
+        for function in functions:
+            function_id = self._required_string(
+                getattr(function, "id", None),
+                description="function id",
+            )
+            raw_targets = self._collect_function_call_targets(
+                getattr(function, "return_expression"),
+            )
+            resolved_targets: list[str] = []
+
+            for target in raw_targets:
+                resolved = self._resolve_function_reference(
+                    target,
+                    function_index,
+                )
+
+                # Undefined targets are already diagnosed by expression
+                # validation. Keep this guard so malformed future call nodes do
+                # not corrupt cycle analysis.
+                if resolved is None:
+                    continue
+
+                resolved_targets.append(resolved)
+
+            graph[function_id] = tuple(resolved_targets)
+
+        visited: set[str] = set()
+        active: set[str] = set()
+        stack: list[str] = []
+
+        def visit(function_id: str) -> None:
+            if function_id in visited:
+                return
+
+            if function_id in active:
+                cycle_start = stack.index(function_id)
+                cycle = stack[cycle_start:] + [function_id]
+                rendered = " -> ".join(
+                    self._function_display_name(
+                        identifier,
+                        function_index,
+                    )
+                    for identifier in cycle
+                )
+                raise InvalidValueError(
+                    f"Recursive function cycle detected: {rendered}."
+                )
+
+            active.add(function_id)
+            stack.append(function_id)
+
+            for target_id in graph.get(function_id, ()):
+                visit(target_id)
+
+            stack.pop()
+            active.remove(function_id)
+            visited.add(function_id)
+
+        ordered_ids = tuple(
+            self._required_string(
+                getattr(function, "id", None),
+                description="function id",
+            )
+            for function in sorted(
+                functions,
+                key=lambda value: (
+                    getattr(value, "order", 0),
+                    getattr(value, "id", ""),
+                ),
+            )
+        )
+
+        for function_id in ordered_ids:
+            visit(function_id)
+
+    def _collect_function_call_targets(
+        self,
+        expression: Any,
+    ) -> tuple[str, ...]:
+        """Return call targets in deterministic left-to-right expression order."""
+
+        expression_type = type(expression).__name__
+
+        if expression_type in {
+            "AIRIntegerLiteral",
+            "AIRStringLiteral",
+            "AIRBooleanLiteral",
+            "AIRIdentifierReference",
+        }:
+            return ()
+
+        if expression_type == "AIRUnaryExpression":
+            return self._collect_function_call_targets(
+                getattr(expression, "operand"),
+            )
+
+        if expression_type == "AIRBinaryExpression":
+            return (
+                self._collect_function_call_targets(
+                    getattr(expression, "left"),
+                )
+                + self._collect_function_call_targets(
+                    getattr(expression, "right"),
+                )
+            )
+
+        if expression_type == "AIRCallExpression":
+            target = self._required_string(
+                getattr(expression, "target", None),
+                description="function call target",
+            )
+            nested = tuple(
+                nested_target
+                for argument in tuple(
+                    getattr(expression, "arguments", ()) or ()
+                )
+                for nested_target in self._collect_function_call_targets(
+                    argument
+                )
+            )
+            return (target,) + nested
+
+        # Expression validation produces the authoritative unsupported-type
+        # diagnostic before call-graph construction reaches this branch.
+        return ()
+
+    def _function_display_name(
+        self,
+        function_id: str,
+        function_index: Mapping[str, Any],
+    ) -> str:
+        function = function_index.get(function_id)
+        name = getattr(function, "name", None)
+
+        if isinstance(name, str) and name.strip():
+            return name.strip()
+
+        if function_id.startswith("function:"):
+            return function_id[len("function:"):]
+
+        return function_id
 
     # ======================================================================
     # State and event declarations
@@ -1227,14 +1483,15 @@ class RuntimeValidator:
         expression: Any,
         state_ids: set[str],
         owner: str,
+        local_names: frozenset[str] = frozenset(),
+        allow_state_references: bool = True,
     ) -> None:
         """
         Validate one AIR expression recursively.
 
-        This implementation dispatches by the canonical AIR expression class
-        names instead of importing the expression module. That keeps the
-        runtime validator independent from the module's filename/casing and
-        avoids introducing a new circular import.
+        P7 extends identifier resolution with immutable function parameters and
+        adds linked pure-function calls. Dispatch remains class-name based to
+        preserve the validator's independence from expression-module imports.
         """
 
         expression_type = type(expression).__name__
@@ -1278,15 +1535,28 @@ class RuntimeValidator:
                 description=f"{owner} identifier reference",
             )
 
-            if not self._state_reference_exists(
-                reference,
-                state_ids,
+            if reference in local_names:
+                return
+
+            if (
+                allow_state_references
+                and self._state_reference_exists(
+                    reference,
+                    state_ids,
+                )
             ):
+                return
+
+            if allow_state_references:
                 raise UndefinedReferenceError(
-                    f"{owner} references undefined state '{reference}'."
+                    f"{owner} references undefined state or local "
+                    f"'{reference}'."
                 )
 
-            return
+            raise UndefinedReferenceError(
+                f"{owner} references undefined function parameter "
+                f"'{reference}'."
+            )
 
         if expression_type == "AIRUnaryExpression":
             operator = self._required_string(
@@ -1309,6 +1579,8 @@ class RuntimeValidator:
                 getattr(expression, "operand"),
                 state_ids=state_ids,
                 owner=f"{owner} operand",
+                local_names=local_names,
+                allow_state_references=allow_state_references,
             )
 
             return
@@ -1355,13 +1627,83 @@ class RuntimeValidator:
                 getattr(expression, "left"),
                 state_ids=state_ids,
                 owner=f"{owner} left operand",
+                local_names=local_names,
+                allow_state_references=allow_state_references,
             )
 
             self._validate_expression(
                 getattr(expression, "right"),
                 state_ids=state_ids,
                 owner=f"{owner} right operand",
+                local_names=local_names,
+                allow_state_references=allow_state_references,
             )
+
+            return
+
+        if expression_type == "AIRCallExpression":
+            target = self._required_string(
+                getattr(expression, "target", None),
+                description=f"{owner} function call target",
+            )
+            function_index = getattr(
+                self,
+                "_function_index",
+                {},
+            )
+            resolved_target = self._resolve_function_reference(
+                target,
+                function_index,
+            )
+
+            if resolved_target is None:
+                raise UndefinedReferenceError(
+                    f"{owner} calls undefined function '{target}'."
+                )
+
+            raw_arguments = getattr(
+                expression,
+                "arguments",
+                (),
+            )
+
+            if isinstance(raw_arguments, (str, bytes)):
+                raise InvalidValueError(
+                    f"{owner} function call arguments must be a sequence "
+                    "of AIR expressions."
+                )
+
+            try:
+                arguments = tuple(raw_arguments or ())
+            except TypeError as exc:
+                raise InvalidValueError(
+                    f"{owner} function call arguments must be iterable."
+                ) from exc
+
+            function = function_index[resolved_target]
+            parameters = tuple(
+                getattr(function, "parameters", ()) or ()
+            )
+
+            if len(arguments) != len(parameters):
+                display_name = self._function_display_name(
+                    resolved_target,
+                    function_index,
+                )
+                raise InvalidValueError(
+                    f"{owner} calls function '{display_name}' with "
+                    f"{len(arguments)} argument(s); expected "
+                    f"{len(parameters)}."
+                )
+
+            for index, argument in enumerate(arguments):
+                self._validate_expression(
+                    argument,
+                    state_ids=state_ids,
+                    owner=f"{owner} argument[{index}]",
+                    local_names=local_names,
+                    allow_state_references=allow_state_references,
+                )
 
             return
 
@@ -1464,6 +1806,33 @@ class RuntimeValidator:
         canonical = f"state:{reference}"
 
         return canonical in state_ids
+
+    def _resolve_function_reference(
+        self,
+        reference: str,
+        function_index: Mapping[str, Any],
+    ) -> Any:
+        """Resolve canonical IDs and plain function names to one function ID."""
+
+        if reference in function_index:
+            return reference
+
+        canonical = (
+            reference
+            if reference.startswith("function:")
+            else f"function:{reference}"
+        )
+
+        if canonical in function_index:
+            return canonical
+
+        for function_id, function in function_index.items():
+            name = getattr(function, "name", None)
+
+            if isinstance(name, str) and name.strip() == reference:
+                return function_id
+
+        return None
 
     # ======================================================================
     # Helpers

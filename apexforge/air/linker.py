@@ -102,6 +102,7 @@ class AIRProgramLinker:
             key=self._required_id,
         )
         directives = self._merge_directives(units)
+        functions = self._merge_functions(units)
         authorities = self._merge_unique(
             units,
             attribute="authorities",
@@ -134,6 +135,7 @@ class AIRProgramLinker:
             authorities=authorities,
             principals=principals,
             roles=roles,
+            functions=functions,
         )
 
     def _resolve_version(
@@ -265,6 +267,73 @@ class AIRProgramLinker:
                 order=global_order,
             )
             for global_order, directive in enumerate(merged)
+        )
+
+    def _merge_functions(
+        self,
+        programs: tuple[AIRProgram, ...],
+    ) -> tuple[Any, ...]:
+        """Merge pure functions and assign deterministic global orders."""
+
+        merged: list[Any] = []
+        seen: set[str] = set()
+
+        for program_index, program in enumerate(programs):
+            local = tuple(
+                getattr(program, "functions", ()) or ()
+            )
+
+            prepared: list[tuple[int, str, Any]] = []
+
+            for function_index, function in enumerate(local):
+                location = (
+                    f"unit[{program_index}].functions"
+                    f"[{function_index}]"
+                )
+                identifier = self._required_id(
+                    function,
+                    location,
+                )
+                order = getattr(function, "order", None)
+
+                if isinstance(order, bool) or not isinstance(order, int):
+                    raise InvalidLinkInputError(
+                        f"{location} order must be an integer; "
+                        f"received {type(order).__name__}."
+                    )
+
+                prepared.append(
+                    (order, identifier, function)
+                )
+
+            # Each compilation unit owns a local function order. Preserve that
+            # order within the unit and use ID only as a deterministic
+            # tie-breaker for malformed equal-order inputs.
+            prepared.sort(
+                key=lambda item: (
+                    item[0],
+                    item[1],
+                )
+            )
+
+            for _, identifier, function in prepared:
+                if identifier in seen:
+                    raise DuplicateLinkDefinitionError(
+                        "function",
+                        identifier,
+                    )
+
+                seen.add(identifier)
+                merged.append(function)
+
+        # Separately compiled function units begin at local order zero.
+        # Renumbering creates one validator-safe global function order.
+        return tuple(
+            replace(
+                function,
+                order=global_order,
+            )
+            for global_order, function in enumerate(merged)
         )
 
     def _required_id(
