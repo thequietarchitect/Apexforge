@@ -138,7 +138,7 @@ def main() -> None:
     )
 
     legacy = compiler_module.compile_source(
-        "function identity(value) { "
+        "function legacy_passthrough(value) { "
         "return value "
         "}"
     )
@@ -157,27 +157,27 @@ def main() -> None:
         "unresolved external call was not deferred",
     )
 
-    choose_signature = inference_module.FunctionSignature(
-        name="choose",
+    external_text_signature = inference_module.FunctionSignature(
+        name="external_text",
         parameter_types=(BOOL,),
         return_type=STRING,
     )
     require_compiler_error(
-        "function UseChoose() : string { "
-        "return choose(1) "
+        "function UseExternalText() : string { "
+        "return external_text(1) "
         "}",
         "APX-TYPE-008",
         function_signatures={
-            "choose": choose_signature,
+            "external_text": external_text_signature,
         },
     )
 
     known_external = compiler_module.compile_source(
-        "function UseChoose(flag : bool) : string { "
-        "return choose(flag) "
+        "function UseExternalText(flag : bool) : string { "
+        "return external_text(flag) "
         "}",
         function_signatures={
-            "choose": choose_signature,
+            "external_text": external_text_signature,
         },
     )
     require(

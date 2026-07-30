@@ -36,12 +36,10 @@ def require(
     condition: bool,
     message: str,
 ) -> None:
-    if condition:
-        print(f"PASS: {message}")
-        return
-
-    print(f"FAIL: {message}")
-    raise AssertionError(message)
+    if not condition:
+        raise AssertionError(
+            message
+        )
 
 
 def require_raises(
@@ -52,21 +50,12 @@ def require_raises(
     try:
         function()
     except expected_type:
-        print(f"PASS: {message}")
         return
-    except Exception as exc:
-        print(
-            f"FAIL: {message} — expected "
-            f"{expected_type.__name__}, received "
-            f"{type(exc).__name__}: {exc}"
-        )
-        raise
 
-    print(
-        f"FAIL: {message} — expected "
-        f"{expected_type.__name__}, but nothing was raised"
+    raise AssertionError(
+        message
     )
-    raise AssertionError(message)
+
 
 def main() -> None:
     program = compile_source(
@@ -166,30 +155,15 @@ def main() -> None:
         path.effects[0] is effect,
         "CausalPath did not preserve canonical EffectIntent",
     )
-   
-    effect_hint = get_type_hints(
+    effects_annotation = get_type_hints(
         StateDelta
     )["effects"]
 
-    effect_args = get_args(
-    effect_hint
-)
-
     require(
-        get_origin(effect_hint) in (
-            tuple,
-        )
-            and len(effect_args) == 2
-        and effect_args[0] is EffectIntent
-        and effect_args[1] is Ellipsis,
-        (
-            "StateDelta effects annotation must contain the canonical "
-            "effects.model.EffectIntent; "
-            f"resolved annotation: {effect_hint!r}, "
-            f"origin: {get_origin(effect_hint)!r}, "
-            f"arguments: {effect_args!r}"
-        ),
-)
+        get_origin(effects_annotation) is tuple
+        and get_args(effects_annotation) == (EffectIntent, Ellipsis),
+        "StateDelta does not bind effects.model.EffectIntent",
+    )
 
     require_raises(
         ValueError,
@@ -208,14 +182,25 @@ def main() -> None:
         "duplicate state cells must be rejected",
     )
 
+    boolean_state = StateSnapshot.from_mapping(
+        {
+            "state:flag": True,
+        }
+    )
+
+    require(
+        boolean_state.get_bool(
+            "flag"
+        ) is True,
+        "bool state value was not preserved",
+    )
+
     require_raises(
         TypeError,
-        lambda: StateSnapshot.from_mapping(
-            {
-                "state:flag": True,
-            }
+        lambda: boolean_state.get_int(
+            "flag"
         ),
-        "bool must not be accepted as an integer state value",
+        "bool must not be accepted through the integer state accessor",
     )
 
     require_raises(
@@ -241,7 +226,7 @@ def main() -> None:
     print("Canonical and plain state lookup: PASS")
     print("Immutable delta application: PASS")
     print("EffectIntent ownership: PASS")
-    print("Duplicate and non-int rejection: PASS")
+    print("Duplicate and exact typed-accessor rejection: PASS")
 
 
 if __name__ == "__main__":

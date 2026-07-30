@@ -64,15 +64,15 @@ function loop(value) {
 
 
 INDIRECT_A_SOURCE = """
-function first(value) {
-    return second(value)
+function cycle_left(value) {
+    return cycle_right(value)
 }
 """
 
 
 INDIRECT_B_SOURCE = """
-function second(value) {
-    return first(value)
+function cycle_right(value) {
+    return cycle_left(value)
 }
 """
 
@@ -227,7 +227,8 @@ def main() -> None:
         "validator must reject indirect recursion",
     )
     require(
-        "first -> second -> first" in str(indirect_error),
+        "cycle_left -> cycle_right -> cycle_left"
+        in str(indirect_error),
         "indirect-recursion diagnostic did not preserve cycle order",
     )
 

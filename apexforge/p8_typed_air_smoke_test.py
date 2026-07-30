@@ -76,7 +76,7 @@ def main() -> None:
     )
 
     legacy_function_program = compile_source(
-        "function identity(value) { "
+        "function legacy_passthrough(value) { "
         "return value "
         "}"
     )

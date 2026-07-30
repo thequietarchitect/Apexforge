@@ -32,6 +32,9 @@ from runtime.diagnostics import (
 )
 from runtime.call_stack import CallFrame, CallStack
 from runtime.state import StateDelta, StateSnapshot
+from standard_library.core import DEFAULT_STANDARD_LIBRARY
+from standard_library.model import StandardLibraryInvocationError
+from standard_library.registry import StandardLibraryRegistry
 
 
 MAX_CONDITIONAL_DEPTH = 64
@@ -97,8 +100,22 @@ class RuntimeEngine:
     def __init__(
         self,
         causality: Optional[CausalEngine] = None,
+        standard_library: Optional[StandardLibraryRegistry] = None,
     ) -> None:
         self._causality = causality or CausalEngine()
+        self._standard_library = (
+            standard_library
+            if standard_library is not None
+            else DEFAULT_STANDARD_LIBRARY
+        )
+        if not isinstance(
+            self._standard_library,
+            StandardLibraryRegistry,
+        ):
+            raise TypeError(
+                "RuntimeEngine.standard_library must be "
+                "StandardLibraryRegistry."
+            )
 
     def execute(
         self,
@@ -1221,6 +1238,20 @@ class RuntimeEngine:
         call_stack: CallStack,
         trace_steps: list[TraceStep],
     ) -> Any:
+        builtin = self._standard_library.get(
+            expression.target
+        )
+        if builtin is not None:
+            return self._evaluate_standard_library_call(
+                builtin=builtin,
+                expression=expression,
+                state=state,
+                functions=functions,
+                caller_frame=caller_frame,
+                call_stack=call_stack,
+                trace_steps=trace_steps,
+            )
+
         function = self._resolve_function_reference(
             expression.target,
             functions,
@@ -1407,6 +1438,83 @@ class RuntimeEngine:
             )
         )
 
+        return value
+
+    def _evaluate_standard_library_call(
+        self,
+        *,
+        builtin: Any,
+        expression: AIRCallExpression,
+        state: StateSnapshot,
+        functions: Mapping[str, Any],
+        caller_frame: Optional[CallFrame],
+        call_stack: CallStack,
+        trace_steps: list[TraceStep],
+    ) -> Any:
+        """Evaluate one pure host-backed standard-library call."""
+
+        arguments: list[Any] = []
+        for argument in tuple(
+            getattr(expression, "arguments", ()) or ()
+        ):
+            arguments.append(
+                self._evaluate_expression(
+                    argument,
+                    state,
+                    functions=functions,
+                    frame=caller_frame,
+                    call_stack=call_stack,
+                    trace_steps=trace_steps,
+                )
+            )
+
+        trace_steps.append(
+            TraceStep(
+                "stdlib.call.start",
+                "entered pure standard-library function",
+                facts(
+                    arguments=len(arguments),
+                    function=builtin.canonical_id,
+                    name=builtin.name,
+                ),
+            )
+        )
+
+        try:
+            value = builtin.invoke(
+                tuple(arguments),
+                type_arguments=tuple(
+                    getattr(expression, "type_arguments", ()) or ()
+                ),
+            )
+        except StandardLibraryInvocationError as exc:
+            trace_steps.append(
+                TraceStep(
+                    "stdlib.call.abort",
+                    "aborted pure standard-library function",
+                    facts(
+                        code=exc.code,
+                        function=builtin.canonical_id,
+                        name=builtin.name,
+                    ),
+                )
+            )
+            raise RuntimeExpressionError(
+                str(exc),
+                trace_steps=tuple(trace_steps),
+            ) from exc
+
+        trace_steps.append(
+            TraceStep(
+                "stdlib.call.finish",
+                "returned from pure standard-library function",
+                facts(
+                    function=builtin.canonical_id,
+                    name=builtin.name,
+                    result_type=type(value).__name__,
+                ),
+            )
+        )
         return value
 
     def _execute_function_statements(

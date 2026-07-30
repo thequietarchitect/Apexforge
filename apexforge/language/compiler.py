@@ -82,6 +82,7 @@ from type_system.model import (
     STRING,
     resolve_builtin_type,
 )
+from standard_library.core import DEFAULT_STANDARD_LIBRARY
 
 
 class CompilerError(ValueError):
@@ -274,30 +275,11 @@ def _compile_type_annotation(
 def _normalize_function_signatures(
     function_signatures: Optional[Mapping[str, FunctionSignature]],
 ) -> dict[str, FunctionSignature]:
-    """Normalize an optional external function-signature environment."""
+    """Merge external signatures with the canonical standard library."""
 
-    if function_signatures is None:
-        return {}
-
-    normalized = dict(function_signatures)
-
-    for name, signature in normalized.items():
-        if type(name) is not str or not name:
-            raise ValueError(
-                "Function signature mappings require non-empty string names."
-            )
-        if not isinstance(signature, FunctionSignature):
-            raise TypeError(
-                "Function signature mappings require FunctionSignature values; "
-                f"{name!r} received {type(signature).__name__}."
-            )
-        if name != signature.name:
-            raise ValueError(
-                "Function signature mapping key must match signature.name; "
-                f"received key {name!r} for {signature.name!r}."
-            )
-
-    return normalized
+    return DEFAULT_STANDARD_LIBRARY.merge_external_signatures(
+        function_signatures
+    )
 
 
 def _expression_identifiers(
@@ -1640,6 +1622,17 @@ def _compile_function_with_map(
     function_id = f"function:{node.name}"
     entries: list[SourceMapEntry] = []
     functions = _normalize_function_signatures(function_signatures)
+
+    if DEFAULT_STANDARD_LIBRARY.contains(node.name):
+        raise _compile_error(
+            code="APX-COMPILE-015",
+            message=(
+                f"Function name {node.name!r} is reserved by the "
+                "ApexForge standard library."
+            ),
+            node=node,
+            air_id=function_id,
+        )
     _append_source_entry(
         entries,
         air_id=function_id,

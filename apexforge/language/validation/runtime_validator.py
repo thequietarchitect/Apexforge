@@ -60,6 +60,8 @@ from type_system.model import (
     VOID,
     resolve_builtin_type,
 )
+from standard_library.core import DEFAULT_STANDARD_LIBRARY
+from standard_library.registry import StandardLibraryRegistry
 
 
 class _LegacyFunctionReturn:
@@ -109,6 +111,24 @@ class UndefinedReferenceError(RuntimeValidationError):
 
 class RuntimeValidator:
     """Validate an AIRProgram for safe execution by RuntimeEngine."""
+
+    def __init__(
+        self,
+        standard_library: Optional[StandardLibraryRegistry] = None,
+    ) -> None:
+        self._standard_library = (
+            standard_library
+            if standard_library is not None
+            else DEFAULT_STANDARD_LIBRARY
+        )
+        if not isinstance(
+            self._standard_library,
+            StandardLibraryRegistry,
+        ):
+            raise TypeError(
+                "RuntimeValidator.standard_library must be "
+                "StandardLibraryRegistry."
+            )
 
     def validate(
         self,
@@ -711,6 +731,8 @@ class RuntimeValidator:
             resolved_targets: list[str] = []
 
             for target in raw_targets:
+                if self._standard_library.contains(target):
+                    continue
                 resolved = self._resolve_function_reference(
                     target,
                     function_index,
@@ -1970,13 +1992,21 @@ class RuntimeValidator:
         self,
         function_index: Mapping[str, Any],
     ) -> dict[str, FunctionSignature]:
-        signatures: dict[str, FunctionSignature] = {}
+        signatures: dict[str, FunctionSignature] = (
+            self._standard_library.signatures()
+        )
 
         for function_id, function in function_index.items():
             function_name = self._required_string(
                 getattr(function, "name", None),
                 description=f"function '{function_id}' name",
             )
+            if self._standard_library.contains(function_name):
+                raise DuplicateDefinitionError(
+                    f"Function '{function_id}' uses reserved "
+                    f"standard-library name '{function_name}'."
+                )
+
             parameters = tuple(
                 getattr(
                     function,
@@ -2684,7 +2714,10 @@ class RuntimeValidator:
                 function_index,
             )
 
-            if resolved_target is None:
+            if (
+                resolved_target is None
+                and not self._standard_library.contains(target)
+            ):
                 raise UndefinedReferenceError(
                     f"{owner} calls undefined function '{target}'."
                 )
@@ -2733,20 +2766,28 @@ class RuntimeValidator:
                     f"{owner} function call arguments must be iterable."
                 ) from exc
 
-            function = function_index[resolved_target]
-            parameters = tuple(
-                getattr(function, "parameters", ()) or ()
-            )
-
-            if len(arguments) != len(parameters):
+            if resolved_target is None:
+                builtin = self._standard_library.require(target)
+                expected_argument_count = len(
+                    builtin.signature.parameter_types
+                )
+                display_name = builtin.name
+            else:
+                function = function_index[resolved_target]
+                parameters = tuple(
+                    getattr(function, "parameters", ()) or ()
+                )
+                expected_argument_count = len(parameters)
                 display_name = self._function_display_name(
                     resolved_target,
                     function_index,
                 )
+
+            if len(arguments) != expected_argument_count:
                 raise InvalidValueError(
                     f"{owner} calls function '{display_name}' with "
                     f"{len(arguments)} argument(s); expected "
-                    f"{len(parameters)}."
+                    f"{expected_argument_count}."
                 )
 
             for index, argument in enumerate(arguments):
