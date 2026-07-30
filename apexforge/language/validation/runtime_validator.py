@@ -377,13 +377,28 @@ class RuntimeValidator:
         self,
         function: Any,
     ) -> tuple[Any, ...]:
-        body = tuple(getattr(function, "body", ()) or ())
+        raw_body = getattr(function, "body", ())
+
+        body = self._function_statement_sequence(
+            raw_body,
+            owner=(
+                f"function '{getattr(function, 'id', '<unknown>')}' body"
+            ),
+            required=False,
+        )
+
         if body:
             return body
 
-        legacy = tuple(
-            getattr(function, "local_bindings", ()) or ()
+        legacy = self._function_statement_sequence(
+            getattr(function, "local_bindings", ()),
+            owner=(
+                f"function '{getattr(function, 'id', '<unknown>')}' "
+                "legacy local bindings"
+            ),
+            required=False,
         )
+
         if not hasattr(function, "return_expression"):
             raise InvalidValueError(
                 f"Function '{getattr(function, 'id', '<unknown>')}' is "
@@ -391,6 +406,7 @@ class RuntimeValidator:
             )
 
         return_expression = getattr(function, "return_expression")
+
         if return_expression is None:
             raise InvalidValueError(
                 f"Function '{getattr(function, 'id', '<unknown>')}' is "
@@ -401,6 +417,35 @@ class RuntimeValidator:
         # the same statement pipeline without importing air.functions.
         return legacy + (_LegacyFunctionReturn(return_expression),)
 
+    def _function_statement_sequence(
+        self,
+        value: Any,
+        *,
+        owner: str,
+        required: bool = True,
+    ) -> tuple[Any, ...]:
+        """Normalize one pure-function statement stream defensively."""
+
+        if value is None:
+            if required:
+                raise InvalidValueError(
+                    f"{owner} statement stream is missing."
+                )
+            return ()
+
+        if isinstance(value, (str, bytes)):
+            raise InvalidValueError(
+                f"{owner} statement stream must be a sequence of AIR "
+                "statements, not text."
+            )
+
+        try:
+            return tuple(value)
+        except TypeError as exc:
+            raise InvalidValueError(
+                f"{owner} statement stream must be iterable."
+            ) from exc
+
     def _validate_function_statements(
         self,
         *,
@@ -410,17 +455,30 @@ class RuntimeValidator:
         owner: str,
         depth: int,
     ) -> bool:
+        """Validate lexical scope and definite return for one statement block."""
+
         if depth > 64:
             raise InvalidValueError(
                 f"{owner} exceeds the maximum function conditional "
                 "nesting depth of 64."
             )
 
+        normalized_statements = self._function_statement_sequence(
+            statements,
+            owner=owner,
+        )
         current_names = set(visible_names)
         definitely_returns = False
 
-        for index, statement in enumerate(tuple(statements)):
+        for index, statement in enumerate(normalized_statements):
             statement_owner = f"{owner} statement[{index}]"
+
+            if definitely_returns:
+                raise InvalidValueError(
+                    f"{statement_owner} is unreachable because the preceding "
+                    "control-flow path definitely returns."
+                )
+
             statement_type = type(statement).__name__
 
             if statement_type == "AIRLocalBinding":
@@ -428,16 +486,19 @@ class RuntimeValidator:
                     getattr(statement, "name", None),
                     description=f"{statement_owner} local name",
                 )
+
                 if local_name in current_names:
                     raise DuplicateDefinitionError(
                         f"Function '{function_id}' local '{local_name}' "
                         "duplicates or shadows an existing binding."
                     )
+
                 if not hasattr(statement, "expression"):
                     raise InvalidValueError(
                         f"{statement_owner} local '{local_name}' is missing "
                         "its expression."
                     )
+
                 self._validate_expression(
                     getattr(statement, "expression"),
                     state_ids=set(),
@@ -448,11 +509,15 @@ class RuntimeValidator:
                 current_names.add(local_name)
                 continue
 
-            if statement_type in {"AIRFunctionReturn", "_LegacyFunctionReturn"}:
+            if statement_type in {
+                "AIRFunctionReturn",
+                "_LegacyFunctionReturn",
+            }:
                 if not hasattr(statement, "expression"):
                     raise InvalidValueError(
                         f"{statement_owner} return is missing its expression."
                     )
+
                 self._validate_expression(
                     getattr(statement, "expression"),
                     state_ids=set(),
@@ -469,6 +534,7 @@ class RuntimeValidator:
                         f"{statement_owner} conditional is missing its "
                         "condition."
                     )
+
                 self._validate_expression(
                     getattr(statement, "condition"),
                     state_ids=set(),
@@ -477,19 +543,31 @@ class RuntimeValidator:
                     allow_state_references=False,
                 )
 
+                if not hasattr(statement, "actions"):
+                    raise InvalidValueError(
+                        f"{statement_owner} conditional is missing its when "
+                        "statement stream."
+                    )
+
+                true_actions = self._function_statement_sequence(
+                    getattr(statement, "actions"),
+                    owner=f"{statement_owner} when block",
+                )
                 true_returns = self._validate_function_statements(
-                    statements=tuple(
-                        getattr(statement, "actions", ()) or ()
-                    ),
+                    statements=true_actions,
                     visible_names=frozenset(current_names),
                     function_id=function_id,
                     owner=f"{statement_owner} when block",
                     depth=depth + 1,
                 )
-                otherwise_actions = tuple(
-                    getattr(statement, "otherwise_actions", ()) or ()
+
+                otherwise_actions = self._function_statement_sequence(
+                    getattr(statement, "otherwise_actions", ()),
+                    owner=f"{statement_owner} otherwise block",
+                    required=False,
                 )
                 false_returns = False
+
                 if otherwise_actions:
                     false_returns = self._validate_function_statements(
                         statements=otherwise_actions,
@@ -505,7 +583,9 @@ class RuntimeValidator:
 
             raise InvalidValueError(
                 f"{statement_owner} has unsupported pure-function "
-                f"statement type '{statement_type}'."
+                f"statement type '{statement_type}'. Pure functions may "
+                "contain only immutable local bindings, conditionals, and "
+                "returns."
             )
 
         return definitely_returns

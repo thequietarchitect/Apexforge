@@ -39,7 +39,6 @@ from language.parser import (
     UnaryExpressionNode,
     BinaryExpressionNode,
     CallExpressionNode,
-    LetNode,
     FunctionNode,
     FunctionWhenNode,
     LetNode,
@@ -653,6 +652,82 @@ def _compile_directive_with_map(
     return CompiledSource(program=program, source_map=SourceMap(tuple(entries)))
 
 
+
+def _validate_function_source_flow(
+    statements: tuple[object, ...],
+    *,
+    function_name: str,
+    depth: int = 0,
+) -> bool:
+    """Reject unreachable source statements and report definite return.
+
+    RuntimeValidator remains the authoritative AIR-level control-flow
+    validator. This source pass exists so unreachable source code receives a
+    precise compile-stage diagnostic at the first unreachable statement.
+    """
+
+    if depth > 64:
+        # RuntimeValidator also protects hand-authored AIR. Parser-produced
+        # source reaches this guard first and receives a source-aware error.
+        owner = statements[0] if statements else None
+        raise _compile_error(
+            code="APX-COMPILE-013",
+            message=(
+                f"Function {function_name!r} exceeds the maximum function "
+                "conditional nesting depth of 64."
+            ),
+            node=owner,
+            air_id=f"function:{function_name}",
+        )
+
+    definitely_returns = False
+
+    for statement in tuple(statements):
+        if definitely_returns:
+            raise _compile_error(
+                code="APX-COMPILE-012",
+                message=(
+                    f"Function {function_name!r} contains an unreachable "
+                    "statement after a definite return."
+                ),
+                node=statement,
+                air_id=f"function:{function_name}",
+            )
+
+        if isinstance(statement, ReturnNode):
+            definitely_returns = True
+            continue
+
+        if isinstance(statement, FunctionWhenNode):
+            true_returns = _validate_function_source_flow(
+                tuple(statement.actions),
+                function_name=function_name,
+                depth=depth + 1,
+            )
+
+            false_returns = False
+            otherwise_actions = tuple(
+                getattr(statement, "otherwise_actions", ()) or ()
+            )
+
+            if otherwise_actions:
+                false_returns = _validate_function_source_flow(
+                    otherwise_actions,
+                    function_name=function_name,
+                    depth=depth + 1,
+                )
+
+            if true_returns and false_returns:
+                definitely_returns = True
+            continue
+
+        # LetNode and any unsupported node continue normally here.
+        # Unsupported nodes are rejected by _compile_function_statements with
+        # its existing APX-COMPILE-011 diagnostic.
+
+    return definitely_returns
+
+
 def _compile_function_statements(
     statements: tuple[object, ...],
     *,
@@ -821,6 +896,11 @@ def _compile_function_with_map(
     body_nodes = tuple(getattr(node, "body", ()) or ())
     if not body_nodes:
         body_nodes = local_nodes + (node.return_statement,)
+
+    _validate_function_source_flow(
+        body_nodes,
+        function_name=node.name,
+    )
 
     compiled_body = _compile_function_statements(
         body_nodes,
