@@ -263,6 +263,215 @@ def compile_expression(node: ExpressionNode) -> AIRExpression:
     )
 
 
+def _record_expression_function_calls(
+    node: ExpressionNode,
+    entries: list[SourceMapEntry],
+    *,
+    scope: str,
+    counter: list[int],
+) -> None:
+    """Record every source-level function call without changing AIR.
+
+    AFP-P7.3 uses these sidecar entries for module visibility and linked
+    validation diagnostics. The traversal is deterministic and follows source
+    expression structure.
+    """
+
+    if isinstance(node, CallExpressionNode):
+        call_index = counter[0]
+        counter[0] += 1
+        _append_source_entry(
+            entries,
+            air_id=f"function_call:{scope}:{call_index}",
+            node=node,
+            kind="function_call",
+            reference=node.target,
+        )
+        for argument_index, argument in enumerate(node.arguments):
+            _record_expression_function_calls(
+                argument,
+                entries,
+                scope=f"{scope}:argument:{argument_index}",
+                counter=counter,
+            )
+        return
+
+    if isinstance(node, UnaryExpressionNode):
+        _record_expression_function_calls(
+            node.operand,
+            entries,
+            scope=f"{scope}:operand",
+            counter=counter,
+        )
+        return
+
+    if isinstance(node, BinaryExpressionNode):
+        _record_expression_function_calls(
+            node.left,
+            entries,
+            scope=f"{scope}:left",
+            counter=counter,
+        )
+        _record_expression_function_calls(
+            node.right,
+            entries,
+            scope=f"{scope}:right",
+            counter=counter,
+        )
+
+
+def _record_function_statement_calls(
+    statements: tuple[object, ...],
+    entries: list[SourceMapEntry],
+    *,
+    scope: str,
+    counter: list[int],
+) -> None:
+    for statement_index, statement in enumerate(tuple(statements)):
+        statement_scope = f"{scope}:statement:{statement_index}"
+
+        if isinstance(statement, LetNode):
+            _record_expression_function_calls(
+                statement.expression,
+                entries,
+                scope=f"{statement_scope}:local:{statement.name}",
+                counter=counter,
+            )
+            continue
+
+        if isinstance(statement, ReturnNode):
+            _record_expression_function_calls(
+                statement.expression,
+                entries,
+                scope=f"{statement_scope}:return",
+                counter=counter,
+            )
+            continue
+
+        if isinstance(statement, FunctionWhenNode):
+            _record_expression_function_calls(
+                statement.condition,
+                entries,
+                scope=f"{statement_scope}:condition",
+                counter=counter,
+            )
+            _record_function_statement_calls(
+                tuple(statement.actions),
+                entries,
+                scope=f"{statement_scope}:when",
+                counter=counter,
+            )
+            _record_function_statement_calls(
+                tuple(getattr(statement, "otherwise_actions", ()) or ()),
+                entries,
+                scope=f"{statement_scope}:otherwise",
+                counter=counter,
+            )
+
+
+def _record_action_function_calls(
+    actions: tuple[object, ...],
+    entries: list[SourceMapEntry],
+    *,
+    scope: str,
+    counter: list[int],
+) -> None:
+    for action_index, action in enumerate(tuple(actions)):
+        action_scope = f"{scope}:action:{action_index}"
+
+        if isinstance(action, AddActionNode):
+            _record_expression_function_calls(
+                action.value,
+                entries,
+                scope=f"{action_scope}:add",
+                counter=counter,
+            )
+            continue
+
+        if isinstance(action, SetActionNode):
+            _record_expression_function_calls(
+                action.expression,
+                entries,
+                scope=f"{action_scope}:set",
+                counter=counter,
+            )
+            continue
+
+        if isinstance(action, MessageActionNode):
+            _record_expression_function_calls(
+                action.expression,
+                entries,
+                scope=f"{action_scope}:message",
+                counter=counter,
+            )
+            continue
+
+        if isinstance(action, WhenActionNode):
+            _record_expression_function_calls(
+                action.condition,
+                entries,
+                scope=f"{action_scope}:condition",
+                counter=counter,
+            )
+            _record_action_function_calls(
+                tuple(action.actions),
+                entries,
+                scope=f"{action_scope}:when",
+                counter=counter,
+            )
+            _record_action_function_calls(
+                tuple(getattr(action, "otherwise_actions", ()) or ()),
+                entries,
+                scope=f"{action_scope}:otherwise",
+                counter=counter,
+            )
+
+
+def _record_directive_function_calls(
+    node: DirectiveNode,
+    entries: list[SourceMapEntry],
+) -> None:
+    counter = [0]
+
+    for state_index, state in enumerate(node.states):
+        _record_expression_function_calls(
+            state.initial,
+            entries,
+            scope=f"{node.name}:state:{state_index}:{state.name}",
+            counter=counter,
+        )
+
+    for cause_index, cause in enumerate(node.causes):
+        for path_index, path in enumerate(cause.paths):
+            _record_action_function_calls(
+                tuple(path.actions),
+                entries,
+                scope=(
+                    f"{node.name}:cause:{cause_index}:{cause.name}:"
+                    f"path:{path_index}:{path.name}"
+                ),
+                counter=counter,
+            )
+
+
+def _record_function_calls(
+    node: FunctionNode,
+    entries: list[SourceMapEntry],
+) -> None:
+    body = tuple(getattr(node, "body", ()) or ())
+    if not body:
+        body = tuple(getattr(node, "local_bindings", ()) or ()) + (
+            node.return_statement,
+        )
+
+    _record_function_statement_calls(
+        body,
+        entries,
+        scope=node.name,
+        counter=[0],
+    )
+
+
 def _local_reference(
     mapping: dict[str, str],
     name: str,
@@ -502,6 +711,10 @@ def _compile_directive_with_map(
         node=node,
         kind="authority_check",
         reference=node.name,
+    )
+    _record_directive_function_calls(
+        node,
+        entries,
     )
 
     state_ids = {state.name: f"state:{state.name}" for state in node.states}
@@ -828,6 +1041,10 @@ def _compile_function_with_map(
         node=node,
         kind="function",
         reference=node.name,
+    )
+    _record_function_calls(
+        node,
+        entries,
     )
 
     parameter_names = tuple(parameter.name for parameter in node.parameters)
