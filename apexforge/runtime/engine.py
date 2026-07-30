@@ -12,6 +12,7 @@ from air.indexes import index_by_id
 from air.expressions import (
     AIRExpression,
     AIRIntegerLiteral,
+    AIRFloatLiteral,
     AIRStringLiteral,
     AIRBooleanLiteral,
     AIRIdentifierReference,
@@ -831,21 +832,33 @@ class RuntimeEngine:
         )
 
         operation = assignment.operation
+        operation_types = {
+            "set_int": int,
+            "add_int": int,
+            "set_bool": bool,
+            "set_string": str,
+            "set_float": float,
+            "add_float": float,
+        }
+        expected_type = operation_types.get(
+            operation
+        )
 
-        if operation in {
-            "set_int",
-            "add_int",
-        }:
-            if isinstance(value, bool) or not isinstance(
-                value,
-                int,
-            ):
-                raise RuntimeExpressionError(
-                    f"assignment '{assignment.state}' uses "
-                    f"{operation} but evaluated to "
-                    f"{type(value).__name__}, not int",
-                    trace_steps=tuple(trace_steps),
-                )
+        if expected_type is None:
+            raise RuntimeExpressionError(
+                f"assignment '{assignment.state}' uses unsupported "
+                f"operation {operation!r}",
+                trace_steps=tuple(trace_steps),
+            )
+
+        if type(value) is not expected_type:
+            raise RuntimeExpressionError(
+                f"assignment '{assignment.state}' uses "
+                f"{operation} but evaluated to "
+                f"{type(value).__name__}, not "
+                f"{expected_type.__name__}",
+                trace_steps=tuple(trace_steps),
+            )
 
         return replace(
             assignment,
@@ -927,6 +940,12 @@ class RuntimeEngine:
         if isinstance(
             expression,
             AIRIntegerLiteral,
+        ):
+            return expression.value
+
+        if isinstance(
+            expression,
+            AIRFloatLiteral,
         ):
             return expression.value
 

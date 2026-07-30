@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 from role_compiler import compile_role
 from air.model import (
@@ -33,6 +33,7 @@ from language.parser import (
     WhenActionNode,
     ExpressionNode,
     IntegerLiteralNode,
+    FloatLiteralNode,
     StringLiteralNode,
     BooleanLiteralNode,
     IdentifierNode,
@@ -50,6 +51,7 @@ from language.parser import (
 from air.expressions import (
     AIRExpression,
     AIRIntegerLiteral,
+    AIRFloatLiteral,
     AIRStringLiteral,
     AIRBooleanLiteral,
     AIRIdentifierReference,
@@ -65,6 +67,19 @@ from air.functions import (
     AIRParameter,
 )
 from language.source import SourceSpan
+from type_system.inference import (
+    FunctionSignature,
+    TypeInferenceError,
+    infer_expression_type,
+)
+from type_system.model import (
+    ApexType,
+    BOOL,
+    FLOAT,
+    INT,
+    STRING,
+    resolve_builtin_type,
+)
 
 
 class CompilerError(ValueError):
@@ -227,9 +242,510 @@ def _compile_error(
     )
 
 
+def _compile_type_annotation(
+    annotation: object,
+    *,
+    owner: str,
+    node: object,
+    default: Optional[ApexType] = None,
+) -> Optional[ApexType]:
+    """Normalize one optional AST type annotation for AIR storage."""
+
+    if annotation is None:
+        return default
+
+    apex_type = getattr(annotation, "apex_type", None)
+
+    try:
+        return resolve_builtin_type(apex_type)
+    except (TypeError, ValueError) as exc:
+        raise _compile_error(
+            code="APX-COMPILE-014",
+            message=(
+                f"{owner} contains an invalid ApexForge type annotation."
+            ),
+            node=node,
+        ) from exc
+
+
+
+def _normalize_function_signatures(
+    function_signatures: Optional[Mapping[str, FunctionSignature]],
+) -> dict[str, FunctionSignature]:
+    """Normalize an optional external function-signature environment."""
+
+    if function_signatures is None:
+        return {}
+
+    normalized = dict(function_signatures)
+
+    for name, signature in normalized.items():
+        if type(name) is not str or not name:
+            raise ValueError(
+                "Function signature mappings require non-empty string names."
+            )
+        if not isinstance(signature, FunctionSignature):
+            raise TypeError(
+                "Function signature mappings require FunctionSignature values; "
+                f"{name!r} received {type(signature).__name__}."
+            )
+        if name != signature.name:
+            raise ValueError(
+                "Function signature mapping key must match signature.name; "
+                f"received key {name!r} for {signature.name!r}."
+            )
+
+    return normalized
+
+
+def _expression_identifiers(
+    node: ExpressionNode,
+) -> tuple[str, ...]:
+    """Return source-order identifier references from one expression."""
+
+    if isinstance(node, IdentifierNode):
+        return (node.name,)
+
+    if isinstance(node, UnaryExpressionNode):
+        return _expression_identifiers(node.operand)
+
+    if isinstance(node, BinaryExpressionNode):
+        return (
+            _expression_identifiers(node.left)
+            + _expression_identifiers(node.right)
+        )
+
+    if isinstance(node, CallExpressionNode):
+        return tuple(
+            name
+            for argument in node.arguments
+            for name in _expression_identifiers(argument)
+        )
+
+    return ()
+
+
+def _expression_call_targets(
+    node: ExpressionNode,
+) -> tuple[str, ...]:
+    """Return source-order function-call targets from one expression."""
+
+    if isinstance(node, UnaryExpressionNode):
+        return _expression_call_targets(node.operand)
+
+    if isinstance(node, BinaryExpressionNode):
+        return (
+            _expression_call_targets(node.left)
+            + _expression_call_targets(node.right)
+        )
+
+    if isinstance(node, CallExpressionNode):
+        return (node.target,) + tuple(
+            target
+            for argument in node.arguments
+            for target in _expression_call_targets(argument)
+        )
+
+    return ()
+
+
+def _infer_source_expression_type(
+    node: ExpressionNode,
+    *,
+    identifiers: Mapping[str, Optional[ApexType]],
+    functions: Mapping[str, FunctionSignature],
+    deferred_identifiers: frozenset[str] = frozenset(),
+) -> Optional[ApexType]:
+    """Infer one source expression or defer it to linked-program checking.
+
+    A call is deferred when its external signature is absent or incomplete.
+    Expressions depending on a deferred local are deferred as well. All other
+    type failures become source-aware ``CompilerError`` diagnostics.
+    """
+
+    for target in _expression_call_targets(node):
+        signature = functions.get(target)
+        if (
+            signature is None
+            or signature.return_type is None
+            or any(
+                parameter_type is None
+                for parameter_type in signature.parameter_types
+            )
+        ):
+            return None
+
+    for name in _expression_identifiers(node):
+        if name not in identifiers:
+            continue
+        if identifiers[name] is not None:
+            continue
+        if name in deferred_identifiers:
+            return None
+
+        raise _compile_error(
+            code="APX-TYPE-002",
+            message=(
+                f"Identifier {name!r} has no declared or inferred type."
+            ),
+            node=node,
+        )
+
+    try:
+        return infer_expression_type(
+            compile_expression(node),
+            identifiers=identifiers,
+            functions=functions,
+        )
+    except TypeInferenceError as error:
+        raise _compile_error(
+            code=error.code,
+            message=error.message,
+            node=node,
+        ) from error
+
+
+def _require_source_expression_type(
+    node: ExpressionNode,
+    *,
+    expected: ApexType,
+    owner: str,
+    identifiers: Mapping[str, Optional[ApexType]],
+    functions: Mapping[str, FunctionSignature],
+    deferred_identifiers: frozenset[str] = frozenset(),
+) -> Optional[ApexType]:
+    actual = _infer_source_expression_type(
+        node,
+        identifiers=identifiers,
+        functions=functions,
+        deferred_identifiers=deferred_identifiers,
+    )
+
+    if actual is None:
+        return None
+
+    if actual is not expected:
+        raise _compile_error(
+            code="APX-TYPE-011",
+            message=(
+                f"{owner} requires {expected}; received {actual}."
+            ),
+            node=node,
+        )
+
+    return actual
+
+
+def _directive_state_types(
+    node: DirectiveNode,
+) -> dict[str, ApexType]:
+    state_types: dict[str, ApexType] = {}
+
+    for state in node.states:
+        value_type = _compile_type_annotation(
+            getattr(state, "type_annotation", None),
+            owner=f"State {state.name!r}",
+            node=state,
+            default=INT,
+        )
+
+        if value_type is None:
+            raise AssertionError(
+                "state type normalization returned None"
+            )
+
+        state_types[state.name] = value_type
+
+    return state_types
+
+
+def _type_check_directive_states(
+    node: DirectiveNode,
+    *,
+    functions: Mapping[str, FunctionSignature],
+) -> dict[str, ApexType]:
+    """Validate state initializers and return the canonical state environment."""
+
+    state_types = _directive_state_types(node)
+
+    for state in node.states:
+        expected = state_types[state.name]
+
+        _require_source_expression_type(
+            state.initial,
+            expected=expected,
+            owner=f"State {state.name!r} initializer",
+            identifiers=state_types,
+            functions=functions,
+        )
+
+    return state_types
+
+
+def _type_check_directive_actions(
+    actions: tuple[object, ...],
+    *,
+    state_types: Mapping[str, ApexType],
+    functions: Mapping[str, FunctionSignature],
+) -> None:
+    """Validate typed directive mutation and condition expressions."""
+
+    for action in tuple(actions):
+        if isinstance(action, AddActionNode):
+            expected = state_types.get(
+                action.state_name
+            )
+
+            if expected is None:
+                continue
+
+            if expected not in {
+                INT,
+                FLOAT,
+            }:
+                raise _compile_error(
+                    code="APX-TYPE-013",
+                    message=(
+                        f"State {action.state_name!r} has type {expected}; "
+                        "add requires int or float."
+                    ),
+                    node=action,
+                )
+
+            _require_source_expression_type(
+                action.value,
+                expected=expected,
+                owner=(
+                    f"Add action for state "
+                    f"{action.state_name!r}"
+                ),
+                identifiers=state_types,
+                functions=functions,
+            )
+            continue
+
+        if isinstance(action, SetActionNode):
+            expected = state_types.get(
+                action.state_name
+            )
+
+            if expected is None:
+                continue
+
+            _require_source_expression_type(
+                action.expression,
+                expected=expected,
+                owner=(
+                    f"Set action for state "
+                    f"{action.state_name!r}"
+                ),
+                identifiers=state_types,
+                functions=functions,
+            )
+            continue
+
+        if isinstance(action, MessageActionNode):
+            # Message payloads remain expression-valued. Infer known payloads so
+            # invalid operators are rejected, but do not require string yet.
+            _infer_source_expression_type(
+                action.expression,
+                identifiers=state_types,
+                functions=functions,
+            )
+            continue
+
+        if isinstance(action, WhenActionNode):
+            condition_type = _infer_source_expression_type(
+                action.condition,
+                identifiers=state_types,
+                functions=functions,
+            )
+
+            if (
+                condition_type is not None
+                and condition_type is not BOOL
+            ):
+                raise _compile_error(
+                    code="APX-TYPE-012",
+                    message=(
+                        "Directive when condition requires bool; "
+                        f"received {condition_type}."
+                    ),
+                    node=action.condition,
+                )
+
+            _type_check_directive_actions(
+                tuple(action.actions),
+                state_types=state_types,
+                functions=functions,
+            )
+            _type_check_directive_actions(
+                tuple(
+                    getattr(
+                        action,
+                        "otherwise_actions",
+                        (),
+                    ) or ()
+                ),
+                state_types=state_types,
+                functions=functions,
+            )
+
+
+def _type_check_function_statements(
+    statements: tuple[object, ...],
+    *,
+    function_name: str,
+    identifiers: Mapping[str, Optional[ApexType]],
+    deferred_identifiers: frozenset[str],
+    expected_return: Optional[ApexType],
+    functions: Mapping[str, FunctionSignature],
+) -> None:
+    """Type-check one lexical pure-function statement stream."""
+
+    scope = dict(identifiers)
+    deferred = set(deferred_identifiers)
+
+    for statement in statements:
+        if isinstance(statement, LetNode):
+            inferred = _infer_source_expression_type(
+                statement.expression,
+                identifiers=scope,
+                functions=functions,
+                deferred_identifiers=frozenset(deferred),
+            )
+            scope[statement.name] = inferred
+            if inferred is None:
+                deferred.add(statement.name)
+            else:
+                deferred.discard(statement.name)
+            continue
+
+        if isinstance(statement, ReturnNode):
+            if expected_return is None:
+                _infer_source_expression_type(
+                    statement.expression,
+                    identifiers=scope,
+                    functions=functions,
+                    deferred_identifiers=frozenset(deferred),
+                )
+            else:
+                _require_source_expression_type(
+                    statement.expression,
+                    expected=expected_return,
+                    owner=f"Function {function_name!r} return",
+                    identifiers=scope,
+                    functions=functions,
+                    deferred_identifiers=frozenset(deferred),
+                )
+            continue
+
+        if isinstance(statement, FunctionWhenNode):
+            condition_type = _infer_source_expression_type(
+                statement.condition,
+                identifiers=scope,
+                functions=functions,
+                deferred_identifiers=frozenset(deferred),
+            )
+
+            if condition_type is not None and condition_type is not BOOL:
+                raise _compile_error(
+                    code="APX-TYPE-012",
+                    message=(
+                        f"Function {function_name!r} when condition requires "
+                        f"bool; received {condition_type}."
+                    ),
+                    node=statement.condition,
+                )
+
+            _type_check_function_statements(
+                tuple(statement.actions),
+                function_name=function_name,
+                identifiers=dict(scope),
+                deferred_identifiers=frozenset(deferred),
+                expected_return=expected_return,
+                functions=functions,
+            )
+            _type_check_function_statements(
+                tuple(getattr(statement, "otherwise_actions", ()) or ()),
+                function_name=function_name,
+                identifiers=dict(scope),
+                deferred_identifiers=frozenset(deferred),
+                expected_return=expected_return,
+                functions=functions,
+            )
+
+
+def _type_check_function(
+    node: FunctionNode,
+    *,
+    body_nodes: tuple[object, ...],
+    functions: Mapping[str, FunctionSignature],
+) -> None:
+    """Type-check annotated source while preserving fully legacy P7 source."""
+
+    parameter_types = {
+        parameter.name: _compile_type_annotation(
+            getattr(parameter, "type_annotation", None),
+            owner=(
+                f"Parameter {parameter.name!r} "
+                f"of function {node.name!r}"
+            ),
+            node=parameter,
+        )
+        for parameter in node.parameters
+    }
+    return_type = _compile_type_annotation(
+        getattr(node, "return_type", None),
+        owner=f"Function {node.name!r} return",
+        node=node,
+    )
+
+    typed_mode = (
+        return_type is not None
+        or any(
+            parameter_type is not None
+            for parameter_type in parameter_types.values()
+        )
+    )
+    if not typed_mode:
+        return
+
+    available_functions = dict(functions)
+    if (
+        return_type is not None
+        and all(
+            parameter_type is not None
+            for parameter_type in parameter_types.values()
+        )
+    ):
+        available_functions.setdefault(
+            node.name,
+            FunctionSignature(
+                name=node.name,
+                parameter_types=tuple(
+                    parameter_types[parameter.name]
+                    for parameter in node.parameters
+                ),
+                return_type=return_type,
+            ),
+        )
+
+    _type_check_function_statements(
+        body_nodes,
+        function_name=node.name,
+        identifiers=parameter_types,
+        deferred_identifiers=frozenset(),
+        expected_return=return_type,
+        functions=available_functions,
+    )
+
+
 def compile_expression(node: ExpressionNode) -> AIRExpression:
     if isinstance(node, IntegerLiteralNode):
         return AIRIntegerLiteral(value=node.value)
+    if isinstance(node, FloatLiteralNode):
+        return AIRFloatLiteral(value=node.value)
     if isinstance(node, StringLiteralNode):
         return AIRStringLiteral(value=node.value)
     if isinstance(node, BooleanLiteralNode):
@@ -497,6 +1013,7 @@ def compile_actions(
     source_entries: Optional[list[SourceMapEntry]] = None,
     scope: str = "action",
     context: Optional[_CompileContext] = None,
+    state_types: Optional[Mapping[str, ApexType]] = None,
 ) -> tuple[object, ...]:
     """Compile one ordered parser-action stream recursively.
 
@@ -510,6 +1027,10 @@ def compile_actions(
     else:
         entries = source_entries if source_entries is not None else []
         context = _CompileContext(entries, scope)
+
+    active_state_types = dict(
+        state_types or {}
+    )
 
     compiled_actions: list[object] = []
     pending_message: Optional[MessageActionNode] = None
@@ -571,10 +1092,29 @@ def compile_actions(
                 owner="state",
                 node=action,
             )
+            state_type = active_state_types.get(
+                action.state_name,
+                INT,
+            )
+            operation = {
+                INT: "add_int",
+                FLOAT: "add_float",
+            }.get(state_type)
+
+            if operation is None:
+                raise _compile_error(
+                    code="APX-TYPE-013",
+                    message=(
+                        f"State {action.state_name!r} has type {state_type}; "
+                        "add requires int or float."
+                    ),
+                    node=action,
+                )
+
             compiled_actions.append(
                 StateAssignment(
                     state=state_id,
-                    operation="add_int",
+                    operation=operation,
                     value=compile_expression(action.value),
                 )
             )
@@ -594,10 +1134,31 @@ def compile_actions(
                 owner="state",
                 node=action,
             )
+            state_type = active_state_types.get(
+                action.state_name,
+                INT,
+            )
+            operation = {
+                INT: "set_int",
+                BOOL: "set_bool",
+                STRING: "set_string",
+                FLOAT: "set_float",
+            }.get(state_type)
+
+            if operation is None:
+                raise _compile_error(
+                    code="APX-TYPE-013",
+                    message=(
+                        f"State {action.state_name!r} cannot be assigned "
+                        f"with type {state_type}."
+                    ),
+                    node=action,
+                )
+
             compiled_actions.append(
                 StateAssignment(
                     state=state_id,
-                    operation="set_int",
+                    operation=operation,
                     value=compile_expression(action.expression),
                 )
             )
@@ -639,12 +1200,14 @@ def compile_actions(
                 state_ids=state_ids,
                 event_ids=event_ids,
                 context=nested_context,
+                state_types=active_state_types,
             )
             false_actions = compile_actions(
                 tuple(getattr(action, "otherwise_actions", ()) or ()),
                 state_ids=state_ids,
                 event_ids=event_ids,
                 context=nested_context,
+                state_types=active_state_types,
             )
             context.invocation_index = nested_context.invocation_index
             context.action_index += 1
@@ -685,11 +1248,27 @@ def compile_actions(
 
 def _compile_directive_with_map(
     node: DirectiveNode,
+    *,
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
 ) -> CompiledSource:
     principal_id = f"principal:{node.name}"
     directive_id = f"directive:{node.name}"
     authority_id = f"auth:{node.name}"
     entries: list[SourceMapEntry] = []
+    functions = _normalize_function_signatures(function_signatures)
+
+    state_types = _type_check_directive_states(
+        node,
+        functions=functions,
+    )
+
+    for cause in node.causes:
+        for path in cause.paths:
+            _type_check_directive_actions(
+                tuple(path.actions),
+                state_types=state_types,
+                functions=functions,
+            )
 
     _append_source_entry(
         entries,
@@ -770,6 +1349,7 @@ def _compile_directive_with_map(
                 state_ids=state_ids,
                 event_ids=event_ids,
                 context=action_context,
+                state_types=state_types,
             )
 
             assignments = tuple(
@@ -827,6 +1407,12 @@ def _compile_directive_with_map(
             StateDefinition(
                 id=state_ids[state.name],
                 initial=compile_expression(state.initial),
+                value_type=_compile_type_annotation(
+                    getattr(state, "type_annotation", None),
+                    owner=f"State {state.name!r}",
+                    node=state,
+                    default=INT,
+                ),
             )
             for state in node.states
         ),
@@ -1030,11 +1616,14 @@ def _compile_function_statements(
 
 def _compile_function_with_map(
     node: FunctionNode,
+    *,
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
 ) -> CompiledSource:
     """Compile one pure function into an independently linkable AIR unit."""
 
     function_id = f"function:{node.name}"
     entries: list[SourceMapEntry] = []
+    functions = _normalize_function_signatures(function_signatures)
     _append_source_entry(
         entries,
         air_id=function_id,
@@ -1119,6 +1708,12 @@ def _compile_function_with_map(
         function_name=node.name,
     )
 
+    _type_check_function(
+        node,
+        body_nodes=body_nodes,
+        functions=functions,
+    )
+
     compiled_body = _compile_function_statements(
         body_nodes,
         function_name=node.name,
@@ -1141,7 +1736,17 @@ def _compile_function_with_map(
                 id=function_id,
                 name=node.name,
                 parameters=tuple(
-                    AIRParameter(name=parameter.name)
+                    AIRParameter(
+                        name=parameter.name,
+                        value_type=_compile_type_annotation(
+                            getattr(parameter, "type_annotation", None),
+                            owner=(
+                                f"Parameter {parameter.name!r} "
+                                f"of function {node.name!r}"
+                            ),
+                            node=parameter,
+                        ),
+                    )
                     for parameter in node.parameters
                 ),
                 return_expression=compile_expression(
@@ -1156,6 +1761,11 @@ def _compile_function_with_map(
                     for binding in local_nodes
                 ),
                 body=compiled_body,
+                return_type=_compile_type_annotation(
+                    getattr(node, "return_type", None),
+                    owner=f"Function {node.name!r} return",
+                    node=node,
+                ),
             ),
         ),
     )
@@ -1166,22 +1776,44 @@ def _compile_function_with_map(
     )
 
 
-def compile_directive(node: DirectiveNode) -> AIRProgram:
-    return _compile_directive_with_map(node).program
+def compile_directive(
+    node: DirectiveNode,
+    *,
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
+) -> AIRProgram:
+    return _compile_directive_with_map(
+        node,
+        function_signatures=function_signatures,
+    ).program
 
 
-def compile_function(node: FunctionNode) -> AIRProgram:
-    return _compile_function_with_map(node).program
+def compile_function(
+    node: FunctionNode,
+    *,
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
+) -> AIRProgram:
+    return _compile_function_with_map(
+        node,
+        function_signatures=function_signatures,
+    ).program
 
 
 def compile_node_with_map(
     node: DirectiveNode | RoleNode | FunctionNode,
+    *,
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
 ) -> CompiledSource:
     if isinstance(node, DirectiveNode):
-        return _compile_directive_with_map(node)
+        return _compile_directive_with_map(
+            node,
+            function_signatures=function_signatures,
+        )
 
     if isinstance(node, FunctionNode):
-        return _compile_function_with_map(node)
+        return _compile_function_with_map(
+            node,
+            function_signatures=function_signatures,
+        )
 
     if isinstance(node, RoleNode):
         role = compile_role(node)
@@ -1204,23 +1836,39 @@ def compile_node_with_map(
 
 def compile_node(
     node: DirectiveNode | RoleNode | FunctionNode,
+    *,
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
 ) -> AIRProgram | AIRRole:
-    return compile_node_with_map(node).program
+    return compile_node_with_map(
+        node,
+        function_signatures=function_signatures,
+    ).program
 
 
 def compile_source_with_map(
     source: str,
     *,
     source_name: str = "<memory>",
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
 ) -> CompiledSource:
     node = parse(source, source_name=source_name)
-    return compile_node_with_map(node)
+    return compile_node_with_map(
+        node,
+        function_signatures=function_signatures,
+    )
 
 
-def compile_source(source: str) -> AIRProgram | AIRRole:
+def compile_source(
+    source: str,
+    *,
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
+) -> AIRProgram | AIRRole:
     """Backward-compatible one-source compiler returning AIR only."""
 
-    return compile_source_with_map(source).program
+    return compile_source_with_map(
+        source,
+        function_signatures=function_signatures,
+    ).program
 
 
 __all__ = (

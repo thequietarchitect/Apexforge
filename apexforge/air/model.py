@@ -13,12 +13,23 @@ from air.expressions import AIRExpression
 from air.functions import AIRFunction
 from air.types import as_tuple, is_int
 from authority.model import AuthorityCheck, AuthorityGrant, Principal
+from type_system.model import (
+    ApexType,
+    BOOL,
+    FLOAT,
+    INT,
+    STRING,
+    TypeLike,
+    VOID,
+    resolve_builtin_type,
+)
 
 
 FactValue = Union[
     str,
     int,
     bool,
+    float,
     AIRExpression,
 ]
 
@@ -64,7 +75,23 @@ def facts(
 class StateDefinition:
     id: str
     initial: AIRExpression = 0
-    value_type: str = "AIRExpression"
+    # ApexForge states were integer-only before P8, so an omitted annotation
+    # retains the canonical INT identity.
+    value_type: TypeLike = INT
+
+    def __post_init__(self) -> None:
+        # Accept the pre-P8 placeholder for hand-authored legacy AIR while
+        # ensuring canonical storage after construction.
+        selected_type: TypeLike = (
+            INT
+            if self.value_type == "AIRExpression"
+            else self.value_type
+        )
+        object.__setattr__(
+            self,
+            "value_type",
+            resolve_builtin_type(selected_type),
+        )
 
 
 @dataclass(frozen=True, order=True)
@@ -73,6 +100,10 @@ class StateAssignment:
     operation: Literal[
         "set_int",
         "add_int",
+        "set_bool",
+        "set_string",
+        "set_float",
+        "add_float",
     ]
     value: AIRExpression
 
@@ -187,25 +218,92 @@ class VerificationResult:
         )
 
 
+_LITERAL_TYPE_NAMES = {
+    "AIRIntegerLiteral": INT,
+    "AIRBooleanLiteral": BOOL,
+    "AIRStringLiteral": STRING,
+    "AIRFloatLiteral": FLOAT,
+}
+
+
+_OPERATION_TYPES = {
+    "set_int": INT,
+    "add_int": INT,
+    "set_bool": BOOL,
+    "set_string": STRING,
+    "set_float": FLOAT,
+    "add_float": FLOAT,
+}
+
+
+def _primitive_value_matches_type(
+    value: object,
+    expected: ApexType,
+) -> bool:
+    if expected is INT:
+        return type(value) is int
+    if expected is BOOL:
+        return type(value) is bool
+    if expected is STRING:
+        return type(value) is str
+    if expected is FLOAT:
+        return type(value) is float
+    return False
+
+
+def _expression_shape_matches_type(
+    value: object,
+    expected: ApexType,
+) -> bool:
+    if isinstance(value, AIRExpression):
+        literal_type = _LITERAL_TYPE_NAMES.get(
+            type(value).__name__
+        )
+        # Non-literal expressions are structurally valid here. Their semantic
+        # result type is checked by the P8 compiler and linked AIR validator.
+        return (
+            literal_type is None
+            or literal_type is expected
+        )
+
+    return _primitive_value_matches_type(
+        value,
+        expected,
+    )
+
+
 def validate_state_definition_shape(
     state: StateDefinition,
 ) -> bool:
+    try:
+        value_type = resolve_builtin_type(
+            state.value_type
+        )
+    except (TypeError, ValueError):
+        return False
+
     return (
-        state.value_type == "int"
-        and is_int(state.initial)
+        value_type is not VOID
+        and _expression_shape_matches_type(
+            state.initial,
+            value_type,
+        )
     )
 
 
 def validate_assignment_shape(
     assignment: StateAssignment,
 ) -> bool:
-    return (
+    expected = _OPERATION_TYPES.get(
         assignment.operation
-        in (
-            "set_int",
-            "add_int",
+    )
+
+    return (
+        expected is not None
+        and _expression_shape_matches_type(
+            assignment.value,
+            expected,
         )
-        and is_int(assignment.value)
     )
 
 
@@ -274,6 +372,17 @@ class AIRWhenAction:
         ...,
     ] = ()
 
+
+# Backward-compatible re-exports.
+#
+# These classes are defined only in causality.model. Importing them here keeps
+# older ``from air.model import ...`` call sites working without creating a
+# second Python class identity.
+from causality.model import (  # noqa: E402
+    CausalDecision,
+    CausalPath,
+    DirectiveInvocation,
+)
 
 # Backward-compatible re-exports.
 #

@@ -8,6 +8,7 @@ from typing import Optional, Sequence
 from language.diagnostics import BuildDiagnostic
 from language.lexer import Token, lex
 from language.source import SourceSpan, cover_spans
+from type_system.model import ApexType, resolve_builtin_type
 
 
 class ParseError(SyntaxError):
@@ -30,6 +31,12 @@ class ExpressionNode:
 @dataclass(frozen=True)
 class IntegerLiteralNode(ExpressionNode):
     value: int
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+
+
+@dataclass(frozen=True)
+class FloatLiteralNode(ExpressionNode):
+    value: float
     span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
@@ -74,9 +81,20 @@ class CallExpressionNode(ExpressionNode):
 
 
 @dataclass(frozen=True)
+class TypeAnnotationNode:
+    apex_type: ApexType
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+
+    @property
+    def name(self) -> str:
+        return self.apex_type.name
+
+
+@dataclass(frozen=True)
 class ParameterNode:
     name: str
     span: Optional[SourceSpan] = field(default=None, compare=False)
+    type_annotation: Optional[TypeAnnotationNode] = None
 
 
 @dataclass(frozen=True)
@@ -110,6 +128,7 @@ class FunctionNode:
     local_bindings: tuple[LetNode, ...] = ()
     body: tuple[object, ...] = ()
     span: Optional[SourceSpan] = field(default=None, compare=False)
+    return_type: Optional[TypeAnnotationNode] = None
 
 
 @dataclass(frozen=True)
@@ -117,6 +136,7 @@ class StateNode:
     name: str
     initial: ExpressionNode
     span: Optional[SourceSpan] = field(default=None, compare=False)
+    type_annotation: Optional[TypeAnnotationNode] = None
 
 
 @dataclass(frozen=True)
@@ -407,6 +427,30 @@ class Parser:
     # Top-level declarations
     # ======================================================================
 
+    def parse_type_annotation(self) -> TypeAnnotationNode:
+        """Parse ``: TypeName`` and resolve its canonical P8 identity."""
+
+        colon = self.consume("COLON")
+        type_name = self.consume("IDENT")
+
+        try:
+            apex_type = resolve_builtin_type(type_name.value)
+        except ValueError:
+            self._raise(
+                code="APX-PARSE-008",
+                message=(
+                    "Unknown ApexForge type "
+                    f"{type_name.value!r}."
+                ),
+                token=type_name,
+            )
+            raise AssertionError("unreachable")
+
+        return TypeAnnotationNode(
+            apex_type=apex_type,
+            span=_cover(colon, type_name),
+        )
+
     def parse_function(self) -> FunctionNode:
         """Parse an ordered pure-function statement body."""
 
@@ -415,19 +459,36 @@ class Parser:
         self.consume_any(*self._LEFT_PAREN_KINDS)
 
         parameters: list[ParameterNode] = []
+
         if self.current().kind not in self._RIGHT_PAREN_KINDS:
             while True:
                 parameter = self.consume("IDENT")
+                type_annotation: Optional[TypeAnnotationNode] = None
+
+                if self.current().kind == "COLON":
+                    type_annotation = self.parse_type_annotation()
+
                 parameters.append(
                     ParameterNode(
                         name=parameter.value,
-                        span=parameter.span,
+                        span=(
+                            _cover(parameter, type_annotation)
+                            if type_annotation is not None
+                            else parameter.span
+                        ),
+                        type_annotation=type_annotation,
                     )
                 )
+
                 if self.match("COMMA") is None:
                     break
 
         self.consume_any(*self._RIGHT_PAREN_KINDS)
+
+        return_type: Optional[TypeAnnotationNode] = None
+        if self.current().kind == "COLON":
+            return_type = self.parse_type_annotation()
+
         self.consume("LBRACE")
         body = self._parse_function_statement_block(
             owner=f"function {name.value!r}",
@@ -458,6 +519,7 @@ class Parser:
             local_bindings=tuple(leading_locals),
             body=body,
             span=_cover(start, closing),
+            return_type=return_type,
         )
 
     def _parse_function_statement_block(
@@ -756,10 +818,20 @@ class Parser:
 
     def parse_state(self) -> StateNode:
         start = self.consume("STATE")
-        name = self.consume("IDENT").value
+        name = self.consume("IDENT")
+        type_annotation: Optional[TypeAnnotationNode] = None
+
+        if self.current().kind == "COLON":
+            type_annotation = self.parse_type_annotation()
+
         self.consume("EQUAL")
         initial = self.parse_expression()
-        return StateNode(name=name, initial=initial, span=_cover(start, initial))
+        return StateNode(
+            name=name.value,
+            initial=initial,
+            span=_cover(start, initial),
+            type_annotation=type_annotation,
+        )
 
     def parse_event(self) -> EventNode:
         start = self.consume("EVENT")
@@ -1036,6 +1108,10 @@ class Parser:
             number = self.consume("NUMBER")
             return IntegerLiteralNode(value=int(number.value), span=number.span)
 
+        if token.kind == "FLOAT":
+            number = self.consume("FLOAT")
+            return FloatLiteralNode(value=float(number.value), span=number.span)
+
         if token.kind == "STRING":
             string = self.consume("STRING")
             return StringLiteralNode(value=string.value, span=string.span)
@@ -1114,12 +1190,14 @@ __all__ = [
     "ParseError",
     "ExpressionNode",
     "IntegerLiteralNode",
+    "FloatLiteralNode",
     "StringLiteralNode",
     "BooleanLiteralNode",
     "IdentifierNode",
     "UnaryExpressionNode",
     "BinaryExpressionNode",
     "CallExpressionNode",
+    "TypeAnnotationNode",
     "ParameterNode",
     "LetNode",
     "ReturnNode",

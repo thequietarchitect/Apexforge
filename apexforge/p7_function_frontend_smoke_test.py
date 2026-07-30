@@ -7,15 +7,22 @@ P7 integration slice.
 
 from __future__ import annotations
 
-from air.expressions import AIRBinaryExpression, AIRCallExpression
-from language.compiler import CompilerError, compile_source
+import air.expressions as air_expressions
+import language.compiler as compiler_module
 from language.lexer import lex
-from language.parser import CallExpressionNode, FunctionNode, ParseError, parse
+import language.parser as parser_module
 
 
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+def qualified_type_name(value: object) -> str:
+    """Return a useful module-qualified runtime type name for failures."""
+
+    value_type = type(value)
+    return f"{value_type.__module__}.{value_type.__qualname__}"
 
 
 FUNCTION_SOURCE = """
@@ -43,8 +50,17 @@ def main() -> None:
     require("LPAREN" in token_kinds, "left parenthesis was not lexed")
     require("RPAREN" in token_kinds, "right parenthesis was not lexed")
 
-    node = parse(FUNCTION_SOURCE, source_name="increase.apex")
-    require(isinstance(node, FunctionNode), "function did not parse")
+    node = parser_module.parse(
+        FUNCTION_SOURCE,
+        source_name="increase.apex",
+    )
+    require(
+        isinstance(node, parser_module.FunctionNode),
+        (
+            "function returned unexpected node type: "
+            f"{qualified_type_name(node)}"
+        ),
+    )
     require(node.name == "increase", "function name changed")
     require(
         tuple(parameter.name for parameter in node.parameters) == ("value",),
@@ -53,15 +69,21 @@ def main() -> None:
 
     expression = node.return_statement.expression
     require(
-        isinstance(expression, type(node.return_statement.expression)),
+        expression is not None,
         "return expression was not retained",
     )
     require(
-        isinstance(getattr(expression, "left", None), CallExpressionNode),
-        "nested call expression did not parse",
+        isinstance(
+            getattr(expression, "left", None),
+            parser_module.CallExpressionNode,
+        ),
+        (
+            "nested call expression returned unexpected node type: "
+            f"{qualified_type_name(getattr(expression, 'left', None))}"
+        ),
     )
 
-    compiled_function = compile_source(FUNCTION_SOURCE)
+    compiled_function = compiler_module.compile_source(FUNCTION_SOURCE)
     require(len(compiled_function.functions) == 1, "function AIR missing")
     function = compiled_function.functions[0]
     require(function.id == "function:increase", "function ID changed")
@@ -70,31 +92,52 @@ def main() -> None:
         "AIR parameter order changed",
     )
     require(
-        isinstance(function.return_expression, AIRBinaryExpression),
-        "return expression was not compiled",
+        isinstance(
+            function.return_expression,
+            air_expressions.AIRBinaryExpression,
+        ),
+        (
+            "return expression returned unexpected AIR type: "
+            f"{qualified_type_name(function.return_expression)}"
+        ),
     )
     require(
-        isinstance(function.return_expression.left, AIRCallExpression),
-        "AIR call expression was not compiled",
+        isinstance(
+            function.return_expression.left,
+            air_expressions.AIRCallExpression,
+        ),
+        (
+            "AIR call expression returned unexpected type: "
+            f"{qualified_type_name(function.return_expression.left)}"
+        ),
     )
     require(
         function.return_expression.left.target == "double",
         "AIR call target changed",
     )
 
-    compiled_directive = compile_source(DIRECTIVE_SOURCE)
+    compiled_directive = compiler_module.compile_source(DIRECTIVE_SOURCE)
     assignment = compiled_directive.causal_decisions[0].paths[0].actions[0]
     require(
-        isinstance(assignment.value, AIRCallExpression),
-        "directive function call was not compiled as an expression",
+        isinstance(
+            assignment.value,
+            air_expressions.AIRCallExpression,
+        ),
+        (
+            "directive function call returned unexpected AIR type: "
+            f"{qualified_type_name(assignment.value)}"
+        ),
     )
-    require(assignment.value.target == "increase", "directive call target changed")
+    require(
+        assignment.value.target == "increase",
+        "directive call target changed",
+    )
 
     try:
-        compile_source(
+        compiler_module.compile_source(
             "function bad(value, value) { return value }"
         )
-    except CompilerError as error:
+    except compiler_module.CompilerError as error:
         require(
             error.diagnostic.code == "APX-COMPILE-008",
             "duplicate parameter used the wrong diagnostic",
@@ -103,12 +146,14 @@ def main() -> None:
         raise AssertionError("duplicate function parameter was accepted")
 
     try:
-        parse("function bad(value) { value + 1 }")
-    except ParseError as error:
+        parser_module.parse("function bad(value) { value + 1 }")
+    except parser_module.ParseError as error:
         require(
             error.diagnostic.code == "APX-PARSE-007",
             "missing return used the wrong diagnostic",
-)
+        )
+    else:
+        raise AssertionError("unsupported bare function statement was accepted")
 
     print("AFP-P7.1 function front-end smoke test passed.")
     print("Function keywords and commas: PASS")

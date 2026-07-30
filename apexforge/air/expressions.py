@@ -17,6 +17,11 @@ class AIRIntegerLiteral(AIRExpression):
 
 
 @dataclass(frozen=True)
+class AIRFloatLiteral(AIRExpression):
+    value: float
+
+
+@dataclass(frozen=True)
 class AIRStringLiteral(AIRExpression):
     value: str
 

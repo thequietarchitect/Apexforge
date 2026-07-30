@@ -77,6 +77,7 @@ ONE_CHARACTER_TOKENS = {
     "(": "LPAREN",
     ")": "RPAREN",
     ",": "COMMA",
+    ":": "COLON",
     "<": "LT",
     ">": "GT",
 }
@@ -229,15 +230,66 @@ def lex(
             while i < len(source) and source[i].isdigit():
                 i += 1
 
+            kind = "NUMBER"
+
+            if i < len(source) and source[i] == ".":
+                decimal_point = i
+                i += 1
+
+                if i >= len(source) or not source[i].isdigit():
+                    raise _lex_error(
+                        source_text,
+                        code="APX-LEX-005",
+                        message=(
+                            "Malformed float literal; expected digits after "
+                            "the decimal point."
+                        ),
+                        start=start,
+                        end=min(i, len(source)),
+                    )
+
+                while i < len(source) and source[i].isdigit():
+                    i += 1
+
+                if i < len(source) and source[i] == ".":
+                    raise _lex_error(
+                        source_text,
+                        code="APX-LEX-005",
+                        message=(
+                            "Malformed float literal; multiple decimal "
+                            "points are not allowed."
+                        ),
+                        start=start,
+                        end=i + 1,
+                    )
+
+                kind = "FLOAT"
+
             number_text = source[start:i]
             tokens.append(
                 Token(
-                    kind="NUMBER",
+                    kind=kind,
                     value=number_text,
                     span=source_text.span(start, i),
                 )
             )
             continue
+
+        if char == ".":
+            end = i + 1
+            while end < len(source) and source[end].isdigit():
+                end += 1
+
+            raise _lex_error(
+                source_text,
+                code="APX-LEX-005",
+                message=(
+                    "Malformed float literal; expected digits before the "
+                    "decimal point."
+                ),
+                start=i,
+                end=end,
+            )
 
         if char.isalpha() or char == "_":
             start = i

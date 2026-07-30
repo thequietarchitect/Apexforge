@@ -31,11 +31,29 @@ the AIRProgram, and avoiding those imports prevents circular dependencies.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Optional, Sequence
 
 
 # Adjust this import only if AIRProgram is stored somewhere else.
-from air.model import AIRProgram, VerifiedAIRProgram
+from air.model import (
+    AIRProgram,
+    VerifiedAIRProgram,
+    validate_state_definition_shape,
+)
+from type_system.inference import (
+    FunctionSignature,
+    TypeInferenceError,
+    infer_expression_type_partial,
+)
+from type_system.model import (
+    ApexType,
+    BOOL,
+    FLOAT,
+    INT,
+    STRING,
+    VOID,
+    resolve_builtin_type,
+)
 
 
 class _LegacyFunctionReturn:
@@ -123,6 +141,7 @@ class RuntimeValidator:
             getattr(program, "states", ()),
             owner="state",
         )
+        self._state_index = state_index
 
         event_index = self._index_by_id(
             getattr(program, "events", ()),
@@ -227,6 +246,12 @@ class RuntimeValidator:
             directive_index=directive_index,
             principal_index=principal_index,
             authority_index=authority_index,
+        )
+
+        self._validate_linked_program_types(
+            program=program,
+            state_index=state_index,
+            function_index=function_index,
         )
 
         return VerifiedAIRProgram(
@@ -703,6 +728,7 @@ class RuntimeValidator:
         expression_type = type(expression).__name__
         if expression_type in {
             "AIRIntegerLiteral",
+            "AIRFloatLiteral",
             "AIRStringLiteral",
             "AIRBooleanLiteral",
             "AIRIdentifierReference",
@@ -769,6 +795,26 @@ class RuntimeValidator:
             if not hasattr(state, "initial"):
                 raise InvalidValueError(
                     f"State '{state_id}' is missing its initial expression."
+                )
+
+            try:
+                value_type = resolve_builtin_type(
+                    getattr(state, "value_type", INT)
+                )
+            except (TypeError, ValueError) as exc:
+                raise InvalidValueError(
+                    f"State '{state_id}' has an invalid ApexForge type."
+                ) from exc
+
+            if value_type is VOID:
+                raise InvalidValueError(
+                    f"State '{state_id}' cannot use void."
+                )
+
+            if not validate_state_definition_shape(state):
+                raise InvalidValueError(
+                    f"State '{state_id}' initializer is incompatible with "
+                    f"declared type {value_type}."
                 )
 
             self._validate_expression(
@@ -1402,14 +1448,62 @@ class RuntimeValidator:
             description=f"{owner} assignment operation",
         )
 
-        if operation not in {
-            "set_int",
-            "add_int",
-        }:
+        operation_types = {
+            "set_int": INT,
+            "add_int": INT,
+            "set_bool": BOOL,
+            "set_string": STRING,
+            "set_float": FLOAT,
+            "add_float": FLOAT,
+        }
+        operation_type = operation_types.get(
+            operation
+        )
+
+        if operation_type is None:
             raise InvalidValueError(
                 f"{owner} uses unsupported assignment operation "
-                f"'{operation}'. Expected 'set_int' or 'add_int'."
+                f"'{operation}'."
             )
+
+        state_index = getattr(
+            self,
+            "_state_index",
+            {},
+        )
+        state_definition = state_index.get(
+            state_id
+        )
+
+        if state_definition is None:
+            canonical = (
+                state_id
+                if state_id.startswith("state:")
+                else f"state:{state_id}"
+            )
+            state_definition = state_index.get(
+                canonical
+            )
+
+        if state_definition is not None:
+            try:
+                declared_type = resolve_builtin_type(
+                    getattr(
+                        state_definition,
+                        "value_type",
+                        INT,
+                    )
+                )
+            except (TypeError, ValueError) as exc:
+                raise InvalidValueError(
+                    f"{owner} targets a state with invalid type metadata."
+                ) from exc
+
+            if declared_type is not operation_type:
+                raise InvalidValueError(
+                    f"{owner} uses {operation!r} for state {state_id!r} "
+                    f"declared as {declared_type}."
+                )
 
         if not hasattr(
             assignment,
@@ -1700,6 +1794,613 @@ class RuntimeValidator:
                     )
 
 
+
+    # ======================================================================
+    # AFP-P8 linked-program type closure
+    # ======================================================================
+
+    def _validate_linked_program_types(
+        self,
+        *,
+        program: AIRProgram,
+        state_index: Mapping[str, Any],
+        function_index: Mapping[str, Any],
+    ) -> None:
+        """Validate known types after separately compiled AIR units are linked."""
+
+        function_signatures = self._linked_function_signatures(
+            function_index
+        )
+        state_types = self._linked_state_types(
+            state_index
+        )
+
+        for state_id, state in state_index.items():
+            expected = state_types[state_id]
+            actual = self._infer_linked_expression_type(
+                getattr(state, "initial"),
+                owner=(
+                    f"state '{state_id}' initial expression"
+                ),
+                identifiers=state_types,
+                functions=function_signatures,
+                require_complete_arguments=False,
+            )
+
+            if (
+                actual is not None
+                and actual is not expected
+            ):
+                raise InvalidValueError(
+                    f"State '{state_id}' declares {expected} but its "
+                    f"initializer produces {actual}."
+                )
+
+        for function_id, function in function_index.items():
+            self._validate_linked_function_type(
+                function_id=function_id,
+                function=function,
+                functions=function_signatures,
+            )
+
+        for decision in tuple(
+            getattr(
+                program,
+                "causal_decisions",
+                (),
+            ) or ()
+        ):
+            for path in tuple(
+                getattr(
+                    decision,
+                    "paths",
+                    (),
+                ) or ()
+            ):
+                actions = tuple(
+                    getattr(
+                        path,
+                        "actions",
+                        (),
+                    ) or ()
+                )
+
+                if actions:
+                    self._validate_linked_action_types(
+                        actions=actions,
+                        owner=f"path '{getattr(path, 'id', '<unknown>')}'",
+                        state_types=state_types,
+                        functions=function_signatures,
+                    )
+                    continue
+
+                for assignment in tuple(
+                    getattr(
+                        path,
+                        "assignments",
+                        (),
+                    ) or ()
+                ):
+                    self._validate_linked_assignment_type(
+                        assignment=assignment,
+                        owner=(
+                            f"path '{getattr(path, 'id', '<unknown>')}'"
+                        ),
+                        state_types=state_types,
+                        functions=function_signatures,
+                    )
+
+    def _linked_function_signatures(
+        self,
+        function_index: Mapping[str, Any],
+    ) -> dict[str, FunctionSignature]:
+        signatures: dict[str, FunctionSignature] = {}
+
+        for function_id, function in function_index.items():
+            function_name = self._required_string(
+                getattr(function, "name", None),
+                description=f"function '{function_id}' name",
+            )
+            parameters = tuple(
+                getattr(
+                    function,
+                    "parameters",
+                    (),
+                ) or ()
+            )
+
+            try:
+                signature = FunctionSignature(
+                    name=function_name,
+                    parameter_types=tuple(
+                        getattr(
+                            parameter,
+                            "value_type",
+                            None,
+                        )
+                        for parameter in parameters
+                    ),
+                    return_type=getattr(
+                        function,
+                        "return_type",
+                        None,
+                    ),
+                )
+            except (TypeError, ValueError) as exc:
+                raise InvalidValueError(
+                    f"Function '{function_id}' contains invalid type metadata."
+                ) from exc
+
+            for index, parameter_type in enumerate(
+                signature.parameter_types
+            ):
+                if parameter_type is VOID:
+                    raise InvalidValueError(
+                        f"Function '{function_id}' parameter[{index}] "
+                        "cannot use void."
+                    )
+
+            aliases = {
+                function_id,
+                function_name,
+            }
+
+            if function_id.startswith(
+                "function:"
+            ):
+                aliases.add(
+                    function_id[
+                        len("function:"):
+                    ]
+                )
+
+            for alias in aliases:
+                existing = signatures.get(
+                    alias
+                )
+
+                if (
+                    existing is not None
+                    and existing != signature
+                ):
+                    raise DuplicateDefinitionError(
+                        f"Function type alias '{alias}' is ambiguous."
+                    )
+
+                signatures[
+                    alias
+                ] = signature
+
+        return signatures
+
+    def _linked_state_types(
+        self,
+        state_index: Mapping[str, Any],
+    ) -> dict[str, ApexType]:
+        state_types: dict[str, ApexType] = {}
+
+        for state_id, state in state_index.items():
+            try:
+                value_type = resolve_builtin_type(
+                    getattr(
+                        state,
+                        "value_type",
+                        INT,
+                    )
+                )
+            except (TypeError, ValueError) as exc:
+                raise InvalidValueError(
+                    f"State '{state_id}' contains invalid type metadata."
+                ) from exc
+
+            if value_type is VOID:
+                raise InvalidValueError(
+                    f"State '{state_id}' cannot use void."
+                )
+
+            aliases = {
+                state_id,
+            }
+
+            if state_id.startswith(
+                "state:"
+            ):
+                aliases.add(
+                    state_id[
+                        len("state:"):
+                    ]
+                )
+
+            for alias in aliases:
+                state_types[
+                    alias
+                ] = value_type
+
+        return state_types
+
+    def _infer_linked_expression_type(
+        self,
+        expression: Any,
+        *,
+        owner: str,
+        identifiers: Mapping[str, Optional[ApexType]],
+        functions: Mapping[str, FunctionSignature],
+        require_complete_arguments: bool,
+    ) -> Optional[ApexType]:
+        try:
+            return infer_expression_type_partial(
+                expression,
+                identifiers=identifiers,
+                functions=functions,
+                require_complete_arguments=require_complete_arguments,
+            )
+        except TypeInferenceError as error:
+            raise InvalidValueError(
+                f"{owner}: {error.message}"
+            ) from error
+
+    def _validate_linked_function_type(
+        self,
+        *,
+        function_id: str,
+        function: Any,
+        functions: Mapping[str, FunctionSignature],
+    ) -> None:
+        function_name = self._required_string(
+            getattr(function, "name", None),
+            description=f"function '{function_id}' name",
+        )
+        signature = functions[
+            function_id
+        ]
+        parameters = tuple(
+            getattr(
+                function,
+                "parameters",
+                (),
+            ) or ()
+        )
+        identifiers: dict[
+            str,
+            Optional[ApexType],
+        ] = {
+            self._required_string(
+                getattr(parameter, "name", None),
+                description=(
+                    f"function '{function_id}' parameter name"
+                ),
+            ): parameter_type
+            for parameter, parameter_type in zip(
+                parameters,
+                signature.parameter_types,
+            )
+        }
+        typed_function = (
+            signature.return_type is not None
+            or any(
+                parameter_type is not None
+                for parameter_type in signature.parameter_types
+            )
+        )
+
+        self._validate_linked_function_statement_types(
+            statements=self._function_body(
+                function
+            ),
+            owner=f"function '{function_id}' body",
+            function_name=function_name,
+            identifiers=identifiers,
+            expected_return=signature.return_type,
+            functions=functions,
+            require_complete=typed_function,
+        )
+
+    def _validate_linked_function_statement_types(
+        self,
+        *,
+        statements: Sequence[Any],
+        owner: str,
+        function_name: str,
+        identifiers: Mapping[str, Optional[ApexType]],
+        expected_return: Optional[ApexType],
+        functions: Mapping[str, FunctionSignature],
+        require_complete: bool,
+    ) -> None:
+        scope = dict(
+            identifiers
+        )
+
+        for index, statement in enumerate(
+            tuple(statements)
+        ):
+            statement_owner = (
+                f"{owner} statement[{index}]"
+            )
+            statement_type = type(
+                statement
+            ).__name__
+
+            if statement_type == "AIRLocalBinding":
+                local_name = self._required_string(
+                    getattr(
+                        statement,
+                        "name",
+                        None,
+                    ),
+                    description=(
+                        f"{statement_owner} local name"
+                    ),
+                )
+                scope[
+                    local_name
+                ] = self._infer_linked_expression_type(
+                    getattr(
+                        statement,
+                        "expression",
+                    ),
+                    owner=(
+                        f"{statement_owner} local "
+                        f"'{local_name}' expression"
+                    ),
+                    identifiers=scope,
+                    functions=functions,
+                    require_complete_arguments=require_complete,
+                )
+                continue
+
+            if statement_type in {
+                "AIRFunctionReturn",
+                "_LegacyFunctionReturn",
+            }:
+                actual = self._infer_linked_expression_type(
+                    getattr(
+                        statement,
+                        "expression",
+                    ),
+                    owner=(
+                        f"{statement_owner} return expression"
+                    ),
+                    identifiers=scope,
+                    functions=functions,
+                    require_complete_arguments=require_complete,
+                )
+
+                if expected_return is None:
+                    continue
+
+                if actual is None:
+                    raise InvalidValueError(
+                        f"Function '{function_name}' declares return type "
+                        f"{expected_return}, but its linked return type "
+                        "cannot be determined."
+                    )
+
+                if actual is not expected_return:
+                    raise InvalidValueError(
+                        f"Function '{function_name}' declares return type "
+                        f"{expected_return}, but returns {actual}."
+                    )
+                continue
+
+            if statement_type == "AIRFunctionWhen":
+                condition_type = self._infer_linked_expression_type(
+                    getattr(
+                        statement,
+                        "condition",
+                    ),
+                    owner=(
+                        f"{statement_owner} condition"
+                    ),
+                    identifiers=scope,
+                    functions=functions,
+                    require_complete_arguments=require_complete,
+                )
+
+                if (
+                    condition_type is not None
+                    and condition_type is not BOOL
+                ):
+                    raise InvalidValueError(
+                        f"{statement_owner} condition requires bool; "
+                        f"received {condition_type}."
+                    )
+
+                if (
+                    require_complete
+                    and condition_type is None
+                ):
+                    raise InvalidValueError(
+                        f"{statement_owner} condition type cannot be "
+                        "determined in a typed function."
+                    )
+
+                self._validate_linked_function_statement_types(
+                    statements=tuple(
+                        getattr(
+                            statement,
+                            "actions",
+                            (),
+                        ) or ()
+                    ),
+                    owner=(
+                        f"{statement_owner} when block"
+                    ),
+                    function_name=function_name,
+                    identifiers=dict(scope),
+                    expected_return=expected_return,
+                    functions=functions,
+                    require_complete=require_complete,
+                )
+                self._validate_linked_function_statement_types(
+                    statements=tuple(
+                        getattr(
+                            statement,
+                            "otherwise_actions",
+                            (),
+                        ) or ()
+                    ),
+                    owner=(
+                        f"{statement_owner} otherwise block"
+                    ),
+                    function_name=function_name,
+                    identifiers=dict(scope),
+                    expected_return=expected_return,
+                    functions=functions,
+                    require_complete=require_complete,
+                )
+
+    def _validate_linked_action_types(
+        self,
+        *,
+        actions: Sequence[Any],
+        owner: str,
+        state_types: Mapping[str, ApexType],
+        functions: Mapping[str, FunctionSignature],
+    ) -> None:
+        for index, action in enumerate(
+            tuple(actions)
+        ):
+            action_owner = (
+                f"{owner} action[{index}]"
+            )
+            action_type = type(
+                action
+            ).__name__
+
+            if action_type == "StateAssignment":
+                self._validate_linked_assignment_type(
+                    assignment=action,
+                    owner=action_owner,
+                    state_types=state_types,
+                    functions=functions,
+                )
+                continue
+
+            if action_type == "AIRWhenAction":
+                condition_type = self._infer_linked_expression_type(
+                    getattr(
+                        action,
+                        "condition",
+                    ),
+                    owner=(
+                        f"{action_owner} condition"
+                    ),
+                    identifiers=state_types,
+                    functions=functions,
+                    require_complete_arguments=False,
+                )
+
+                if (
+                    condition_type is not None
+                    and condition_type is not BOOL
+                ):
+                    raise InvalidValueError(
+                        f"{action_owner} condition requires bool; "
+                        f"received {condition_type}."
+                    )
+
+                self._validate_linked_action_types(
+                    actions=tuple(
+                        getattr(
+                            action,
+                            "actions",
+                            (),
+                        ) or ()
+                    ),
+                    owner=(
+                        f"{action_owner} when block"
+                    ),
+                    state_types=state_types,
+                    functions=functions,
+                )
+                self._validate_linked_action_types(
+                    actions=tuple(
+                        getattr(
+                            action,
+                            "otherwise_actions",
+                            (),
+                        ) or ()
+                    ),
+                    owner=(
+                        f"{action_owner} otherwise block"
+                    ),
+                    state_types=state_types,
+                    functions=functions,
+                )
+                continue
+
+            if action_type == "EventEmission":
+                for fact in tuple(
+                    getattr(
+                        action,
+                        "facts",
+                        (),
+                    ) or ()
+                ):
+                    self._infer_linked_expression_type(
+                        getattr(
+                            fact,
+                            "value",
+                            None,
+                        ),
+                        owner=(
+                            f"{action_owner} event fact"
+                        ),
+                        identifiers=state_types,
+                        functions=functions,
+                        require_complete_arguments=False,
+                    )
+
+    def _validate_linked_assignment_type(
+        self,
+        *,
+        assignment: Any,
+        owner: str,
+        state_types: Mapping[str, ApexType],
+        functions: Mapping[str, FunctionSignature],
+    ) -> None:
+        operation_types = {
+            "set_int": INT,
+            "add_int": INT,
+            "set_bool": BOOL,
+            "set_string": STRING,
+            "set_float": FLOAT,
+            "add_float": FLOAT,
+        }
+        operation = getattr(
+            assignment,
+            "operation",
+            None,
+        )
+        expected = operation_types.get(
+            operation
+        )
+
+        if expected is None:
+            return
+
+        actual = self._infer_linked_expression_type(
+            getattr(
+                assignment,
+                "value",
+            ),
+            owner=(
+                f"{owner} assignment expression"
+            ),
+            identifiers=state_types,
+            functions=functions,
+            require_complete_arguments=False,
+        )
+
+        if (
+            actual is not None
+            and actual is not expected
+        ):
+            raise InvalidValueError(
+                f"{owner} uses {operation!r}, which requires {expected}; "
+                f"its expression produces {actual}."
+            )
+
     # ======================================================================
     # AIR expressions
     # ======================================================================
@@ -1722,12 +2423,34 @@ class RuntimeValidator:
 
         expression_type = type(expression).__name__
 
+        # Hand-authored and legacy AIR may retain primitive literal values
+        # instead of wrapping them in AIR literal expression objects.
+        # Preserve exact Python type identity so bool is not treated as int.
+        if type(expression) in {
+            int,
+            bool,
+            str,
+            float,
+        }:
+            return
+
         if expression_type == "AIRIntegerLiteral":
             value = getattr(expression, "value", None)
 
             if isinstance(value, bool) or not isinstance(value, int):
                 raise InvalidValueError(
                     f"{owner} must contain an integer literal value; "
+                    f"received {type(value).__name__}."
+                )
+
+            return
+
+        if expression_type == "AIRFloatLiteral":
+            value = getattr(expression, "value", None)
+
+            if type(value) is not float:
+                raise InvalidValueError(
+                    f"{owner} must contain a float literal value; "
                     f"received {type(value).__name__}."
                 )
 

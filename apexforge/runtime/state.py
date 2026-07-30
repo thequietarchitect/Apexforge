@@ -7,39 +7,93 @@ This module owns runtime state. AIR declarations and event records remain in
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping, Tuple
+from typing import Any, Mapping, Tuple, Union
 
-from air.expressions import AIRIntegerLiteral
+from air.expressions import (
+    AIRBooleanLiteral,
+    AIRFloatLiteral,
+    AIRIntegerLiteral,
+    AIRStringLiteral,
+)
 from air.model import EventRecord, StateAssignment
 from effects.model import EffectIntent
+from type_system.model import (
+    ApexType,
+    BOOL,
+    FLOAT,
+    INT,
+    STRING,
+    VOID,
+    resolve_builtin_type,
+)
 
 
-def _require_int(
-    value: Any,
+StateValue = Union[int, bool, str, float]
+_MISSING = object()
+
+
+def _value_type(
+    value: object,
+) -> ApexType:
+    if type(value) is int:
+        return INT
+    if type(value) is bool:
+        return BOOL
+    if type(value) is str:
+        return STRING
+    if type(value) is float:
+        return FLOAT
+
+    raise TypeError(
+        "ApexForge runtime state values must be int, bool, string, or float; "
+        f"received {type(value).__name__}."
+    )
+
+
+def _require_value_type(
+    value: object,
     *,
+    expected: ApexType,
     owner: str,
-) -> int:
-    """Require a real integer rather than ``bool`` or an AIR expression."""
+) -> StateValue:
+    actual = _value_type(value)
 
-    if type(value) is not int:
+    if actual is not expected:
         raise TypeError(
-            f"{owner} must be an int; "
-            f"received {type(value).__name__}."
+            f"{owner} must be {expected}; "
+            f"received {actual}."
         )
 
-    return value
+    return value  # type: ignore[return-value]
 
 
-def _program_initial_int(
+def _program_initial_value(
     state: Any,
-) -> int:
-    """Convert one verified state initializer into a runtime integer.
+) -> StateValue:
+    """Convert one verified literal state initializer into a runtime value.
 
-    AFP-P1 programs may contain primitive integers. AFP-P2 compilation wraps
-    integer source literals in ``AIRIntegerLiteral``. More general initializer
-    expressions are intentionally rejected here until initialization-order
-    semantics are defined.
+    Initialization-order and cross-state expression evaluation remain outside
+    this constructor. The compiler and validator guarantee the initializer's
+    type before snapshot creation.
     """
+
+    state_id = getattr(
+        state,
+        "id",
+        "<unknown>",
+    )
+    value_type = resolve_builtin_type(
+        getattr(
+            state,
+            "value_type",
+            INT,
+        )
+    )
+
+    if value_type is VOID:
+        raise TypeError(
+            f"state {state_id!r} cannot use void."
+        )
 
     initial = getattr(
         state,
@@ -47,25 +101,79 @@ def _program_initial_int(
         None,
     )
 
-    if type(initial) is int:
-        return initial
-
-    if isinstance(
-        initial,
-        AIRIntegerLiteral,
-    ):
-        return _require_int(
-            initial.value,
-            owner=(
-                f"state '{getattr(state, 'id', '<unknown>')}' "
-                "integer initializer"
-            ),
+    if type(initial) in {
+        int,
+        bool,
+        str,
+        float,
+    }:
+        return _require_value_type(
+            initial,
+            expected=value_type,
+            owner=f"state {state_id!r} initializer",
         )
 
+    literal_specs = (
+        (
+            AIRIntegerLiteral,
+            INT,
+        ),
+        (
+            AIRBooleanLiteral,
+            BOOL,
+        ),
+        (
+            AIRStringLiteral,
+            STRING,
+        ),
+        (
+            AIRFloatLiteral,
+            FLOAT,
+        ),
+    )
+
+    for literal_class, literal_type in literal_specs:
+        if isinstance(
+            initial,
+            literal_class,
+        ):
+            if value_type is not literal_type:
+                raise TypeError(
+                    f"state {state_id!r} declares {value_type} "
+                    f"but contains {literal_type} initializer."
+                )
+
+            return _require_value_type(
+                initial.value,
+                expected=literal_type,
+                owner=f"state {state_id!r} initializer",
+            )
+
     raise TypeError(
-        f"state '{getattr(state, 'id', '<unknown>')}' initializer "
-        "must be an integer or AIRIntegerLiteral before runtime "
-        f"snapshot creation; received {type(initial).__name__}."
+        f"state {state_id!r} initializer must be a verified literal before "
+        "runtime snapshot creation; "
+        f"received {type(initial).__name__}."
+    )
+
+
+def _candidate_keys(
+    key: str,
+) -> tuple[str, ...]:
+    if not isinstance(key, str) or not key:
+        raise ValueError(
+            "State key must be a non-empty string."
+        )
+
+    if key.startswith("state:"):
+        plain = key[len("state:"):]
+        return (
+            key,
+            plain,
+        ) if plain else (key,)
+
+    return (
+        key,
+        f"state:{key}",
     )
 
 
@@ -74,7 +182,7 @@ class StateCell:
     """One immutable runtime state value."""
 
     key: str
-    value: int
+    value: StateValue
 
     def __post_init__(
         self,
@@ -87,15 +195,14 @@ class StateCell:
                 "StateCell key must be a non-empty string."
             )
 
-        _require_int(
-            self.value,
-            owner=f"state cell '{self.key}'",
+        _value_type(
+            self.value
         )
 
 
 @dataclass(frozen=True)
 class StateSnapshot:
-    """An immutable, deterministic set of runtime state cells."""
+    """An immutable, deterministic set of typed runtime state cells."""
 
     cells: Tuple[StateCell, ...] = ()
 
@@ -108,7 +215,6 @@ class StateSnapshot:
                 key=lambda cell: cell.key,
             )
         )
-
         seen: set[str] = set()
 
         for cell in normalized:
@@ -139,7 +245,7 @@ class StateSnapshot:
     @classmethod
     def from_mapping(
         cls,
-        values: Mapping[str, int],
+        values: Mapping[str, StateValue],
     ) -> "StateSnapshot":
         return cls(
             cells=tuple(
@@ -160,7 +266,7 @@ class StateSnapshot:
             cells=tuple(
                 StateCell(
                     key=state.id,
-                    value=_program_initial_int(
+                    value=_program_initial_value(
                         state
                     ),
                 )
@@ -168,48 +274,91 @@ class StateSnapshot:
             )
         )
 
+    def get_value(
+        self,
+        key: str,
+        default: object = _MISSING,
+    ) -> StateValue:
+        for candidate in _candidate_keys(key):
+            for cell in self.cells:
+                if cell.key == candidate:
+                    return cell.value
+
+        if default is _MISSING:
+            raise KeyError(key)
+
+        _value_type(default)
+        return default  # type: ignore[return-value]
+
     def get_int(
         self,
         key: str,
         default: int = 0,
     ) -> int:
-        """Read either a canonical ``state:name`` ID or its plain alias."""
-
-        _require_int(
+        _require_value_type(
             default,
+            expected=INT,
             owner="StateSnapshot.get_int default",
         )
+        return _require_value_type(
+            self.get_value(key, default),
+            expected=INT,
+            owner=f"state {key!r}",
+        )  # type: ignore[return-value]
 
-        candidates = [key]
+    def get_bool(
+        self,
+        key: str,
+        default: bool = False,
+    ) -> bool:
+        _require_value_type(
+            default,
+            expected=BOOL,
+            owner="StateSnapshot.get_bool default",
+        )
+        return _require_value_type(
+            self.get_value(key, default),
+            expected=BOOL,
+            owner=f"state {key!r}",
+        )  # type: ignore[return-value]
 
-        if key.startswith(
-            "state:"
-        ):
-            plain_key = key[
-                len("state:"):
-            ]
+    def get_string(
+        self,
+        key: str,
+        default: str = "",
+    ) -> str:
+        _require_value_type(
+            default,
+            expected=STRING,
+            owner="StateSnapshot.get_string default",
+        )
+        return _require_value_type(
+            self.get_value(key, default),
+            expected=STRING,
+            owner=f"state {key!r}",
+        )  # type: ignore[return-value]
 
-            if plain_key:
-                candidates.append(
-                    plain_key
-                )
-        else:
-            candidates.append(
-                f"state:{key}"
-            )
-
-        for candidate in candidates:
-            for cell in self.cells:
-                if cell.key == candidate:
-                    return cell.value
-
-        return default
+    def get_float(
+        self,
+        key: str,
+        default: float = 0.0,
+    ) -> float:
+        _require_value_type(
+            default,
+            expected=FLOAT,
+            owner="StateSnapshot.get_float default",
+        )
+        return _require_value_type(
+            self.get_value(key, default),
+            expected=FLOAT,
+            owner=f"state {key!r}",
+        )  # type: ignore[return-value]
 
     def apply(
         self,
         delta: "StateDelta",
     ) -> "StateSnapshot":
-        """Return a new snapshot with the delta's assignments applied."""
+        """Return a new snapshot with typed assignments applied."""
 
         if not isinstance(
             delta,
@@ -225,36 +374,60 @@ class StateSnapshot:
             for cell in self.cells
         }
 
+        operation_types = {
+            "set_int": INT,
+            "add_int": INT,
+            "set_bool": BOOL,
+            "set_string": STRING,
+            "set_float": FLOAT,
+            "add_float": FLOAT,
+        }
+
         for assignment in delta.assignments:
-            value = _require_int(
+            expected = operation_types.get(
+                assignment.operation
+            )
+
+            if expected is None:
+                raise ValueError(
+                    "unsupported state operation: "
+                    f"{assignment.operation}"
+                )
+
+            value = _require_value_type(
                 assignment.value,
+                expected=expected,
                 owner=(
                     f"assignment to state "
-                    f"'{assignment.state}'"
+                    f"{assignment.state!r}"
                 ),
             )
 
-            previous = values.get(
-                assignment.state,
-                0,
-            )
-
-            if assignment.operation == "set_int":
+            if assignment.operation.startswith("set_"):
                 values[
                     assignment.state
                 ] = value
                 continue
 
-            if assignment.operation == "add_int":
-                values[
-                    assignment.state
-                ] = previous + value
-                continue
-
-            raise ValueError(
-                "unsupported state operation: "
-                f"{assignment.operation}"
+            previous_default: StateValue = (
+                0
+                if expected is INT
+                else 0.0
             )
+            previous = _require_value_type(
+                values.get(
+                    assignment.state,
+                    previous_default,
+                ),
+                expected=expected,
+                owner=(
+                    f"existing state "
+                    f"{assignment.state!r}"
+                ),
+            )
+            values[
+                assignment.state
+            ] = previous + value  # type: ignore[operator]
 
         return type(self).from_mapping(
             values
@@ -297,3 +470,11 @@ class StateDelta:
             or self.events
             or self.effects
         )
+
+
+__all__ = (
+    "StateCell",
+    "StateDelta",
+    "StateSnapshot",
+    "StateValue",
+)
