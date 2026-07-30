@@ -42,3 +42,11 @@ class AIRBinaryExpression(AIRExpression):
     left: AIRExpression
     operator: str
     right: AIRExpression
+
+
+@dataclass(frozen=True)
+class AIRCallExpression(AIRExpression):
+    """A pure function call evaluated inside an immutable call frame."""
+
+    target: str
+    arguments: tuple[AIRExpression, ...] = ()

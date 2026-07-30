@@ -67,6 +67,33 @@ class BinaryExpressionNode(ExpressionNode):
 
 
 @dataclass(frozen=True)
+class CallExpressionNode(ExpressionNode):
+    target: str
+    arguments: tuple[ExpressionNode, ...]
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+
+
+@dataclass(frozen=True)
+class ParameterNode:
+    name: str
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+
+
+@dataclass(frozen=True)
+class ReturnNode:
+    expression: ExpressionNode
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+
+
+@dataclass(frozen=True)
+class FunctionNode:
+    name: str
+    parameters: tuple[ParameterNode, ...]
+    return_statement: ReturnNode
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+
+
+@dataclass(frozen=True)
 class StateNode:
     name: str
     initial: ExpressionNode
@@ -338,6 +365,8 @@ class Parser:
 
     def parse(self) -> object:
         kind = self.current().kind
+        if kind == "FUNCTION":
+            return self.parse_function()
         if kind == "DIRECTIVE":
             return self.parse_directive()
         if kind == "WORKFLOW":
@@ -358,6 +387,53 @@ class Parser:
     # ======================================================================
     # Top-level declarations
     # ======================================================================
+
+    def parse_function(self) -> FunctionNode:
+        """Parse a P7.1 pure function with one return expression."""
+
+        start = self.consume("FUNCTION")
+        name = self.consume("IDENT")
+        self.consume_any(*self._LEFT_PAREN_KINDS)
+
+        parameters: list[ParameterNode] = []
+        if self.current().kind not in self._RIGHT_PAREN_KINDS:
+            while True:
+                parameter = self.consume("IDENT")
+                parameters.append(
+                    ParameterNode(
+                        name=parameter.value,
+                        span=parameter.span,
+                    )
+                )
+                if self.match("COMMA") is None:
+                    break
+
+        self.consume_any(*self._RIGHT_PAREN_KINDS)
+        self.consume("LBRACE")
+
+        if self.current().kind != "RETURN":
+            self._raise(
+                code="APX-PARSE-006",
+                message=(
+                    f"Function {name.value!r} must contain exactly one "
+                    "return expression in AFP-P7.1."
+                ),
+            )
+
+        return_start = self.consume("RETURN")
+        expression = self.parse_expression()
+        return_statement = ReturnNode(
+            expression=expression,
+            span=_cover(return_start, expression),
+        )
+        closing = self.consume("RBRACE")
+
+        return FunctionNode(
+            name=name.value,
+            parameters=tuple(parameters),
+            return_statement=return_statement,
+            span=_cover(start, closing),
+        )
 
     def parse_directive(self) -> DirectiveNode:
         start = self.consume("DIRECTIVE")
@@ -844,6 +920,24 @@ class Parser:
                 return BooleanLiteralNode(value=True, span=identifier.span)
             if identifier.value == "false":
                 return BooleanLiteralNode(value=False, span=identifier.span)
+
+            if self.current().kind in self._LEFT_PAREN_KINDS:
+                self.consume_any(*self._LEFT_PAREN_KINDS)
+                arguments: list[ExpressionNode] = []
+
+                if self.current().kind not in self._RIGHT_PAREN_KINDS:
+                    while True:
+                        arguments.append(self.parse_expression())
+                        if self.match("COMMA") is None:
+                            break
+
+                closing = self.consume_any(*self._RIGHT_PAREN_KINDS)
+                return CallExpressionNode(
+                    target=identifier.value,
+                    arguments=tuple(arguments),
+                    span=_cover(identifier, closing),
+                )
+
             return IdentifierNode(name=identifier.value, span=identifier.span)
 
         if token.kind in self._LEFT_PAREN_KINDS:
@@ -891,6 +985,10 @@ __all__ = [
     "IdentifierNode",
     "UnaryExpressionNode",
     "BinaryExpressionNode",
+    "CallExpressionNode",
+    "ParameterNode",
+    "ReturnNode",
+    "FunctionNode",
     "StateNode",
     "EventNode",
     "AddActionNode",

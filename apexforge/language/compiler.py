@@ -38,6 +38,8 @@ from language.parser import (
     IdentifierNode,
     UnaryExpressionNode,
     BinaryExpressionNode,
+    CallExpressionNode,
+    FunctionNode,
     RoleNode,
     SetActionNode,
     parse,
@@ -50,7 +52,9 @@ from air.expressions import (
     AIRIdentifierReference,
     AIRUnaryExpression,
     AIRBinaryExpression,
+    AIRCallExpression,
 )
+from air.functions import AIRFunction, AIRParameter
 from language.source import SourceSpan
 
 
@@ -233,6 +237,14 @@ def compile_expression(node: ExpressionNode) -> AIRExpression:
             left=compile_expression(node.left),
             operator=node.operator,
             right=compile_expression(node.right),
+        )
+    if isinstance(node, CallExpressionNode):
+        return AIRCallExpression(
+            target=node.target,
+            arguments=tuple(
+                compile_expression(argument)
+                for argument in node.arguments
+            ),
         )
 
     raise _compile_error(
@@ -631,13 +643,96 @@ def _compile_directive_with_map(
     return CompiledSource(program=program, source_map=SourceMap(tuple(entries)))
 
 
+def _compile_function_with_map(
+    node: FunctionNode,
+) -> CompiledSource:
+    """Compile one P7.1 pure function into an independently linkable AIR unit."""
+
+    function_id = f"function:{node.name}"
+    entries: list[SourceMapEntry] = []
+    _append_source_entry(
+        entries,
+        air_id=function_id,
+        node=node,
+        kind="function",
+        reference=node.name,
+    )
+
+    parameter_names = tuple(parameter.name for parameter in node.parameters)
+    duplicate_names = tuple(
+        name
+        for name in dict.fromkeys(parameter_names)
+        if parameter_names.count(name) > 1
+    )
+    if duplicate_names:
+        raise _compile_error(
+            code="APX-COMPILE-008",
+            message=(
+                f"Function {node.name!r} declares duplicate parameter "
+                f"{duplicate_names[0]!r}."
+            ),
+            node=node,
+            air_id=function_id,
+        )
+
+    for index, parameter in enumerate(node.parameters):
+        _append_source_entry(
+            entries,
+            air_id=f"parameter:{node.name}:{index}",
+            node=parameter,
+            kind="function_parameter",
+            reference=parameter.name,
+        )
+
+    program = AIRProgram(
+        version=AIR_VERSION,
+        states=(),
+        events=(),
+        authority_checks=(),
+        causal_decisions=(),
+        directives=(),
+        requirements=(),
+        authorities=(),
+        principals=(),
+        roles=(),
+        functions=(
+            AIRFunction(
+                id=function_id,
+                name=node.name,
+                parameters=tuple(
+                    AIRParameter(name=parameter.name)
+                    for parameter in node.parameters
+                ),
+                return_expression=compile_expression(
+                    node.return_statement.expression
+                ),
+                order=0,
+            ),
+        ),
+    )
+
+    return CompiledSource(
+        program=program,
+        source_map=SourceMap(tuple(entries)),
+    )
+
+
 def compile_directive(node: DirectiveNode) -> AIRProgram:
     return _compile_directive_with_map(node).program
 
 
-def compile_node_with_map(node: DirectiveNode | RoleNode) -> CompiledSource:
+def compile_function(node: FunctionNode) -> AIRProgram:
+    return _compile_function_with_map(node).program
+
+
+def compile_node_with_map(
+    node: DirectiveNode | RoleNode | FunctionNode,
+) -> CompiledSource:
     if isinstance(node, DirectiveNode):
         return _compile_directive_with_map(node)
+
+    if isinstance(node, FunctionNode):
+        return _compile_function_with_map(node)
 
     if isinstance(node, RoleNode):
         role = compile_role(node)
@@ -658,7 +753,9 @@ def compile_node_with_map(node: DirectiveNode | RoleNode) -> CompiledSource:
     )
 
 
-def compile_node(node: DirectiveNode | RoleNode) -> AIRProgram | AIRRole:
+def compile_node(
+    node: DirectiveNode | RoleNode | FunctionNode,
+) -> AIRProgram | AIRRole:
     return compile_node_with_map(node).program
 
 
@@ -685,6 +782,7 @@ __all__ = (
     "compile_actions",
     "compile_directive",
     "compile_expression",
+    "compile_function",
     "compile_node",
     "compile_node_with_map",
     "compile_source",

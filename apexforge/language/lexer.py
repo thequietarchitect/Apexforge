@@ -1,4 +1,4 @@
-"ApexForge language lexer with source provenance."""
+"""ApexForge language lexer with source provenance."""
 
 from __future__ import annotations
 
@@ -49,6 +49,9 @@ KEYWORDS = {
     "not": "NOT",
     "true": "TRUE",
     "false": "FALSE",
+    # AFP-P7.1 pure-function core.
+    "function": "FUNCTION",
+    "return": "RETURN",
 }
 
 
@@ -72,6 +75,7 @@ ONE_CHARACTER_TOKENS = {
     "%": "PERCENT",
     "(": "LPAREN",
     ")": "RPAREN",
+    ",": "COMMA",
     "<": "LT",
     ">": "GT",
 }

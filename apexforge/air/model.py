@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Literal, Optional, Tuple, TYPE_CHECKING, Union
 
 from air.expressions import AIRExpression
+from air.functions import AIRFunction
 from air.types import as_tuple, is_int
 from authority.model import AuthorityCheck, AuthorityGrant, Principal
 
@@ -143,6 +144,8 @@ class AIRProgram:
     authorities: tuple[DirectiveAuthority, ...] = ()
     principals: tuple[Principal, ...] = ()
     roles: tuple[AIRRole, ...] = ()
+    # Added at the end so all pre-P7 constructors remain source-compatible.
+    functions: tuple[AIRFunction, ...] = ()
 
 
 @dataclass(frozen=True)
