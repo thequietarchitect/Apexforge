@@ -17,6 +17,7 @@ from air.expressions import (
     AIRIdentifierReference,
     AIRUnaryExpression,
     AIRBinaryExpression,
+    AIRCallExpression,
 )
 
 from causality.engine import CausalEngine
@@ -28,15 +29,26 @@ from runtime.diagnostics import (
     TraceStep,
     append_diagnostic,
 )
+from runtime.call_stack import CallFrame, CallStack
 from runtime.state import StateDelta, StateSnapshot
 
 
 MAX_CONDITIONAL_DEPTH = 64
 MAX_INVOCATION_DEPTH = 32
+MAX_FUNCTION_CALL_DEPTH = 64
 
 
 class RuntimeExpressionError(RuntimeError):
     """Raised when an AIR expression cannot be evaluated safely."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        trace_steps: Tuple[TraceStep, ...] = (),
+    ) -> None:
+        self.trace_steps = tuple(trace_steps)
+        super().__init__(message)
 
 
 @dataclass(frozen=True)
@@ -109,6 +121,9 @@ class RuntimeEngine:
         checks = index_by_id(program.authority_checks)
         decisions = index_by_id(program.causal_decisions)
         directives = index_by_id(program.directives)
+        functions = index_by_id(
+            tuple(getattr(program, "functions", ()) or ())
+        )
 
         roots = self._resolve_entry_directives(
             entry_directives=entry_directives,
@@ -137,6 +152,7 @@ class RuntimeEngine:
                 checks=checks,
                 decisions=decisions,
                 directives=directives,
+                functions=functions,
                 context=context,
                 diagnostics=diagnostics,
                 invocation_stack=(),
@@ -245,6 +261,7 @@ class RuntimeEngine:
         checks: Mapping[str, Any],
         decisions: Mapping[str, Any],
         directives: Mapping[str, Any],
+        functions: Mapping[str, Any],
         context: ExecutionContext,
         diagnostics: list[Diagnostic],
         invocation_stack: Tuple[str, ...],
@@ -419,6 +436,7 @@ class RuntimeEngine:
                     checks=checks,
                     decisions=decisions,
                     directives=directives,
+                    functions=functions,
                     context=context,
                     diagnostics=diagnostics,
                     invocation_stack=active_stack,
@@ -426,6 +444,9 @@ class RuntimeEngine:
                     depth=0,
                 )
             except RuntimeExpressionError as exc:
+                trace_steps.extend(
+                    tuple(getattr(exc, "trace_steps", ()) or ())
+                )
                 append_diagnostic(
                     diagnostics,
                     "error",
@@ -519,6 +540,7 @@ class RuntimeEngine:
         checks: Mapping[str, Any],
         decisions: Mapping[str, Any],
         directives: Mapping[str, Any],
+        functions: Mapping[str, Any],
         context: ExecutionContext,
         diagnostics: list[Diagnostic],
         invocation_stack: Tuple[str, ...],
@@ -548,6 +570,8 @@ class RuntimeEngine:
                 evaluated = self._evaluate_assignment(
                     action,
                     candidate_state,
+                    functions=functions,
+                    trace_steps=action_trace_steps,
                 )
 
                 candidate_state = candidate_state.apply(
@@ -574,6 +598,8 @@ class RuntimeEngine:
                 evaluated_facts = self._evaluate_facts(
                     action.facts,
                     candidate_state,
+                    functions=functions,
+                    trace_steps=action_trace_steps,
                 )
 
                 event = EventRecord(
@@ -638,6 +664,7 @@ class RuntimeEngine:
                     checks=checks,
                     decisions=decisions,
                     directives=directives,
+                    functions=functions,
                     context=context,
                     diagnostics=diagnostics,
                     invocation_stack=invocation_stack,
@@ -692,6 +719,10 @@ class RuntimeEngine:
                 condition_result = self._evaluate_expression(
                     action.condition,
                     candidate_state,
+                    functions=functions,
+                    frame=None,
+                    call_stack=CallStack(),
+                    trace_steps=action_trace_steps,
                 )
 
                 if type(condition_result) is not bool:
@@ -732,6 +763,7 @@ class RuntimeEngine:
                     checks=checks,
                     decisions=decisions,
                     directives=directives,
+                    functions=functions,
                     context=context,
                     diagnostics=diagnostics,
                     invocation_stack=invocation_stack,
@@ -778,10 +810,17 @@ class RuntimeEngine:
         self,
         assignment: Any,
         state: StateSnapshot,
+        *,
+        functions: Mapping[str, Any],
+        trace_steps: list[TraceStep],
     ) -> Any:
         value = self._evaluate_expression(
             assignment.value,
             state,
+            functions=functions,
+            frame=None,
+            call_stack=CallStack(),
+            trace_steps=trace_steps,
         )
 
         operation = assignment.operation
@@ -797,7 +836,8 @@ class RuntimeEngine:
                 raise RuntimeExpressionError(
                     f"assignment '{assignment.state}' uses "
                     f"{operation} but evaluated to "
-                    f"{type(value).__name__}, not int"
+                    f"{type(value).__name__}, not int",
+                    trace_steps=tuple(trace_steps),
                 )
 
         return replace(
@@ -809,6 +849,9 @@ class RuntimeEngine:
         self,
         fact_values: Tuple[Any, ...],
         state: StateSnapshot,
+        *,
+        functions: Mapping[str, Any],
+        trace_steps: list[TraceStep],
     ) -> Tuple[Any, ...]:
         evaluated = []
 
@@ -822,6 +865,10 @@ class RuntimeEngine:
             value = self._evaluate_expression(
                 raw_value,
                 state,
+                functions=functions,
+                frame=None,
+                call_stack=CallStack(),
+                trace_steps=trace_steps,
             )
 
             evaluated.append(
@@ -837,13 +884,32 @@ class RuntimeEngine:
         self,
         expression: Any,
         state: StateSnapshot,
+        *,
+        functions: Optional[Mapping[str, Any]] = None,
+        frame: Optional[CallFrame] = None,
+        call_stack: Optional[CallStack] = None,
+        trace_steps: Optional[list[TraceStep]] = None,
     ) -> Any:
         """
         Evaluate AIR expressions recursively.
 
-        Primitive AFP-P1 values pass through unchanged, preserving backward
-        compatibility with programs compiled before expression support.
+        Primitive AFP-P1 values pass through unchanged. P7 calls execute only
+        against linked, verified AIRFunction declarations and immutable frames.
         """
+
+        function_index = functions or {}
+        active_stack = call_stack or CallStack()
+        active_trace = trace_steps if trace_steps is not None else []
+
+        def evaluate(nested: Any) -> Any:
+            return self._evaluate_expression(
+                nested,
+                state,
+                functions=function_index,
+                frame=frame,
+                call_stack=active_stack,
+                trace_steps=active_trace,
+            )
 
         if not isinstance(
             expression,
@@ -873,6 +939,20 @@ class RuntimeEngine:
             expression,
             AIRIdentifierReference,
         ):
+            if frame is not None:
+                found, value = frame.try_resolve(
+                    expression.name
+                )
+
+                if found:
+                    return value
+
+                raise RuntimeExpressionError(
+                    "undefined function-local identifier "
+                    f"{expression.name!r} in {frame.function_id!r}",
+                    trace_steps=tuple(active_trace),
+                )
+
             return self._resolve_identifier(
                 expression.name,
                 state,
@@ -880,11 +960,23 @@ class RuntimeEngine:
 
         if isinstance(
             expression,
+            AIRCallExpression,
+        ):
+            return self._evaluate_function_call(
+                expression=expression,
+                state=state,
+                functions=function_index,
+                caller_frame=frame,
+                call_stack=active_stack,
+                trace_steps=active_trace,
+            )
+
+        if isinstance(
+            expression,
             AIRUnaryExpression,
         ):
-            operand = self._evaluate_expression(
-                expression.operand,
-                state,
+            operand = evaluate(
+                expression.operand
             )
 
             operator = expression.operator
@@ -909,7 +1001,8 @@ class RuntimeEngine:
 
             raise RuntimeExpressionError(
                 f"unsupported unary operator "
-                f"{operator!r}"
+                f"{operator!r}",
+                trace_steps=tuple(active_trace),
             )
 
         if isinstance(
@@ -921,9 +1014,8 @@ class RuntimeEngine:
             # Preserve short-circuit behavior.
             if operator == "and":
                 left = self._require_boolean(
-                    self._evaluate_expression(
-                        expression.left,
-                        state,
+                    evaluate(
+                        expression.left
                     ),
                     operator,
                 )
@@ -932,18 +1024,16 @@ class RuntimeEngine:
                     return False
 
                 return self._require_boolean(
-                    self._evaluate_expression(
-                        expression.right,
-                        state,
+                    evaluate(
+                        expression.right
                     ),
                     operator,
                 )
 
             if operator == "or":
                 left = self._require_boolean(
-                    self._evaluate_expression(
-                        expression.left,
-                        state,
+                    evaluate(
+                        expression.left
                     ),
                     operator,
                 )
@@ -952,21 +1042,18 @@ class RuntimeEngine:
                     return True
 
                 return self._require_boolean(
-                    self._evaluate_expression(
-                        expression.right,
-                        state,
+                    evaluate(
+                        expression.right
                     ),
                     operator,
                 )
 
-            left = self._evaluate_expression(
-                expression.left,
-                state,
+            left = evaluate(
+                expression.left
             )
 
-            right = self._evaluate_expression(
-                expression.right,
-                state,
+            right = evaluate(
+                expression.right
             )
 
             if operator == "+":
@@ -1021,7 +1108,8 @@ class RuntimeEngine:
 
                 if divisor == 0:
                     raise RuntimeExpressionError(
-                        "division by zero"
+                        "division by zero",
+                        trace_steps=tuple(active_trace),
                     )
 
                 return (
@@ -1040,7 +1128,8 @@ class RuntimeEngine:
 
                 if divisor == 0:
                     raise RuntimeExpressionError(
-                        "modulo by zero"
+                        "modulo by zero",
+                        trace_steps=tuple(active_trace),
                     )
 
                 return (
@@ -1086,12 +1175,166 @@ class RuntimeEngine:
 
             raise RuntimeExpressionError(
                 f"unsupported binary operator "
-                f"{operator!r}"
+                f"{operator!r}",
+                trace_steps=tuple(active_trace),
             )
 
         raise RuntimeExpressionError(
             "unsupported AIR expression type "
-            f"{type(expression).__name__}"
+            f"{type(expression).__name__}",
+            trace_steps=tuple(active_trace),
+        )
+
+    def _evaluate_function_call(
+        self,
+        *,
+        expression: AIRCallExpression,
+        state: StateSnapshot,
+        functions: Mapping[str, Any],
+        caller_frame: Optional[CallFrame],
+        call_stack: CallStack,
+        trace_steps: list[TraceStep],
+    ) -> Any:
+        function = self._resolve_function_reference(
+            expression.target,
+            functions,
+        )
+
+        arguments: list[Any] = []
+
+        # Argument evaluation order is semantic and deterministic.
+        for argument in tuple(
+            getattr(expression, "arguments", ()) or ()
+        ):
+            arguments.append(
+                self._evaluate_expression(
+                    argument,
+                    state,
+                    functions=functions,
+                    frame=caller_frame,
+                    call_stack=call_stack,
+                    trace_steps=trace_steps,
+                )
+            )
+
+        parameters = tuple(
+            getattr(function, "parameters", ()) or ()
+        )
+
+        if len(arguments) != len(parameters):
+            raise RuntimeExpressionError(
+                f"function '{function.id}' expects {len(parameters)} "
+                f"argument(s), received {len(arguments)}",
+                trace_steps=tuple(trace_steps),
+            )
+
+        if call_stack.contains(
+            function.id
+        ):
+            cycle = (
+                tuple(frame.function_id for frame in call_stack.frames)
+                + (function.id,)
+            )
+            raise RuntimeExpressionError(
+                "function recursion detected at runtime: "
+                + " -> ".join(cycle),
+                trace_steps=tuple(trace_steps),
+            )
+
+        if call_stack.depth >= MAX_FUNCTION_CALL_DEPTH:
+            raise RuntimeExpressionError(
+                "function call depth exceeds runtime limit "
+                f"of {MAX_FUNCTION_CALL_DEPTH}",
+                trace_steps=tuple(trace_steps),
+            )
+
+        frame = CallFrame.bind(
+            function=function,
+            values=tuple(arguments),
+            depth=call_stack.depth,
+        )
+        nested_stack = call_stack.push(
+            frame
+        )
+
+        trace_steps.append(
+            TraceStep(
+                "function.call.start",
+                "entered pure function call frame",
+                facts(
+                    arguments=len(arguments),
+                    depth=frame.depth,
+                    function=function.id,
+                    name=function.name,
+                ),
+            )
+        )
+
+        try:
+            value = self._evaluate_expression(
+                function.return_expression,
+                state,
+                functions=functions,
+                frame=frame,
+                call_stack=nested_stack,
+                trace_steps=trace_steps,
+            )
+        except RuntimeExpressionError as exc:
+            trace_steps.append(
+                TraceStep(
+                    "function.call.abort",
+                    "aborted pure function evaluation",
+                    facts(
+                        depth=frame.depth,
+                        function=function.id,
+                        name=function.name,
+                    ),
+                )
+            )
+            raise RuntimeExpressionError(
+                str(exc),
+                trace_steps=tuple(trace_steps),
+            ) from exc
+
+        trace_steps.append(
+            TraceStep(
+                "function.call.finish",
+                "returned from pure function call frame",
+                facts(
+                    depth=frame.depth,
+                    function=function.id,
+                    name=function.name,
+                    result_type=type(value).__name__,
+                ),
+            )
+        )
+
+        return value
+
+    def _resolve_function_reference(
+        self,
+        reference: str,
+        functions: Mapping[str, Any],
+    ) -> Any:
+        if not isinstance(reference, str) or not reference:
+            raise RuntimeExpressionError(
+                "function reference must be a non-empty string"
+            )
+
+        if reference in functions:
+            return functions[reference]
+
+        canonical = (
+            reference
+            if reference.startswith("function:")
+            else f"function:{reference}"
+        )
+
+        if canonical in functions:
+            return functions[canonical]
+
+        raise RuntimeExpressionError(
+            f"undefined function call target {reference!r}"
         )
 
     def _resolve_identifier(
@@ -1099,13 +1342,7 @@ class RuntimeEngine:
         name: str,
         state: StateSnapshot,
     ) -> Any:
-        """
-        Resolve either a plain state name or its canonical state:<name> ID.
-
-        This helper supports the common StateSnapshot layouts used during
-        ApexForge prototyping. If your StateSnapshot exposes a dedicated lookup
-        method, keep only that branch once its API is finalized.
-        """
+        """Resolve a plain state name or canonical ``state:<name>`` ID."""
 
         candidates = (
             name,
@@ -1113,23 +1350,33 @@ class RuntimeEngine:
             else f"state:{name}",
         )
 
-        sentinel = object()
-
-        get_int = getattr(
+        # Canonical StateSnapshot exposes immutable cells. Inspecting them
+        # directly preserves reliable missing-state detection without passing
+        # a non-integer sentinel into StateSnapshot.get_int.
+        cells = getattr(
             state,
-            "get_int",
+            "cells",
             None,
         )
 
-        if callable(get_int):
+        if cells is not None:
             for candidate in candidates:
-                value = get_int(
-                    name,
-                    0,
-                )
+                for cell in cells:
+                    if getattr(
+                        cell,
+                        "key",
+                        None,
+                    ) == candidate:
+                        return getattr(
+                            cell,
+                            "value",
+                        )
 
-                if value is not sentinel:
-                    return value
+            raise RuntimeExpressionError(
+                f"undefined state identifier {name!r}"
+            )
+
+        sentinel = object()
 
         get_value = getattr(
             state,
@@ -1194,6 +1441,20 @@ class RuntimeEngine:
                 AttributeError,
             ):
                 continue
+
+        # Compatibility fallback for snapshot-like objects that expose only
+        # get_int. Canonical StateSnapshot was handled above.
+        get_int = getattr(
+            state,
+            "get_int",
+            None,
+        )
+
+        if callable(get_int):
+            return get_int(
+                name,
+                0,
+            )
 
         raise RuntimeExpressionError(
             f"undefined state identifier {name!r}"
