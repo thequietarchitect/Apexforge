@@ -4,7 +4,7 @@ import inspect
 
 from air.model import Fact
 from pipeline.execution_pipeline import ExecutionPipeline
-from language.lexer import one_character_expressions, two_character_expressions
+from language.lexer import ONE_CHARACTER_TOKENS, TWO_CHARACTER_TOKENS
 
 from language.parser import parse
 from language.compiler import compile_directive
@@ -171,8 +171,8 @@ program = pipeline.compile_source(source)
 
 path = program.causal_decisions[0].paths[0]
 
-assert one_character_expressions["+"] == "PLUS"
-assert two_character_expressions[">="] == "GTE"
+assert ONE_CHARACTER_TOKENS["+"] == "PLUS"
+assert TWO_CHARACTER_TOKENS[">="] == "GTE"
 
 print(path.actions)
 

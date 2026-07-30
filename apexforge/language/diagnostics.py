@@ -13,6 +13,7 @@ DiagnosticStage = Literal[
     "lex",
     "parse",
     "compile",
+    "module",
     "link",
     "validate",
     "runtime",
@@ -31,30 +32,63 @@ class BuildDiagnostic:
 
     def __post_init__(self) -> None:
         if self.severity not in {"error", "warning", "info"}:
-            raise ValueError(f"Unsupported diagnostic severity {self.severity!r}.")
+            raise ValueError(
+                f"Unsupported diagnostic severity {self.severity!r}."
+            )
+
         if self.stage not in {
             "lex",
             "parse",
             "compile",
+            "module",
             "link",
             "validate",
             "runtime",
         }:
-            raise ValueError(f"Unsupported diagnostic stage {self.stage!r}.")
+            raise ValueError(
+                f"Unsupported diagnostic stage {self.stage!r}."
+            )
+
         if not isinstance(self.code, str) or not self.code.strip():
-            raise ValueError("BuildDiagnostic.code must be a non-empty string.")
+            raise ValueError(
+                "BuildDiagnostic.code must be a non-empty string."
+            )
+
         if not isinstance(self.message, str) or not self.message.strip():
-            raise ValueError("BuildDiagnostic.message must be a non-empty string.")
-        if self.span is not None and not isinstance(self.span, SourceSpan):
-            raise TypeError("BuildDiagnostic.span must be SourceSpan or None.")
+            raise ValueError(
+                "BuildDiagnostic.message must be a non-empty string."
+            )
+
+        if self.span is not None and not isinstance(
+            self.span,
+            SourceSpan,
+        ):
+            raise TypeError(
+                "BuildDiagnostic.span must be SourceSpan or None."
+            )
 
         related = tuple(self.related_spans)
         if any(not isinstance(span, SourceSpan) for span in related):
-            raise TypeError("BuildDiagnostic.related_spans must contain SourceSpan values.")
+            raise TypeError(
+                "BuildDiagnostic.related_spans must contain "
+                "SourceSpan values."
+            )
 
-        object.__setattr__(self, "code", self.code.strip())
-        object.__setattr__(self, "message", self.message.strip())
-        object.__setattr__(self, "related_spans", related)
+        object.__setattr__(
+            self,
+            "code",
+            self.code.strip(),
+        )
+        object.__setattr__(
+            self,
+            "message",
+            self.message.strip(),
+        )
+        object.__setattr__(
+            self,
+            "related_spans",
+            related,
+        )
 
     @property
     def is_error(self) -> bool:
@@ -62,7 +96,12 @@ class BuildDiagnostic:
 
     def sort_key(self) -> tuple[object, ...]:
         if self.span is None:
-            source_key = ("", "", -1, -1)
+            source_key = (
+                "",
+                "",
+                -1,
+                -1,
+            )
         else:
             source_key = (
                 self.span.source_name.casefold(),
@@ -71,12 +110,31 @@ class BuildDiagnostic:
                 self.span.end.offset,
             )
 
-        severity_rank = {"error": 0, "warning": 1, "info": 2}[self.severity]
-        return (*source_key, severity_rank, self.stage, self.code, self.message)
+        severity_rank = {
+            "error": 0,
+            "warning": 1,
+            "info": 2,
+        }[self.severity]
+
+        return (
+            *source_key,
+            severity_rank,
+            self.stage,
+            self.code,
+            self.message,
+        )
 
     def render(self) -> str:
-        prefix = self.span.render_start() if self.span is not None else "<project>"
-        return f"{prefix} [{self.code}] {self.message}"
+        prefix = (
+            self.span.render_start()
+            if self.span is not None
+            else "<project>"
+        )
+
+        return (
+            f"{prefix} [{self.code}] "
+            f"{self.message}"
+        )
 
 
 class DiagnosticError(Exception):
@@ -84,27 +142,64 @@ class DiagnosticError(Exception):
 
     diagnostic: BuildDiagnostic
 
-    def __init__(self, diagnostic: BuildDiagnostic) -> None:
-        if not isinstance(diagnostic, BuildDiagnostic):
-            raise TypeError("DiagnosticError requires BuildDiagnostic.")
+    def __init__(
+        self,
+        diagnostic: BuildDiagnostic,
+    ) -> None:
+        if not isinstance(
+            diagnostic,
+            BuildDiagnostic,
+        ):
+            raise TypeError(
+                "DiagnosticError requires BuildDiagnostic."
+            )
+
         self.diagnostic = diagnostic
-        super().__init__(diagnostic.render())
+        super().__init__(
+            diagnostic.render()
+        )
 
 
 def diagnostics_from_exception(
     error: BaseException,
 ) -> tuple[BuildDiagnostic, ...]:
-    diagnostic = getattr(error, "diagnostic", None)
-    if isinstance(diagnostic, BuildDiagnostic):
-        return (diagnostic,)
+    diagnostic = getattr(
+        error,
+        "diagnostic",
+        None,
+    )
 
-    diagnostics = getattr(error, "diagnostics", None)
+    if isinstance(
+        diagnostic,
+        BuildDiagnostic,
+    ):
+        return (
+            diagnostic,
+        )
+
+    diagnostics = getattr(
+        error,
+        "diagnostics",
+        None,
+    )
+
     if diagnostics is not None:
         normalized = tuple(
-            item for item in diagnostics if isinstance(item, BuildDiagnostic)
+            item
+            for item in diagnostics
+            if isinstance(
+                item,
+                BuildDiagnostic,
+            )
         )
+
         if normalized:
-            return tuple(sorted(normalized, key=lambda item: item.sort_key()))
+            return tuple(
+                sorted(
+                    normalized,
+                    key=lambda item: item.sort_key(),
+                )
+            )
 
     return ()
 
@@ -114,7 +209,10 @@ def render_diagnostics(
 ) -> str:
     return "\n".join(
         diagnostic.render()
-        for diagnostic in sorted(diagnostics, key=lambda item: item.sort_key())
+        for diagnostic in sorted(
+            diagnostics,
+            key=lambda item: item.sort_key(),
+        )
     )
 
 
