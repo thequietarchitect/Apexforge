@@ -66,12 +66,15 @@ class ApexType:
         return f"{self.name}<{rendered_arguments}>"
 
 
-# AFP-P8 canonical built-in type objects.
+# Frozen primitive identities from AFP-P8.
 INT: Final[ApexType] = ApexType("int")
 BOOL: Final[ApexType] = ApexType("bool")
 STRING: Final[ApexType] = ApexType("string")
 FLOAT: Final[ApexType] = ApexType("float")
 VOID: Final[ApexType] = ApexType("void")
+
+# AFP-P10.6 opaque structured-result identity.
+RESULT: Final[ApexType] = ApexType("result")
 
 
 BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
@@ -80,6 +83,7 @@ BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
     STRING,
     FLOAT,
     VOID,
+    RESULT,
 )
 
 
@@ -109,7 +113,7 @@ def resolve_builtin_type(
     elif isinstance(value, ApexType):
         if value.arguments:
             raise ValueError(
-                "Applied type cannot be resolved as an AFP-P8 built-in: "
+                "Applied type cannot be resolved as a built-in: "
                 f"{value}."
             )
         name = value.name
@@ -136,7 +140,7 @@ def resolve_builtin_type(
 def is_builtin_type(
     value: object,
 ) -> bool:
-    """Return whether ``value`` identifies an AFP-P8 built-in type."""
+    """Return whether ``value`` identifies a canonical built-in type."""
 
     try:
         resolve_builtin_type(value)  # type: ignore[arg-type]
@@ -164,6 +168,7 @@ __all__ = (
     "BUILTIN_TYPES_BY_NAME",
     "FLOAT",
     "INT",
+    "RESULT",
     "STRING",
     "TypeLike",
     "VOID",
