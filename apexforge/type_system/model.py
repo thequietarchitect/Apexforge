@@ -76,6 +76,9 @@ VOID: Final[ApexType] = ApexType("void")
 # AFP-P10.6 opaque structured-result identity.
 RESULT: Final[ApexType] = ApexType("result")
 
+# AFP-P10.7 opaque immutable-collection identity.
+COLLECTION: Final[ApexType] = ApexType("collection")
+
 
 BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
     INT,
@@ -84,6 +87,7 @@ BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
     FLOAT,
     VOID,
     RESULT,
+    COLLECTION,
 )
 
 
@@ -165,6 +169,7 @@ __all__ = (
     "ApexType",
     "BOOL",
     "BUILTIN_TYPES",
+    "COLLECTION",
     "BUILTIN_TYPES_BY_NAME",
     "FLOAT",
     "INT",
