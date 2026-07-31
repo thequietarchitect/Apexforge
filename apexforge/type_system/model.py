@@ -82,6 +82,9 @@ COLLECTION: Final[ApexType] = ApexType("collection")
 # AFP-P10.8 deterministic UTC time identity.
 TIME: Final[ApexType] = ApexType("time")
 
+# AFP-P10.9 deterministic random-stream identity.
+RANDOM: Final[ApexType] = ApexType("random")
+
 
 BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
     INT,
@@ -92,6 +95,7 @@ BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
     RESULT,
     COLLECTION,
     TIME,
+    RANDOM,
 )
 
 
@@ -178,6 +182,7 @@ __all__ = (
     "FLOAT",
     "INT",
     "RESULT",
+    "RANDOM",
     "STRING",
     "TIME",
     "TypeLike",
