@@ -79,6 +79,9 @@ RESULT: Final[ApexType] = ApexType("result")
 # AFP-P10.7 opaque immutable-collection identity.
 COLLECTION: Final[ApexType] = ApexType("collection")
 
+# AFP-P10.8 deterministic UTC time identity.
+TIME: Final[ApexType] = ApexType("time")
+
 
 BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
     INT,
@@ -88,6 +91,7 @@ BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
     VOID,
     RESULT,
     COLLECTION,
+    TIME,
 )
 
 
@@ -175,6 +179,7 @@ __all__ = (
     "INT",
     "RESULT",
     "STRING",
+    "TIME",
     "TypeLike",
     "VOID",
     "is_builtin_type",
