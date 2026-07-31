@@ -85,6 +85,12 @@ TIME: Final[ApexType] = ApexType("time")
 # AFP-P10.9 deterministic random-stream identity.
 RANDOM: Final[ApexType] = ApexType("random")
 
+# AFP-P10.10 immutable structured-diagnostic identity.
+DIAGNOSTIC: Final[ApexType] = ApexType("diagnostic")
+
+# AFP-P10.11 safe reflection/introspection identity.
+TYPE_INFO: Final[ApexType] = ApexType("type_info")
+
 
 BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
     INT,
@@ -96,6 +102,8 @@ BUILTIN_TYPES: Final[Tuple[ApexType, ...]] = (
     COLLECTION,
     TIME,
     RANDOM,
+    DIAGNOSTIC,
+    TYPE_INFO,
 )
 
 
@@ -178,6 +186,7 @@ __all__ = (
     "BOOL",
     "BUILTIN_TYPES",
     "COLLECTION",
+    "DIAGNOSTIC",
     "BUILTIN_TYPES_BY_NAME",
     "FLOAT",
     "INT",
@@ -185,6 +194,7 @@ __all__ = (
     "RANDOM",
     "STRING",
     "TIME",
+    "TYPE_INFO",
     "TypeLike",
     "VOID",
     "is_builtin_type",
