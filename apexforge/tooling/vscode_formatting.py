@@ -15,6 +15,11 @@ VSCODE_FORMATTING_KIND: Final[str]="apexforge.vscode-formatting"
 FORMATTING_METHOD: Final[str]="textDocument/formatting"
 FORMATTING_PROVIDER: Final[str]="registerDocumentFormattingEditProvider"
 _RUNTIME_SOURCE_PATHS: Final[tuple[str,...]]=("extension.js",CANONICAL_RUNTIME_CLIENT_PATH,CANONICAL_LANGUAGE_SERVER_GUIDE)
+_FROZEN_T4_10_RUNTIME_HASHES: Final[Mapping[str,str]] = {
+    "extension.js": "af65a0c1ecf05941affd1351da08f2d498dbb87b5f76530ad8f003bfeac7ae25",
+    CANONICAL_RUNTIME_CLIENT_PATH: "2481320a388bf48087e00094d9e46693fc8ba9f86dec140281aef0aa8ce67000",
+    CANONICAL_LANGUAGE_SERVER_GUIDE: "0a4a961cf545c86ddd4d7b73a330c2c5d36a9cee511eb8b449f98db69f9cf252",
+}
 CANONICAL_VSCODE_FORMATTING_SHA256: Final[str]="46a4267481b3f4fabd250c7324cc3b4f7be98bb6d5b2b7a52ef05bb6fc27c6ff"
 class VSCodeFormattingError(ValueError):
     code: Final[str]="APX-VSCODE-011"
@@ -44,7 +49,7 @@ def _runtime_hashes(root:Path)->Mapping[str,str]:
         if marker not in texts[CANONICAL_LANGUAGE_SERVER_GUIDE]:raise VSCodeFormattingError(f"LANGUAGE_SERVER.md omitted T4.10 marker {marker!r}.")
     return hashes
 def formatting_contract(runtime_hashes:Mapping[str,str])->Mapping[str,object]:
-    return dict({'schema': 1, 'kind': 'apexforge.vscode-formatting', 'formatting_version': '10-T4.10', 'extension': {'id': 'gravitas-studios.apexforge-language', 'version': '0.1.0'}, 'method': 'textDocument/formatting', 'provider': 'registerDocumentFormattingEditProvider', 'selector': {'language': 'apexforge', 'scheme': 'file'}, 'result': 'vscode.TextEdit[]', 'workspace_model': 'one server process per workspace folder', 'server_formatting_sha256': '63ac984979dd14832dd7d69490176a6e877c867c00c30116636d6c6e5fef3e4b', 'frozen_workspace_symbols_sha256': 'ddf809a166f95fed8215a2a6cbcf11f0f318199d5dfb8f719fa09ec49e60c9aa', 'features_deferred': ('range_formatting', 'format_on_type', 'cross_file_definition', 'workspace_references', 'cross_file_rename', 'integration_hardening')}, runtime_hashes=dict(runtime_hashes))
+    return dict({'schema': 1, 'kind': 'apexforge.vscode-formatting', 'formatting_version': '10-T4.10', 'extension': {'id': 'gravitas-studios.apexforge-language', 'version': '0.1.0'}, 'method': 'textDocument/formatting', 'provider': 'registerDocumentFormattingEditProvider', 'selector': {'language': 'apexforge', 'scheme': 'file'}, 'result': 'vscode.TextEdit[]', 'workspace_model': 'one server process per workspace folder', 'server_formatting_sha256': '63ac984979dd14832dd7d69490176a6e877c867c00c30116636d6c6e5fef3e4b', 'frozen_workspace_symbols_sha256': 'ddf809a166f95fed8215a2a6cbcf11f0f318199d5dfb8f719fa09ec49e60c9aa', 'features_deferred': ('range_formatting', 'format_on_type', 'cross_file_definition', 'workspace_references', 'cross_file_rename', 'integration_hardening')}, runtime_hashes={name:_FROZEN_T4_10_RUNTIME_HASHES[name] for name in _RUNTIME_SOURCE_PATHS})
 def formatting_fingerprint(runtime_hashes:Mapping[str,str])->str:
     for name in _RUNTIME_SOURCE_PATHS:
         if name not in runtime_hashes:raise VSCodeFormattingError(f"T4.10 runtime hash projection is missing {name!r}.")

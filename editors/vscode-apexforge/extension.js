@@ -1,4 +1,4 @@
-/* AFP-P10-T4.10 ApexForge VS Code document formatting. */
+/* AFP-P10-T4.11 ApexForge VS Code integration hardening. */
 'use strict';
 
 const fs = require('fs');
@@ -12,7 +12,7 @@ const DIAGNOSTIC_COLLECTION_NAME = 'apexforge';
 const CONFIGURATION_SECTION = 'apexforge.languageServer';
 const DEFAULT_SERVER_PATH = 'apexforge/apexforge_lsp.py';
 const CLIENT_NAME = 'ApexForge VS Code';
-const CLIENT_VERSION = '10-T4.10';
+const CLIENT_VERSION = '10-T4.11';
 
 let activeRuntime = null;
 
@@ -408,6 +408,9 @@ class WorkspaceLanguageServer {
         this.diagnostics = shared.diagnostics;
         this.client = null;
         this.startPromise = null;
+        this.restartPromise = null;
+        this.generation = 0;
+        this.unexpectedExitCount = 0;
         this.openVersions = new Map();
         this.disposed = false;
     }
@@ -442,6 +445,7 @@ class WorkspaceLanguageServer {
     }
 
     async _startCore() {
+        const generation = this.generation;
         if (this.folder.uri.scheme !== 'file') {
             this.log('Skipped: language-server activation requires a file-system workspace.');
             return;
@@ -468,7 +472,8 @@ class WorkspaceLanguageServer {
                     }
                 }
             },
-            onStateChange: (state) => this.trace(`State: ${state}`),
+            onStateChange: (state) => this.handleStateChange(client, state),
+            onExit: (details) => this.handleClientExit(client, details),
             onLog: (message) => this.log(message),
         });
         this.client = client;
@@ -530,6 +535,12 @@ class WorkspaceLanguageServer {
                 },
             });
 
+            if (this.disposed || generation !== this.generation || this.client !== client) {
+                this.log('Discarded stale language-server startup.');
+                await client.stop();
+                return;
+            }
+
             const serverInfo = initializeResult && initializeResult.serverInfo;
             const serverLabel = serverInfo && serverInfo.name
                 ? `${serverInfo.name}@${serverInfo.version || 'unknown'}`
@@ -556,6 +567,36 @@ class WorkspaceLanguageServer {
                 + `See "${OUTPUT_CHANNEL_NAME}" for details.`
             );
         }
+    }
+
+    handleStateChange(client, state) {
+        this.trace(`State: ${state}`);
+        if (this.client !== client) {
+            return;
+        }
+        if (state === 'failed') {
+            this.log('Language-server client entered the failed state.');
+        }
+    }
+
+    handleClientExit(client, details) {
+        if (this.client !== client) {
+            return;
+        }
+        const expected = Boolean(details && details.expected);
+        if (!expected && !this.disposed) {
+            this.unexpectedExitCount += 1;
+            this.log(
+                `Language server exited unexpectedly `
+                + `(code=${String(details && details.code)}, `
+                + `signal=${String(details && details.signal)}).`
+            );
+        }
+        this.client = null;
+        for (const uri of this.openVersions.keys()) {
+            this.diagnostics.delete(vscode.Uri.parse(uri));
+        }
+        this.openVersions.clear();
     }
 
     handleNotification(method, params) {
@@ -683,7 +724,8 @@ class WorkspaceLanguageServer {
                     textDocument: {
                         uri: document.uri.toString(),
                     },
-                }
+                },
+                token
             );
             if (token && token.isCancellationRequested) {
                 return [];
@@ -719,7 +761,8 @@ class WorkspaceLanguageServer {
                         line: position.line,
                         character: position.character,
                     },
-                }
+                },
+                token
             );
             if (token && token.isCancellationRequested) {
                 return undefined;
@@ -753,7 +796,8 @@ class WorkspaceLanguageServer {
                         line: position.line,
                         character: position.character,
                     },
-                }
+                },
+                token
             );
             if (token && token.isCancellationRequested) {
                 return undefined;
@@ -790,7 +834,8 @@ class WorkspaceLanguageServer {
                     context: {
                         includeDeclaration: context.includeDeclaration === true,
                     },
-                }
+                },
+                token
             );
             if (token && token.isCancellationRequested) {
                 return [];
@@ -824,7 +869,8 @@ class WorkspaceLanguageServer {
                         line: position.line,
                         character: position.character,
                     },
-                }
+                },
+                token
             );
             if (token && token.isCancellationRequested) {
                 return undefined;
@@ -859,7 +905,8 @@ class WorkspaceLanguageServer {
                         character: position.character,
                     },
                     newName,
-                }
+                },
+                token
             );
             if (token && token.isCancellationRequested) {
                 return undefined;
@@ -900,7 +947,8 @@ class WorkspaceLanguageServer {
             }
             const result = await client.sendRequest(
                 'textDocument/completion',
-                params
+                params,
+                token
             );
             if (token && token.isCancellationRequested) {
                 return [];
@@ -934,7 +982,7 @@ class WorkspaceLanguageServer {
                     tabSize: Number.isInteger(options && options.tabSize) ? options.tabSize : 4,
                     insertSpaces: !options || options.insertSpaces !== false,
                 },
-            });
+            }, token);
             if (token && token.isCancellationRequested) {
                 return [];
             }
@@ -958,7 +1006,8 @@ class WorkspaceLanguageServer {
         try {
             const result = await client.sendRequest(
                 'workspace/symbol',
-                {query: typeof query === 'string' ? query : ''}
+                {query: typeof query === 'string' ? query : ''},
+                token
             );
             if (token && token.isCancellationRequested) {
                 return [];
@@ -973,13 +1022,25 @@ class WorkspaceLanguageServer {
     }
 
     async restart() {
-        this.log('Restart requested.');
-        await this.stop();
-        this.disposed = false;
-        await this.start();
+        if (this.restartPromise) {
+            return this.restartPromise;
+        }
+        this.restartPromise = (async () => {
+            this.log('Restart requested.');
+            await this.stop();
+            if (!this.disposed) {
+                await this.start();
+            }
+        })();
+        try {
+            await this.restartPromise;
+        } finally {
+            this.restartPromise = null;
+        }
     }
 
     async stop() {
+        this.generation += 1;
         const client = this.client;
         this.client = null;
         for (const uri of this.openVersions.keys()) {
@@ -1059,12 +1120,10 @@ class ApexForgeExtensionRuntime {
     }
 
     async activate() {
-        this.output.appendLine('AFP-P10-T4.10 extension activation started.');
+        this.output.appendLine('AFP-P10-T4.11 extension activation started.');
 
         const folders = vscode.workspace.workspaceFolders || [];
-        for (const folder of folders) {
-            await this.addFolder(folder);
-        }
+        await Promise.allSettled(folders.map((folder) => this.addFolder(folder)));
 
         this.disposables.push(
             vscode.workspace.onDidChangeWorkspaceFolders(async (event) => {
@@ -1106,9 +1165,9 @@ class ApexForgeExtensionRuntime {
                         controller.folder.uri
                     )
                 );
-                for (const controller of affected) {
-                    await controller.restart();
-                }
+                await Promise.allSettled(
+                    affected.map((controller) => controller.restart())
+                );
             }),
             vscode.languages.registerDocumentSymbolProvider(
                 {language: LANGUAGE_ID, scheme: 'file'},
@@ -1222,9 +1281,11 @@ class ApexForgeExtensionRuntime {
             vscode.commands.registerCommand(
                 'apexforge.restartLanguageServer',
                 async () => {
-                    for (const controller of this.controllers.values()) {
-                        await controller.restart();
-                    }
+                    await Promise.allSettled(
+                        [...this.controllers.values()].map(
+                            (controller) => controller.restart()
+                        )
+                    );
                 }
             )
         );
@@ -1235,7 +1296,7 @@ class ApexForgeExtensionRuntime {
             ...this.disposables
         );
 
-        this.output.appendLine('AFP-P10-T4.9 extension activation completed.');
+        this.output.appendLine('AFP-P10-T4.11 extension activation completed.');
     }
 
     async dispose() {

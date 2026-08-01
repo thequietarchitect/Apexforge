@@ -2,8 +2,8 @@
 
 The foundation implements JSON-RPC/LSP lifecycle handling and full text-document
 synchronization over stdio. Diagnostics, document symbols, hover, completion, same-document definition,
-references, safe rename, and workspace symbols and deterministic whole-document formatting are layered onto
-this frozen foundation; range formatting remains deliberately deferred.
+references, safe rename, workspace symbols, and deterministic whole-document formatting are layered onto
+this frozen foundation. T4.11 hardens their integrated lifecycle without adding new language syntax.
 """
 
 from __future__ import annotations
@@ -80,6 +80,16 @@ from language_server.workspace_symbols import (
     P10_T4_WORKSPACE_SYMBOL_VERSION,
     WORKSPACE_SYMBOL_METHOD,
     workspace_symbols,
+)
+
+from language_server.integration import (
+    CANONICAL_INTEGRATION_SHA256,
+    CANCEL_REQUEST_METHOD,
+    MAX_CANCELLED_REQUEST_IDS,
+    P10_T4_INTEGRATION_VERSION,
+    REQUEST_CANCELLED,
+    SET_TRACE_METHOD,
+    TRACE_VALUES,
 )
 
 from language_server.protocol import (
@@ -397,6 +407,9 @@ class LanguageServerSession:
         self.rename_enabled = False
         self.workspace_symbols_enabled = False
         self.formatting_enabled = False
+        self.cancelled_request_ids: dict[object, None] = {}
+        self.cancel_notification_count = 0
+        self.trace_value = "off"
         self._outgoing_notifications: list[dict[str, object]] = []
         self.notification_error_count = 0
         self.last_notification_error: Optional[JsonRpcFault] = None
@@ -507,6 +520,31 @@ class LanguageServerSession:
         is_request: bool,
         params: object,
     ) -> Optional[dict[str, object]]:
+        if method == CANCEL_REQUEST_METHOD:
+            self._require_notification(is_request, method)
+            self._cancel_request(params)
+            return None
+        if method == SET_TRACE_METHOD:
+            self._require_notification(is_request, method)
+            self._set_trace(params)
+            return None
+        if self.exited:
+            if is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data="The language server process has already exited.",
+                    has_data=True,
+                )
+            return None
+        if is_request and message_id in self.cancelled_request_ids:
+            self.cancelled_request_ids.pop(message_id, None)
+            raise JsonRpcFault(
+                REQUEST_CANCELLED,
+                "Request cancelled",
+                data=f"Request {message_id!r} was cancelled before dispatch.",
+                has_data=True,
+            )
         if not self.initialized:
             if method == "initialize":
                 if not is_request:
@@ -736,11 +774,11 @@ class LanguageServerSession:
             )
 
         root_uri = value.get("rootUri")
-        if root_uri is not None and (type(root_uri) is not str or not root_uri):
+        if root_uri is not None and (type(root_uri) is not str or not root_uri or ":" not in root_uri):
             raise JsonRpcFault(
                 INVALID_PARAMS,
                 "Invalid params",
-                data="initialize rootUri must be a non-empty URI or null.",
+                data="initialize rootUri must be a non-empty absolute URI or null.",
                 has_data=True,
             )
 
@@ -1255,6 +1293,56 @@ class LanguageServerSession:
             )
         )
 
+    def health_snapshot(self) -> Mapping[str, object]:
+        """Return deterministic lifecycle state for integration diagnostics."""
+
+        return {
+            "initialized": self.initialized,
+            "initialized_notification_received": self.initialized_notification_received,
+            "shutdown_requested": self.shutdown_requested,
+            "exited": self.exited,
+            "exit_code": self.exit_code,
+            "open_document_count": len(self.documents),
+            "queued_notification_count": len(self._outgoing_notifications),
+            "notification_error_count": self.notification_error_count,
+            "cancel_notification_count": self.cancel_notification_count,
+            "cancelled_request_count": len(self.cancelled_request_ids),
+            "trace": self.trace_value,
+        }
+
+    def _cancel_request(self, params: object) -> None:
+        value = self._require_mapping(params, f"{CANCEL_REQUEST_METHOD} params")
+        request_id = value.get("id")
+        if not is_message_id(request_id):
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=f"{CANCEL_REQUEST_METHOD} params.id must be a string or integer.",
+                has_data=True,
+            )
+        if request_id not in self.cancelled_request_ids:
+            if len(self.cancelled_request_ids) >= MAX_CANCELLED_REQUEST_IDS:
+                oldest = next(iter(self.cancelled_request_ids))
+                self.cancelled_request_ids.pop(oldest, None)
+            self.cancelled_request_ids[request_id] = None
+        self.cancel_notification_count += 1
+
+    def _set_trace(self, params: object) -> None:
+        value = self._require_mapping(params, f"{SET_TRACE_METHOD} params")
+        trace_value = value.get("value")
+        if trace_value not in TRACE_VALUES:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=(
+                    f"{SET_TRACE_METHOD} params.value must be one of "
+                    f"{TRACE_VALUES!r}."
+                ),
+                has_data=True,
+            )
+        assert isinstance(trace_value, str)
+        self.trace_value = trace_value
+
     def _exit(self, *, clean: bool) -> None:
         self.exited = True
         self.exit_code = EXIT_SUCCESS if clean else EXIT_UNCLEAN
@@ -1466,6 +1554,11 @@ def main(
         action="store_true",
         help="print the AFP-P10-T4.4 document-symbol fingerprint",
     )
+    mode.add_argument(
+        "--integration-contract",
+        action="store_true",
+        help="print the AFP-P10-T4.11 integrated hardening fingerprint",
+    )
     arguments = parser.parse_args(tuple(argv) if argv is not None else None)
 
     if arguments.version:
@@ -1514,6 +1607,10 @@ def main(
         print(CANONICAL_DOCUMENT_SYMBOLS_SHA256, file=stdout)
         return EXIT_SUCCESS
 
+    if arguments.integration_contract:
+        print(CANONICAL_INTEGRATION_SHA256, file=stdout)
+        return EXIT_SUCCESS
+
     return run_language_server(
         _binary_reader(stdin),
         _binary_writer(stdout),
@@ -1523,6 +1620,8 @@ def main(
 
 __all__ = (
     "CANONICAL_COMPLETION_SHA256",
+    "CANONICAL_INTEGRATION_SHA256",
+    "CANCEL_REQUEST_METHOD",
     "CANONICAL_DEFINITION_SHA256",
     "CANONICAL_REFERENCES_SHA256",
     "CANONICAL_RENAME_SHA256",
@@ -1561,6 +1660,9 @@ __all__ = (
     "P10_T4_HOVER_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",
     "P10_T4_LSP_FOUNDATION_VERSION",
+    "P10_T4_INTEGRATION_VERSION",
+    "REQUEST_CANCELLED",
+    "SET_TRACE_METHOD",
     "POSITION_ENCODING",
     "SERVER_NAME",
     "SERVER_VERSION",
