@@ -16,3 +16,7 @@ dist/
 # VS Python cache
 .pytest_cache/
 .mypy_cache/
+# ApexForge generated and recovery artifacts
+*.egg-info/
+.apexforge_backups/
+p10_6_hold/
