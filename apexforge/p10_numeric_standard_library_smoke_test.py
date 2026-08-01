@@ -60,7 +60,7 @@ def require_compile_error(source: str, code: str) -> CompilerError:
 
 def main() -> None:
     require(
-        P10_STANDARD_LIBRARY_VERSION == "10.5",
+        P10_STANDARD_LIBRARY_VERSION == "10.12",
         "P10.4 public version changed",
     )
     require(

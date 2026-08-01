@@ -1,8 +1,7 @@
 """AFP-P10-T1.3 deterministic ApexForge project scaffolding.
 
-The scaffold uses ``.apex`` as the default template filename selected for the
-CLI workflow. Source loading remains extension-neutral until AFP-P10-T2 freezes
-the canonical source-extension and grammar contract.
+The scaffold now consumes the AFP-P10-T2.1 canonical source-name contract while
+preserving the frozen T1.3 project layout and source text.
 """
 
 from __future__ import annotations
@@ -12,6 +11,7 @@ from pathlib import Path
 import shutil
 from typing import Union
 
+from language.grammar import CANONICAL_MAIN_FILENAME
 from tooling.project_loader import LoadedProject, load_project
 from tooling.project_manifest import (
     PROJECT_MANIFEST_NAME,
@@ -22,7 +22,7 @@ from tooling.project_manifest import (
 
 P10_T1_SCAFFOLD_VERSION = "10-T1.3"
 DEFAULT_PROJECT_ENTRY = "Main"
-DEFAULT_PROJECT_SOURCE = "src/main.apex"
+DEFAULT_PROJECT_SOURCE = f"src/{CANONICAL_MAIN_FILENAME}"
 DEFAULT_PROJECT_SOURCE_TEXT = """directive Main {
     event ready
 

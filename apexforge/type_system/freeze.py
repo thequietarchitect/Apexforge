@@ -39,10 +39,14 @@ class P9FreezeAudit:
     executable_function_count: int
     rewritten_call_count: int
     preserved_generic_count: int
+    host_specialization_count: int = 0
 
     @property
     def closed(self) -> bool:
-        return self.specialization_count == self.concrete_function_count
+        return self.specialization_count == (
+            self.concrete_function_count
+            + self.host_specialization_count
+        )
 
 
 P9_FREEZE_CANDIDATE = P9FreezeManifest(
@@ -113,8 +117,9 @@ def audit_lowered_generics(result: GenericLoweringResult) -> P9FreezeAudit:
     """Require a closed, executable P9 lowering result.
 
     Source generic declarations may remain for traceability. Every executable
-    function and program-level call must be concrete and must contain no
-    explicit generic type-argument metadata after lowering.
+    linked function and program-level call must be concrete. Calls to
+    host-backed generic leaves retain exact *closed* type-argument metadata;
+    linked generic calls must be rewritten to concrete AIR targets.
     """
 
     if not isinstance(result, GenericLoweringResult):
@@ -154,6 +159,39 @@ def audit_lowered_generics(result: GenericLoweringResult) -> P9FreezeAudit:
         for function in result.functions
         if tuple(getattr(function, "type_parameters", ()) or ())
     }
+    host_generic_targets = set(result.host_generic_targets)
+
+    def is_host_generic_target(target: object) -> bool:
+        if type(target) is not str:
+            return False
+        plain = (
+            target[len("stdlib:"):]
+            if target.startswith("stdlib:")
+            else target
+        )
+        return plain in host_generic_targets
+
+    def require_closed_host_metadata(
+        expression: AIRCallExpression,
+        *,
+        owner: str,
+    ) -> None:
+        type_arguments = tuple(
+            getattr(expression, "type_arguments", ()) or ()
+        )
+        if not type_arguments:
+            raise ValueError(
+                f"{owner} host-generic call {expression.target!r} "
+                "is missing closed type arguments."
+            )
+        for value_type in type_arguments:
+            _assert_concrete_type(
+                value_type,
+                owner=(
+                    f"{owner} host-generic call "
+                    f"{expression.target!r}"
+                ),
+            )
 
     executable = tuple(
         function
@@ -177,9 +215,17 @@ def audit_lowered_generics(result: GenericLoweringResult) -> P9FreezeAudit:
             if not isinstance(expression, AIRCallExpression):
                 continue
             rewritten_calls += 1
-            if tuple(getattr(expression, "type_arguments", ()) or ()):
+            if is_host_generic_target(expression.target):
+                require_closed_host_metadata(
+                    expression,
+                    owner=f"Executable function {function.id!r}",
+                )
+            elif tuple(
+                getattr(expression, "type_arguments", ()) or ()
+            ):
                 raise ValueError(
-                    f"Executable function {function.id!r} retains explicit type arguments."
+                    f"Executable function {function.id!r} retains explicit "
+                    "type arguments outside the host-generic boundary."
                 )
             if expression.target in generic_names or expression.target in generic_ids:
                 raise ValueError(
@@ -192,8 +238,16 @@ def audit_lowered_generics(result: GenericLoweringResult) -> P9FreezeAudit:
         if not isinstance(expression, AIRCallExpression):
             continue
         program_calls += 1
-        if tuple(getattr(expression, "type_arguments", ()) or ()):
-            raise ValueError("Lowered program-level call retains type arguments.")
+        if is_host_generic_target(expression.target):
+            require_closed_host_metadata(
+                expression,
+                owner="Lowered program-level expression",
+            )
+        elif tuple(getattr(expression, "type_arguments", ()) or ()):
+            raise ValueError(
+                "Lowered program-level call retains type arguments outside "
+                "the host-generic boundary."
+            )
         if expression.target in generic_names or expression.target in generic_ids:
             raise ValueError(
                 f"Lowered program-level call still targets {expression.target!r}."
@@ -205,10 +259,14 @@ def audit_lowered_generics(result: GenericLoweringResult) -> P9FreezeAudit:
         executable_function_count=len(executable),
         rewritten_call_count=rewritten_calls + program_calls,
         preserved_generic_count=len(generic_names),
+        host_specialization_count=len(
+            result.host_specializations
+        ),
     )
     if not audit.closed:
         raise ValueError(
-            "P9 lowering specialization count does not match concrete function count."
+            "P9 lowering specialization count does not match concrete AIR "
+            "functions plus host-backed generic leaves."
         )
     return audit
 

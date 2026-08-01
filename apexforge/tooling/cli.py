@@ -14,6 +14,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence, TextIO
 
 from tooling.project_loader import LoadedProject, load_project
 from tooling.project_manifest import ProjectManifestError
+from tooling.project_scaffold import create_project_scaffold
 
 
 P10_T1_CLI_VERSION = "10-T1.2"
@@ -77,6 +78,21 @@ def _parser() -> _ArgumentParser:
         help="project directory, source path, or apexforge.json path",
     )
 
+    new = commands.add_parser(
+        "new",
+        help="create a deterministic ApexForge project scaffold",
+    )
+    new.add_argument(
+        "name",
+        help="project name",
+    )
+    new.add_argument(
+        "directory",
+        nargs="?",
+        default=".",
+        help="parent directory that will receive the project folder",
+    )
+
     return parser
 
 
@@ -112,6 +128,23 @@ def _write_project_summary(
 def _run_project(path: str, *, stdout: TextIO) -> int:
     loaded = load_project(Path(path))
     _write_project_summary(loaded, stream=stdout)
+    return EXIT_SUCCESS
+
+
+def _run_new(
+    name: str,
+    directory: str,
+    *,
+    stdout: TextIO,
+) -> int:
+    scaffold = create_project_scaffold(name, Path(directory))
+    print(
+        f"Created ApexForge project: {scaffold.loaded.manifest.name}",
+        file=stdout,
+    )
+    print(f"Root: {scaffold.root}", file=stdout)
+    print(f"Manifest: {scaffold.manifest_path}", file=stdout)
+    print(f"Source: {scaffold.source_path}", file=stdout)
     return EXIT_SUCCESS
 
 
@@ -181,6 +214,12 @@ def main(
                 namespace.path,
                 stdout=output,
                 builder=project_builder,
+            )
+        if namespace.command == "new":
+            return _run_new(
+                namespace.name,
+                namespace.directory,
+                stdout=output,
             )
     except ProjectManifestError as exc:
         print(str(exc), file=errors)

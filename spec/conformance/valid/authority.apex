@@ -1,0 +1,3 @@
+authority Root {
+    capability run
+}

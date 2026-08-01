@@ -207,13 +207,13 @@ def main() -> None:
     )
 
     unknown_return_error = require_parse_error(
-        "function Bad(value : int) : result { "
+        "function Bad(value : int) : unknown_result { "
         "return value "
         "}",
         "APX-PARSE-008",
     )
     require(
-        "result" in unknown_return_error.diagnostic.message,
+        "unknown_result" in unknown_return_error.diagnostic.message,
         "unknown return type diagnostic omitted the type name",
     )
 

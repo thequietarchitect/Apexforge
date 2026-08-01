@@ -1,0 +1,86 @@
+ApexForgeSource = HeaderSection? Declaration EOF ;
+
+HeaderSection = BlankLine* ModuleHeader BlankLine*
+                (ImportHeader BlankLine*)* ;
+ModuleHeader   = "module" ModuleName ";"? LineEnd ;
+ImportHeader   = "import" ModuleName ";"? LineEnd ;
+ModuleName     = Identifier ("." Identifier)* ;
+
+Declaration = FunctionDeclaration
+            | DirectiveDeclaration
+            | WorkflowDeclaration
+            | AuthorityDeclaration
+            | PrincipalDeclaration
+            | RoleDeclaration ;
+
+FunctionDeclaration = "function" Identifier TypeParameters?
+                      "(" ParameterList? ")" TypeAnnotation?
+                      "{" FunctionStatement* "}" ;
+TypeParameters       = "<" TypeParameter ("," TypeParameter)* ">" ;
+TypeParameter        = Identifier (":" Identifier)? ;
+ParameterList        = Parameter ("," Parameter)* ;
+Parameter            = Identifier TypeAnnotation? ;
+TypeAnnotation       = ":" Identifier ;
+FunctionStatement    = LetStatement | ReturnStatement | FunctionWhen ;
+LetStatement         = "let" Identifier "=" Expression ;
+ReturnStatement      = "return" Expression ;
+FunctionWhen         = "when" Expression "{" FunctionStatement* "}"
+                       ("otherwise" "{" FunctionStatement* "}")? ;
+
+DirectiveDeclaration = "directive" Identifier "{" DirectiveMember* "}" ;
+DirectiveMember      = StateDeclaration | EventDeclaration | CauseDeclaration
+                     | "authority" Identifier | "requires" Identifier ;
+StateDeclaration     = "state" Identifier TypeAnnotation? "=" Expression ;
+EventDeclaration     = "event" Identifier ;
+CauseDeclaration     = "cause" Identifier "{" PathDeclaration* "}" ;
+PathDeclaration      = "path" Identifier "@" Integer
+                       "{" PathAction* "}" ;
+PathAction           = AddAction | SetAction | EmitAction | MessageAction
+                     | InvokeAction | ActionWhen ;
+AddAction            = "add" Identifier Expression ;
+SetAction            = "set" Identifier "=" Expression ;
+EmitAction           = "emit" Identifier ;
+MessageAction        = "message" Expression ;
+InvokeAction         = "invoke" Identifier ;
+ActionWhen           = "when" Expression "{" PathAction* "}"
+                       ("otherwise" "{" PathAction* "}")? ;
+
+WorkflowDeclaration  = "workflow" Identifier
+                       "{" ("invoke" Identifier)* "}" ;
+AuthorityDeclaration = "authority" Identifier ("extends" Identifier)?
+                       "{" ("capability" Identifier)* "}" ;
+RoleDeclaration      = "role" Identifier
+                       "{" ("authority" Identifier)* "}" ;
+PrincipalDeclaration = "principal" Identifier
+                       "{" (("authority" | "role") Identifier)* "}" ;
+
+Expression         = OrExpression ;
+OrExpression       = AndExpression ("or" AndExpression)* ;
+AndExpression      = EqualityExpression ("and" EqualityExpression)* ;
+EqualityExpression = ComparisonExpression
+                     (("==" | "!=") ComparisonExpression)* ;
+ComparisonExpression = AdditiveExpression
+                       (("<" | "<=" | ">" | ">=") AdditiveExpression)* ;
+AdditiveExpression = MultiplicativeExpression
+                     (("+" | "-") MultiplicativeExpression)* ;
+MultiplicativeExpression = UnaryExpression
+                           (("*" | "/" | "%") UnaryExpression)* ;
+UnaryExpression    = ("not" | "+" | "-") UnaryExpression | Primary ;
+Primary            = Integer | Float | String | "true" | "false"
+                   | Call | Identifier | "(" Expression ")" ;
+Call               = Identifier TypeArguments? "(" ArgumentList? ")" ;
+TypeArguments      = "<" Identifier ("," Identifier)* ">" ;
+ArgumentList       = Expression ("," Expression)* ;
+
+Identifier         = IdentifierStart IdentifierContinue* ;
+IdentifierStart    = UnicodeLetter | "_" ;
+IdentifierContinue = UnicodeLetter | UnicodeDigit | "_" ;
+Integer            = Digit+ ;
+Float              = Digit+ "." Digit+ ;
+String             = '"' (StringCharacter | EscapeSequence)* '"' ;
+EscapeSequence     = "\\n" | "\\r" | "\\t" | "\\\"" | "\\\\" ;
+Digit              = "0" | "1" | "2" | "3" | "4"
+                   | "5" | "6" | "7" | "8" | "9" ;
+
+BlankLine = HorizontalWhitespace* LineEnd ;
+LineEnd   = "\n" | "\r\n" ;

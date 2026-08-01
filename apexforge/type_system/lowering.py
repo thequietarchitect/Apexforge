@@ -1,12 +1,17 @@
 """AFP-P9.7 deterministic lowering of closed generic AIR.
 
 The P9.6 closure identifies every closed generic specialization reachable from
-linked AIR. This module materializes those records as concrete, parameter-free
-AIR functions and rewrites executable call sites to the concrete targets.
+linked AIR. This module materializes linked records as concrete,
+parameter-free AIR functions and rewrites executable call sites to the
+concrete targets.
+
+Host-backed generic callables may be supplied as external signatures. They
+remain host-dispatched terminal leaves: lowering preserves their target and
+attaches the exact closed type arguments required by the host runtime boundary.
 
 Original generic declarations remain present for source traceability and
 future tooling. Runtime execution can therefore use ordinary P7 call frames
-without performing type inference or carrying explicit type arguments.
+for linked functions without performing type inference.
 """
 
 from __future__ import annotations
@@ -36,7 +41,7 @@ from air.functions import (
 )
 from type_system.closure import (
     GenericSpecializationManifest,
-    collect_linked_specializations,
+    LinkedSpecializationCollector,
 )
 from type_system.generics import (
     ApexTypeVariable,
@@ -49,7 +54,6 @@ from type_system.inference import (
     TypeInferenceError,
     infer_expression_type,
     resolve_call_specialization,
-    signatures_from_air_functions,
 )
 from type_system.specialization import GenericSpecialization
 from type_system.substitution import GenericSubstitution
@@ -122,7 +126,40 @@ class GenericLoweringResult:
 
     @property
     def canonical_ids(self) -> tuple[str, ...]:
+        """Return materialized linked-specialization identities."""
+
         return tuple(binding.canonical_id for binding in self.bindings)
+
+    @property
+    def host_specializations(
+        self,
+    ) -> tuple[GenericSpecialization, ...]:
+        """Return closed manifest records intentionally left host-backed."""
+
+        materialized = set(self.canonical_ids)
+        return tuple(
+            record
+            for record in self.manifest.records
+            if record.canonical_id not in materialized
+        )
+
+    @property
+    def host_canonical_ids(self) -> tuple[str, ...]:
+        return tuple(
+            record.canonical_id
+            for record in self.host_specializations
+        )
+
+    @property
+    def host_generic_targets(self) -> tuple[str, ...]:
+        return tuple(
+            sorted(
+                {
+                    record.key.target
+                    for record in self.host_specializations
+                }
+            )
+        )
 
     def binding_for(
         self,
@@ -184,7 +221,15 @@ def specialization_function_id(
 class LinkedGenericLowerer:
     """Materialize and rewrite the P9.6 closed specialization closure."""
 
-    def __init__(self, program: object) -> None:
+    def __init__(
+        self,
+        program: object,
+        *,
+        external_signatures: Optional[
+            Mapping[str, FunctionSignature]
+        ] = None,
+        host_generic_targets: Iterable[str] = (),
+    ) -> None:
         functions = tuple(getattr(program, "functions", ()) or ())
         for index, function in enumerate(functions):
             if not isinstance(function, AIRFunction):
@@ -223,14 +268,16 @@ class LinkedGenericLowerer:
                     )
                 self._functions_by_target[target] = function
 
-        canonical = signatures_from_air_functions(self._functions)
-        self._signatures: dict[str, FunctionSignature] = {}
-        for function in self._functions:
-            signature = canonical[function.name]
-            self._signatures[function.name] = signature
-            self._signatures[function.id] = signature
-
-        self._manifest = collect_linked_specializations(program)
+        collector = LinkedSpecializationCollector(
+            self._functions,
+            external_signatures=external_signatures,
+            host_generic_targets=host_generic_targets,
+        )
+        self._signatures = collector.signatures
+        self._host_generic_targets = frozenset(
+            collector.host_generic_targets
+        )
+        self._manifest = collector.collect(program=program)
         self._bindings = self._build_bindings(self._manifest.records)
         self._binding_by_canonical = {
             binding.canonical_id: binding for binding in self._bindings
@@ -240,9 +287,9 @@ class LinkedGenericLowerer:
             for specialization in self._manifest.records
         }
         self._all_signatures = dict(self._signatures)
-        for specialization in self._manifest.records:
-            binding = self._binding_by_canonical[
-                specialization.canonical_id
+        for binding in self._bindings:
+            specialization = self._specialization_by_canonical[
+                binding.canonical_id
             ]
             lowered_signature = FunctionSignature(
                 name=binding.function_name,
@@ -261,6 +308,18 @@ class LinkedGenericLowerer:
         bindings: list[LoweredSpecializationBinding] = []
 
         for specialization in tuple(records):
+            target = specialization.key.target
+            if target not in self._functions_by_name:
+                if target in self._host_generic_targets:
+                    continue
+                raise GenericLoweringError(
+                    code="APX-LOWER-004",
+                    message=(
+                        "Specialization references unknown linked or host "
+                        f"generic function {target!r}."
+                    ),
+                )
+
             function_name = specialization_function_name(specialization)
             function_id = f"function:{function_name}"
             if function_name in occupied_names or function_id in occupied_ids:
@@ -306,8 +365,13 @@ class LinkedGenericLowerer:
             default=-1,
         )
         specialized: list[AIRFunction] = []
+        materialized_records = tuple(
+            specialization
+            for specialization in self._manifest.records
+            if specialization.key.target in self._functions_by_name
+        )
         for index, specialization in enumerate(
-            self._manifest.records,
+            materialized_records,
             start=1,
         ):
             source = self._functions_by_name.get(
@@ -317,8 +381,8 @@ class LinkedGenericLowerer:
                 raise GenericLoweringError(
                     code="APX-LOWER-004",
                     message=(
-                        "Specialization references unknown generic function "
-                        f"{specialization.key.target!r}."
+                        "Specialization references unknown linked generic "
+                        f"function {specialization.key.target!r}."
                     ),
                 )
             binding = self._binding_by_canonical[
@@ -619,6 +683,7 @@ class LinkedGenericLowerer:
                 )
 
             target = expression.target
+            rewritten_type_arguments: tuple[TypeIdentity, ...] = ()
             explicit_type_arguments = tuple(
                 self._project_type(value_type, substitution)
                 for value_type in tuple(
@@ -634,24 +699,35 @@ class LinkedGenericLowerer:
                     require_complete=True,
                     require_closed=True,
                 )
-                binding = self._binding_by_canonical.get(
-                    specialization.canonical_id
-                )
-                if binding is None:
-                    raise GenericLoweringError(
-                        code="APX-LOWER-007",
-                        message=(
-                            "Generic call resolved outside the collected "
-                            f"specialization manifest: "
-                            f"{specialization.canonical_id!r}."
-                        ),
+                if (
+                    specialization.key.target
+                    in self._host_generic_targets
+                ):
+                    # Host-backed generic leaves keep their dispatch target.
+                    # Attach exact closed metadata so runtime invocation does
+                    # not repeat caller-owned generic inference.
+                    rewritten_type_arguments = tuple(
+                        specialization.type_arguments
                     )
-                target = binding.function_name
+                else:
+                    binding = self._binding_by_canonical.get(
+                        specialization.canonical_id
+                    )
+                    if binding is None:
+                        raise GenericLoweringError(
+                            code="APX-LOWER-007",
+                            message=(
+                                "Generic call resolved outside the collected "
+                                f"specialization manifest: "
+                                f"{specialization.canonical_id!r}."
+                            ),
+                        )
+                    target = binding.function_name
 
             rewritten = AIRCallExpression(
                 target=target,
                 arguments=tuple(rewritten_arguments),
-                type_arguments=(),
+                type_arguments=rewritten_type_arguments,
             )
             return rewritten, infer_expression_type(
                 rewritten,
@@ -752,10 +828,21 @@ class LinkedGenericLowerer:
         return value
 
 
-def lower_linked_generics(program: object) -> GenericLoweringResult:
-    """Lower the complete closed generic specialization closure."""
+def lower_linked_generics(
+    program: object,
+    *,
+    external_signatures: Optional[
+        Mapping[str, FunctionSignature]
+    ] = None,
+    host_generic_targets: Iterable[str] = (),
+) -> GenericLoweringResult:
+    """Lower linked generics while preserving declared host-generic leaves."""
 
-    return LinkedGenericLowerer(program).lower()
+    return LinkedGenericLowerer(
+        program,
+        external_signatures=external_signatures,
+        host_generic_targets=host_generic_targets,
+    ).lower()
 
 
 __all__ = (

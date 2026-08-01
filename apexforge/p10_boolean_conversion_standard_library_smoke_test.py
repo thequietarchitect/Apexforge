@@ -70,7 +70,7 @@ def require_runtime_error(operation, code: str) -> RuntimeExpressionError:
 
 
 def main() -> None:
-    require(P10_STANDARD_LIBRARY_VERSION == "10.5", "version changed")
+    require(P10_STANDARD_LIBRARY_VERSION == "10.12", "version changed")
     require(len(CORE_BUILTINS) == 5, "P10.1 core count changed")
     require(len(NUMERIC_BUILTINS) == 11, "P10.2 numeric count changed")
     require(len(STRING_BUILTINS) == 10, "P10.3 string count changed")

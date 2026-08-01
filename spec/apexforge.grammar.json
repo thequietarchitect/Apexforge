@@ -1,0 +1,467 @@
+{
+  "boundaries": {
+    "comments_supported": false,
+    "one_top_level_declaration_per_source": true,
+    "ordinary_semicolons_supported": false
+  },
+  "ebnf": "ApexForgeSource = HeaderSection? Declaration EOF ;\n\nHeaderSection = BlankLine* ModuleHeader BlankLine*\n                (ImportHeader BlankLine*)* ;\nModuleHeader   = \"module\" ModuleName \";\"? LineEnd ;\nImportHeader   = \"import\" ModuleName \";\"? LineEnd ;\nModuleName     = Identifier (\".\" Identifier)* ;\n\nDeclaration = FunctionDeclaration\n            | DirectiveDeclaration\n            | WorkflowDeclaration\n            | AuthorityDeclaration\n            | PrincipalDeclaration\n            | RoleDeclaration ;\n\nFunctionDeclaration = \"function\" Identifier TypeParameters?\n                      \"(\" ParameterList? \")\" TypeAnnotation?\n                      \"{\" FunctionStatement* \"}\" ;\nTypeParameters       = \"<\" TypeParameter (\",\" TypeParameter)* \">\" ;\nTypeParameter        = Identifier (\":\" Identifier)? ;\nParameterList        = Parameter (\",\" Parameter)* ;\nParameter            = Identifier TypeAnnotation? ;\nTypeAnnotation       = \":\" Identifier ;\nFunctionStatement    = LetStatement | ReturnStatement | FunctionWhen ;\nLetStatement         = \"let\" Identifier \"=\" Expression ;\nReturnStatement      = \"return\" Expression ;\nFunctionWhen         = \"when\" Expression \"{\" FunctionStatement* \"}\"\n                       (\"otherwise\" \"{\" FunctionStatement* \"}\")? ;\n\nDirectiveDeclaration = \"directive\" Identifier \"{\" DirectiveMember* \"}\" ;\nDirectiveMember      = StateDeclaration | EventDeclaration | CauseDeclaration\n                     | \"authority\" Identifier | \"requires\" Identifier ;\nStateDeclaration     = \"state\" Identifier TypeAnnotation? \"=\" Expression ;\nEventDeclaration     = \"event\" Identifier ;\nCauseDeclaration     = \"cause\" Identifier \"{\" PathDeclaration* \"}\" ;\nPathDeclaration      = \"path\" Identifier \"@\" Integer\n                       \"{\" PathAction* \"}\" ;\nPathAction           = AddAction | SetAction | EmitAction | MessageAction\n                     | InvokeAction | ActionWhen ;\nAddAction            = \"add\" Identifier Expression ;\nSetAction            = \"set\" Identifier \"=\" Expression ;\nEmitAction           = \"emit\" Identifier ;\nMessageAction        = \"message\" Expression ;\nInvokeAction         = \"invoke\" Identifier ;\nActionWhen           = \"when\" Expression \"{\" PathAction* \"}\"\n                       (\"otherwise\" \"{\" PathAction* \"}\")? ;\n\nWorkflowDeclaration  = \"workflow\" Identifier\n                       \"{\" (\"invoke\" Identifier)* \"}\" ;\nAuthorityDeclaration = \"authority\" Identifier (\"extends\" Identifier)?\n                       \"{\" (\"capability\" Identifier)* \"}\" ;\nRoleDeclaration      = \"role\" Identifier\n                       \"{\" (\"authority\" Identifier)* \"}\" ;\nPrincipalDeclaration = \"principal\" Identifier\n                       \"{\" ((\"authority\" | \"role\") Identifier)* \"}\" ;\n\nExpression         = OrExpression ;\nOrExpression       = AndExpression (\"or\" AndExpression)* ;\nAndExpression      = EqualityExpression (\"and\" EqualityExpression)* ;\nEqualityExpression = ComparisonExpression\n                     ((\"==\" | \"!=\") ComparisonExpression)* ;\nComparisonExpression = AdditiveExpression\n                       ((\"<\" | \"<=\" | \">\" | \">=\") AdditiveExpression)* ;\nAdditiveExpression = MultiplicativeExpression\n                     ((\"+\" | \"-\") MultiplicativeExpression)* ;\nMultiplicativeExpression = UnaryExpression\n                           ((\"*\" | \"/\" | \"%\") UnaryExpression)* ;\nUnaryExpression    = (\"not\" | \"+\" | \"-\") UnaryExpression | Primary ;\nPrimary            = Integer | Float | String | \"true\" | \"false\"\n                   | Call | Identifier | \"(\" Expression \")\" ;\nCall               = Identifier TypeArguments? \"(\" ArgumentList? \")\" ;\nTypeArguments      = \"<\" Identifier (\",\" Identifier)* \">\" ;\nArgumentList       = Expression (\",\" Expression)* ;\n\nIdentifier         = IdentifierStart IdentifierContinue* ;\nIdentifierStart    = UnicodeLetter | \"_\" ;\nIdentifierContinue = UnicodeLetter | UnicodeDigit | \"_\" ;\nInteger            = Digit+ ;\nFloat              = Digit+ \".\" Digit+ ;\nString             = '\"' (StringCharacter | EscapeSequence)* '\"' ;\nEscapeSequence     = \"\\\\n\" | \"\\\\r\" | \"\\\\t\" | \"\\\\\\\"\" | \"\\\\\\\\\" ;\nDigit              = \"0\" | \"1\" | \"2\" | \"3\" | \"4\"\n                   | \"5\" | \"6\" | \"7\" | \"8\" | \"9\" ;\n\nBlankLine = HorizontalWhitespace* LineEnd ;\nLineEnd   = \"\\n\" | \"\\r\\n\" ;\n",
+  "export_version": "10-T2.2",
+  "grammar_sha256": "09abf328030692267297950d8d5894e69f3d2c9c9af6642c90b9d298f3515f18",
+  "grammar_version": "10-T2.1",
+  "headers": {
+    "keywords": [
+      "module",
+      "import"
+    ],
+    "optional_semicolon": true
+  },
+  "kind": "apexforge.syntax-grammar",
+  "notes": [
+    "The canonical source extension is lowercase .apex.",
+    "The project loader remains extension-neutral for frozen T1 compatibility.",
+    "A source unit contains one ordinary top-level declaration.",
+    "Module/import headers are optional, line-oriented, and precede the declaration.",
+    "An import requires a preceding module declaration.",
+    "Only module/import header lines accept an optional semicolon.",
+    "Ordinary declarations and statements are not semicolon-terminated.",
+    "Whitespace separates tokens but is otherwise insignificant after headers.",
+    "Comments are not part of the P10-T2.1 grammar.",
+    "A function must contain at least one return statement (parser constraint).",
+    "A message action must be immediately followed by emit (compiler constraint)."
+  ],
+  "productions": [
+    {
+      "expression": "HeaderSection? Declaration EOF",
+      "name": "ApexForgeSource"
+    },
+    {
+      "expression": "BlankLine* ModuleHeader BlankLine* (ImportHeader BlankLine*)*",
+      "name": "HeaderSection"
+    },
+    {
+      "expression": "\"module\" ModuleName \";\"? LineEnd",
+      "name": "ModuleHeader"
+    },
+    {
+      "expression": "\"import\" ModuleName \";\"? LineEnd",
+      "name": "ImportHeader"
+    },
+    {
+      "expression": "Identifier (\".\" Identifier)*",
+      "name": "ModuleName"
+    },
+    {
+      "expression": "FunctionDeclaration | DirectiveDeclaration | WorkflowDeclaration | AuthorityDeclaration | PrincipalDeclaration | RoleDeclaration",
+      "name": "Declaration"
+    },
+    {
+      "expression": "\"function\" Identifier TypeParameters? \"(\" ParameterList? \")\" TypeAnnotation? \"{\" FunctionStatement* \"}\"",
+      "name": "FunctionDeclaration"
+    },
+    {
+      "expression": "\"<\" TypeParameter (\",\" TypeParameter)* \">\"",
+      "name": "TypeParameters"
+    },
+    {
+      "expression": "Identifier (\":\" Identifier)?",
+      "name": "TypeParameter"
+    },
+    {
+      "expression": "Parameter (\",\" Parameter)*",
+      "name": "ParameterList"
+    },
+    {
+      "expression": "Identifier TypeAnnotation?",
+      "name": "Parameter"
+    },
+    {
+      "expression": "\":\" Identifier",
+      "name": "TypeAnnotation"
+    },
+    {
+      "expression": "LetStatement | ReturnStatement | FunctionWhen",
+      "name": "FunctionStatement"
+    },
+    {
+      "expression": "\"let\" Identifier \"=\" Expression",
+      "name": "LetStatement"
+    },
+    {
+      "expression": "\"return\" Expression",
+      "name": "ReturnStatement"
+    },
+    {
+      "expression": "\"when\" Expression \"{\" FunctionStatement* \"}\" (\"otherwise\" \"{\" FunctionStatement* \"}\")?",
+      "name": "FunctionWhen"
+    },
+    {
+      "expression": "\"directive\" Identifier \"{\" DirectiveMember* \"}\"",
+      "name": "DirectiveDeclaration"
+    },
+    {
+      "expression": "StateDeclaration | EventDeclaration | CauseDeclaration | \"authority\" Identifier | \"requires\" Identifier",
+      "name": "DirectiveMember"
+    },
+    {
+      "expression": "\"state\" Identifier TypeAnnotation? \"=\" Expression",
+      "name": "StateDeclaration"
+    },
+    {
+      "expression": "\"event\" Identifier",
+      "name": "EventDeclaration"
+    },
+    {
+      "expression": "\"cause\" Identifier \"{\" PathDeclaration* \"}\"",
+      "name": "CauseDeclaration"
+    },
+    {
+      "expression": "\"path\" Identifier \"@\" Integer \"{\" PathAction* \"}\"",
+      "name": "PathDeclaration"
+    },
+    {
+      "expression": "AddAction | SetAction | EmitAction | MessageAction | InvokeAction | ActionWhen",
+      "name": "PathAction"
+    },
+    {
+      "expression": "\"add\" Identifier Expression",
+      "name": "AddAction"
+    },
+    {
+      "expression": "\"set\" Identifier \"=\" Expression",
+      "name": "SetAction"
+    },
+    {
+      "expression": "\"emit\" Identifier",
+      "name": "EmitAction"
+    },
+    {
+      "expression": "\"message\" Expression",
+      "name": "MessageAction"
+    },
+    {
+      "expression": "\"invoke\" Identifier",
+      "name": "InvokeAction"
+    },
+    {
+      "expression": "\"when\" Expression \"{\" PathAction* \"}\" (\"otherwise\" \"{\" PathAction* \"}\")?",
+      "name": "ActionWhen"
+    },
+    {
+      "expression": "\"workflow\" Identifier \"{\" (\"invoke\" Identifier)* \"}\"",
+      "name": "WorkflowDeclaration"
+    },
+    {
+      "expression": "\"authority\" Identifier (\"extends\" Identifier)? \"{\" (\"capability\" Identifier)* \"}\"",
+      "name": "AuthorityDeclaration"
+    },
+    {
+      "expression": "\"role\" Identifier \"{\" (\"authority\" Identifier)* \"}\"",
+      "name": "RoleDeclaration"
+    },
+    {
+      "expression": "\"principal\" Identifier \"{\" ((\"authority\" | \"role\") Identifier)* \"}\"",
+      "name": "PrincipalDeclaration"
+    },
+    {
+      "expression": "OrExpression",
+      "name": "Expression"
+    },
+    {
+      "expression": "AndExpression (\"or\" AndExpression)*",
+      "name": "OrExpression"
+    },
+    {
+      "expression": "EqualityExpression (\"and\" EqualityExpression)*",
+      "name": "AndExpression"
+    },
+    {
+      "expression": "ComparisonExpression ((\"==\" | \"!=\") ComparisonExpression)*",
+      "name": "EqualityExpression"
+    },
+    {
+      "expression": "AdditiveExpression ((\"<\" | \"<=\" | \">\" | \">=\") AdditiveExpression)*",
+      "name": "ComparisonExpression"
+    },
+    {
+      "expression": "MultiplicativeExpression ((\"+\" | \"-\") MultiplicativeExpression)*",
+      "name": "AdditiveExpression"
+    },
+    {
+      "expression": "UnaryExpression ((\"*\" | \"/\" | \"%\") UnaryExpression)*",
+      "name": "MultiplicativeExpression"
+    },
+    {
+      "expression": "(\"not\" | \"+\" | \"-\") UnaryExpression | Primary",
+      "name": "UnaryExpression"
+    },
+    {
+      "expression": "Integer | Float | String | \"true\" | \"false\" | Call | Identifier | \"(\" Expression \")\"",
+      "name": "Primary"
+    },
+    {
+      "expression": "Identifier TypeArguments? \"(\" ArgumentList? \")\"",
+      "name": "Call"
+    },
+    {
+      "expression": "\"<\" Identifier (\",\" Identifier)* \">\"",
+      "name": "TypeArguments"
+    },
+    {
+      "expression": "Expression (\",\" Expression)*",
+      "name": "ArgumentList"
+    },
+    {
+      "expression": "IdentifierStart IdentifierContinue*",
+      "name": "Identifier"
+    },
+    {
+      "expression": "UnicodeLetter | \"_\"",
+      "name": "IdentifierStart"
+    },
+    {
+      "expression": "UnicodeLetter | UnicodeDigit | \"_\"",
+      "name": "IdentifierContinue"
+    },
+    {
+      "expression": "Digit+",
+      "name": "Integer"
+    },
+    {
+      "expression": "Digit+ \".\" Digit+",
+      "name": "Float"
+    },
+    {
+      "expression": "'\"' (StringCharacter | EscapeSequence)* '\"'",
+      "name": "String"
+    },
+    {
+      "expression": "\"\\\\n\" | \"\\\\r\" | \"\\\\t\" | \"\\\\\\\"\" | \"\\\\\\\\\"",
+      "name": "EscapeSequence"
+    },
+    {
+      "expression": "\"0\" | \"1\" | \"2\" | \"3\" | \"4\" | \"5\" | \"6\" | \"7\" | \"8\" | \"9\"",
+      "name": "Digit"
+    },
+    {
+      "expression": "HorizontalWhitespace* LineEnd",
+      "name": "BlankLine"
+    },
+    {
+      "expression": "\"\\n\" | \"\\r\\n\"",
+      "name": "LineEnd"
+    }
+  ],
+  "schema": 1,
+  "source": {
+    "extension": ".apex",
+    "glob": "*.apex",
+    "main_filename": "main.apex"
+  },
+  "tokens": {
+    "keywords": [
+      {
+        "lexeme": "directive",
+        "token": "DIRECTIVE"
+      },
+      {
+        "lexeme": "workflow",
+        "token": "WORKFLOW"
+      },
+      {
+        "lexeme": "authority",
+        "token": "AUTHORITY"
+      },
+      {
+        "lexeme": "capability",
+        "token": "CAPABILITY"
+      },
+      {
+        "lexeme": "state",
+        "token": "STATE"
+      },
+      {
+        "lexeme": "event",
+        "token": "EVENT"
+      },
+      {
+        "lexeme": "cause",
+        "token": "CAUSE"
+      },
+      {
+        "lexeme": "path",
+        "token": "PATH"
+      },
+      {
+        "lexeme": "add",
+        "token": "ADD"
+      },
+      {
+        "lexeme": "emit",
+        "token": "EMIT"
+      },
+      {
+        "lexeme": "message",
+        "token": "MESSAGE"
+      },
+      {
+        "lexeme": "invoke",
+        "token": "INVOKE"
+      },
+      {
+        "lexeme": "requires",
+        "token": "REQUIRES"
+      },
+      {
+        "lexeme": "extends",
+        "token": "EXTENDS"
+      },
+      {
+        "lexeme": "principal",
+        "token": "PRINCIPAL"
+      },
+      {
+        "lexeme": "role",
+        "token": "ROLE"
+      },
+      {
+        "lexeme": "set",
+        "token": "SET"
+      },
+      {
+        "lexeme": "when",
+        "token": "WHEN"
+      },
+      {
+        "lexeme": "otherwise",
+        "token": "OTHERWISE"
+      },
+      {
+        "lexeme": "and",
+        "token": "AND"
+      },
+      {
+        "lexeme": "or",
+        "token": "OR"
+      },
+      {
+        "lexeme": "not",
+        "token": "NOT"
+      },
+      {
+        "lexeme": "true",
+        "token": "TRUE"
+      },
+      {
+        "lexeme": "false",
+        "token": "FALSE"
+      },
+      {
+        "lexeme": "function",
+        "token": "FUNCTION"
+      },
+      {
+        "lexeme": "return",
+        "token": "RETURN"
+      },
+      {
+        "lexeme": "let",
+        "token": "LET"
+      }
+    ],
+    "one_character": [
+      {
+        "lexeme": "{",
+        "token": "LBRACE"
+      },
+      {
+        "lexeme": "}",
+        "token": "RBRACE"
+      },
+      {
+        "lexeme": "=",
+        "token": "EQUAL"
+      },
+      {
+        "lexeme": "@",
+        "token": "AT"
+      },
+      {
+        "lexeme": "+",
+        "token": "PLUS"
+      },
+      {
+        "lexeme": "-",
+        "token": "MINUS"
+      },
+      {
+        "lexeme": "*",
+        "token": "STAR"
+      },
+      {
+        "lexeme": "/",
+        "token": "SLASH"
+      },
+      {
+        "lexeme": "%",
+        "token": "PERCENT"
+      },
+      {
+        "lexeme": "(",
+        "token": "LPAREN"
+      },
+      {
+        "lexeme": ")",
+        "token": "RPAREN"
+      },
+      {
+        "lexeme": ",",
+        "token": "COMMA"
+      },
+      {
+        "lexeme": ":",
+        "token": "COLON"
+      },
+      {
+        "lexeme": "<",
+        "token": "LT"
+      },
+      {
+        "lexeme": ">",
+        "token": "GT"
+      }
+    ],
+    "string_escapes": [
+      "\\n",
+      "\\r",
+      "\\t",
+      "\\\"",
+      "\\\\"
+    ],
+    "two_character": [
+      {
+        "lexeme": "==",
+        "token": "EQEQ"
+      },
+      {
+        "lexeme": "!=",
+        "token": "NE"
+      },
+      {
+        "lexeme": "<=",
+        "token": "LTE"
+      },
+      {
+        "lexeme": ">=",
+        "token": "GTE"
+      }
+    ]
+  },
+  "top_level_declarations": [
+    "function",
+    "directive",
+    "workflow",
+    "authority",
+    "principal",
+    "role"
+  ]
+}

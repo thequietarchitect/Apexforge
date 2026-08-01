@@ -18,7 +18,26 @@ from type_system.generics import (
     type_satisfies_constraints,
 )
 from type_system.inference import FunctionSignature
-from type_system.model import BOOL, FLOAT, INT, STRING, VOID, ApexType
+from standard_library.collection_value import RuntimeCollection
+from standard_library.diagnostic_value import RuntimeDiagnostic
+from standard_library.random_value import RuntimeRandom
+from standard_library.result_value import RuntimeResult
+from standard_library.time_value import RuntimeTime
+from standard_library.type_info_value import RuntimeTypeInfo
+from type_system.model import (
+    BOOL,
+    COLLECTION,
+    DIAGNOSTIC,
+    FLOAT,
+    INT,
+    RESULT,
+    RANDOM,
+    STRING,
+    TIME,
+    TYPE_INFO,
+    VOID,
+    ApexType,
+)
 
 
 class StandardLibraryInvocationError(RuntimeError):
@@ -49,6 +68,18 @@ def _runtime_apex_type(value: Any) -> TypeIdentity | None:
         return BOOL
     if type(value) is str:
         return STRING
+    if type(value) is RuntimeResult:
+        return RESULT
+    if type(value) is RuntimeCollection:
+        return COLLECTION
+    if type(value) is RuntimeDiagnostic:
+        return DIAGNOSTIC
+    if type(value) is RuntimeTime:
+        return TIME
+    if type(value) is RuntimeRandom:
+        return RANDOM
+    if type(value) is RuntimeTypeInfo:
+        return TYPE_INFO
     if value is None:
         return VOID
     return None

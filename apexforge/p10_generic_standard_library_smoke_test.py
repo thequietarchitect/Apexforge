@@ -70,7 +70,7 @@ def require_invocation_error(
 
 def main() -> None:
     require(
-        P10_STANDARD_LIBRARY_VERSION == "10.5",
+        P10_STANDARD_LIBRARY_VERSION == "10.12",
         "P10 standard-library version changed",
     )
     require(

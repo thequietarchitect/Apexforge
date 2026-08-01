@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "kind": "apexforge.grammar-conformance",
+  "version": "10-T2.3",
+  "grammar_version": "10-T2.1",
+  "grammar_sha256": "09abf328030692267297950d8d5894e69f3d2c9c9af6642c90b9d298f3515f18",
+  "grammar_export_version": "10-T2.2",
+  "grammar_export_sha256": "d2ed66345cf66569cf9c673bc2f42cb1ea62592f9f371580796f0c97995e35ea",
+  "aggregate_entry": "Main",
+  "valid": [
+    {"id": "function", "path": "valid/function.apex"},
+    {"id": "constrained-generic", "path": "valid/constrained-generic.apex"},
+    {"id": "directive", "path": "valid/directive.apex"},
+    {"id": "workflow", "path": "valid/workflow.apex"},
+    {"id": "authority", "path": "valid/authority.apex"},
+    {"id": "role", "path": "valid/role.apex"},
+    {"id": "principal", "path": "valid/principal.apex"}
+  ],
+  "projects": [
+    {
+      "id": "module-project",
+      "directory": "valid/module-project",
+      "entry": "ModuleMain",
+      "sources": ["core.apex", "main.apex"]
+    }
+  ],
+  "invalid": [
+    {"id": "unsupported-comment", "path": "invalid/unsupported-comment.apex", "pipeline": "source", "expected_code": "APX-LEX-001"},
+    {"id": "ordinary-semicolon", "path": "invalid/ordinary-semicolon.apex", "pipeline": "source", "expected_code": "APX-LEX-001"},
+    {"id": "malformed-float", "path": "invalid/malformed-float.apex", "pipeline": "source", "expected_code": "APX-LEX-005"},
+    {"id": "missing-return", "path": "invalid/missing-return.apex", "pipeline": "source", "expected_code": "APX-PARSE-006"},
+    {"id": "misplaced-module", "path": "invalid/misplaced-module.apex", "pipeline": "module", "expected_code": "APX-MODULE-001"},
+    {"id": "duplicate-import", "path": "invalid/duplicate-import.apex", "pipeline": "module", "expected_code": "APX-MODULE-004"},
+    {"id": "invalid-generic", "path": "invalid/invalid-generic.apex", "pipeline": "source", "expected_code": "APX-PARSE-014"}
+  ]
+}

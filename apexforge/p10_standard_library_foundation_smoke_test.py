@@ -68,7 +68,7 @@ def evaluate_call(engine, program, target, *arguments):
 def main() -> None:
     registry = DEFAULT_STANDARD_LIBRARY
     require(
-        P10_STANDARD_LIBRARY_VERSION == "10.5",
+        P10_STANDARD_LIBRARY_VERSION == "10.12",
         "P10.4 standard-library API version changed",
     )
     require(

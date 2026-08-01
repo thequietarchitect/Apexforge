@@ -41,9 +41,9 @@ def require_raises(
 
 def main() -> None:
     require(
-        tuple(str(apex_type) for apex_type in BUILTIN_TYPES)
+        tuple(str(apex_type) for apex_type in BUILTIN_TYPES[:5])
         == ("int", "bool", "string", "float", "void"),
-        "built-in type order or spelling changed",
+        "P8 primitive type order or spelling changed",
     )
 
     require(

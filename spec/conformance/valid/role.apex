@@ -1,0 +1,3 @@
+role Operator {
+    authority Root
+}
