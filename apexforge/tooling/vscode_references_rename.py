@@ -1,4 +1,4 @@
-"""AFP-P10-T4.7 VS Code same-document definition integration audit."""
+"""AFP-P10-T4.8 VS Code references and safe rename integration audit."""
 
 from __future__ import annotations
 
@@ -12,18 +12,16 @@ import sys
 from typing import Final, Mapping, Optional, Sequence, TextIO
 from zipfile import BadZipFile, ZipFile
 
-from language_server.definition import CANONICAL_DEFINITION_SHA256
-from tooling.vscode_completion import (
-    CANONICAL_VSCODE_COMPLETION_SHA256,
-    VSCodeCompletionError,
-    audit_vscode_completion,
+from language_server.references import CANONICAL_REFERENCES_SHA256
+from language_server.rename import CANONICAL_RENAME_SHA256
+from tooling.vscode_definition import (
+    CANONICAL_VSCODE_DEFINITION_SHA256,
+    VSCodeDefinitionError,
+    audit_vscode_definition,
 )
-from tooling.vscode_document_symbols import CANONICAL_VSCODE_DOCUMENT_SYMBOLS_SHA256
-from tooling.vscode_hover import CANONICAL_VSCODE_HOVER_SHA256
 from tooling.vscode_lsp_activation import (
     CANONICAL_LANGUAGE_SERVER_GUIDE,
     CANONICAL_RUNTIME_CLIENT_PATH,
-    CANONICAL_VSCODE_LSP_ACTIVATION_SHA256,
 )
 from tooling.vscode_package import (
     CANONICAL_VSCODE_EXTENSION_ID,
@@ -31,11 +29,14 @@ from tooling.vscode_package import (
 )
 
 
-P10_T4_VSCODE_DEFINITION_VERSION: Final[str] = "10-T4.7"
-VSCODE_DEFINITION_SCHEMA: Final[int] = 1
-VSCODE_DEFINITION_KIND: Final[str] = "apexforge.vscode-definition"
-DEFINITION_METHOD: Final[str] = "textDocument/definition"
-DEFINITION_PROVIDER: Final[str] = "registerDefinitionProvider"
+P10_T4_VSCODE_REFERENCES_RENAME_VERSION: Final[str] = "10-T4.8"
+VSCODE_REFERENCES_RENAME_SCHEMA: Final[int] = 1
+VSCODE_REFERENCES_RENAME_KIND: Final[str] = "apexforge.vscode-references-rename"
+REFERENCES_METHOD: Final[str] = "textDocument/references"
+PREPARE_RENAME_METHOD: Final[str] = "textDocument/prepareRename"
+RENAME_METHOD: Final[str] = "textDocument/rename"
+REFERENCES_PROVIDER: Final[str] = "registerReferenceProvider"
+RENAME_PROVIDER: Final[str] = "registerRenameProvider"
 
 _RUNTIME_SOURCE_PATHS: Final[tuple[str, ...]] = (
     "extension.js",
@@ -43,45 +44,33 @@ _RUNTIME_SOURCE_PATHS: Final[tuple[str, ...]] = (
     CANONICAL_LANGUAGE_SERVER_GUIDE,
 )
 
-# Compatibility projection: T4.8 extends the editor runtime, while the frozen
-# T4.7 definition fingerprint remains scoped to the bytes present at freeze.
-_FROZEN_T4_7_RUNTIME_HASHES: Final[Mapping[str, str]] = {
-    "extension.js": "3df36b02e2d1aef7004992ddf686ead78a5735973a7504cb1a55b2fc70b030a2",
-    CANONICAL_RUNTIME_CLIENT_PATH: (
-        "2481320a388bf48087e00094d9e46693fc8ba9f86dec140281aef0aa8ce67000"
-    ),
-    CANONICAL_LANGUAGE_SERVER_GUIDE: (
-        "a97d3791a027954ad0ce4590e782d0a1ae962a1ce945e5432d6be099592bd21c"
-    ),
-}
-
-CANONICAL_VSCODE_DEFINITION_SHA256: Final[str] = "939e9649c7c44d7b5a7cce0ac9eaa7ab900b12a49df1b7dab7d55500b8996e1a"
+CANONICAL_VSCODE_REFERENCES_RENAME_SHA256: Final[str] = "8dcb0b5ca57e2a8a507d16513fcb75d96e7f15d72db3d768afdcb8161d7d6119"
 
 
-class VSCodeDefinitionError(ValueError):
-    code: Final[str] = "APX-VSCODE-008"
+class VSCodeReferencesRenameError(ValueError):
+    code: Final[str] = "APX-VSCODE-009"
 
     def __init__(self, message: str) -> None:
         if type(message) is not str or not message:
-            raise ValueError("VSCodeDefinitionError.message must be non-empty.")
+            raise ValueError("VSCodeReferencesRenameError.message must be non-empty.")
         self.message = message
         super().__init__(f"[{self.code}] {message}")
 
 
 @dataclass(frozen=True)
-class VSCodeDefinitionAudit:
+class VSCodeReferencesRenameAudit:
     extension_root: Path
     extension_id: str
     package_version: str
     runtime_file_count: int
-    definition_sha256: str
+    references_rename_sha256: str
 
 
 @dataclass(frozen=True)
-class VSCodeDefinitionVSIXAudit:
+class VSCodeReferencesRenameVSIXAudit:
     vsix_path: Path
     archive_file_count: int
-    definition_sha256: str
+    references_rename_sha256: str
     vsix_sha256: str
 
 
@@ -89,7 +78,7 @@ def _read_bytes(path: Path, owner: str) -> bytes:
     try:
         return path.read_bytes()
     except OSError as error:
-        raise VSCodeDefinitionError(
+        raise VSCodeReferencesRenameError(
             f"Could not read {owner} at {path}: {error}."
         ) from error
 
@@ -108,90 +97,98 @@ def _runtime_hashes(extension_root: Path) -> Mapping[str, str]:
     for name in _RUNTIME_SOURCE_PATHS:
         data = _read_bytes(
             extension_root / PurePosixPath(name),
-            f"T4.7 runtime source {name}",
+            f"T4.8 runtime source {name}",
         )
         hashes[name] = _sha256_bytes(data)
         try:
             texts[name] = data.decode("utf-8")
         except UnicodeDecodeError as error:
-            raise VSCodeDefinitionError(
-                f"T4.7 runtime source {name!r} must be UTF-8."
+            raise VSCodeReferencesRenameError(
+                f"T4.8 runtime source {name!r} must be UTF-8."
             ) from error
 
-    required_extension_markers = (
-        "registerDefinitionProvider",
-        "provideDefinition",
-        "textDocument/definition",
-        "convertDefinition",
-        "new vscode.Location",
-        "definition: {",
-        "linkSupport: false",
+    extension_markers = (
+        "registerReferenceProvider",
+        "provideReferences",
+        "textDocument/references",
+        "convertReferences",
+        "registerRenameProvider",
+        "prepareRename",
+        "provideRenameEdits",
+        "textDocument/prepareRename",
+        "textDocument/rename",
+        "convertWorkspaceEdit",
+        "new vscode.WorkspaceEdit",
+        "prepareSupport: true",
     )
-    for marker in required_extension_markers:
+    for marker in extension_markers:
         if marker not in texts["extension.js"]:
-            raise VSCodeDefinitionError(
-                f"extension.js omitted T4.7 definition marker {marker!r}."
+            raise VSCodeReferencesRenameError(
+                f"extension.js omitted T4.8 marker {marker!r}."
             )
 
     guide_markers = (
-        "textDocument/definition",
+        "textDocument/references",
+        "textDocument/prepareRename",
+        "textDocument/rename",
+        "Shift+F12",
+        "F2",
         "same-document",
-        "F12",
         "cross-file",
     )
     for marker in guide_markers:
         if marker not in texts[CANONICAL_LANGUAGE_SERVER_GUIDE]:
-            raise VSCodeDefinitionError(
-                f"LANGUAGE_SERVER.md omitted T4.7 marker {marker!r}."
+            raise VSCodeReferencesRenameError(
+                f"LANGUAGE_SERVER.md omitted T4.8 marker {marker!r}."
             )
     return hashes
 
 
-def definition_contract(runtime_hashes: Mapping[str, str]) -> Mapping[str, object]:
+def references_rename_contract(runtime_hashes: Mapping[str, str]) -> Mapping[str, object]:
     return {
-        "schema": VSCODE_DEFINITION_SCHEMA,
-        "kind": VSCODE_DEFINITION_KIND,
-        "definition_version": P10_T4_VSCODE_DEFINITION_VERSION,
+        "schema": VSCODE_REFERENCES_RENAME_SCHEMA,
+        "kind": VSCODE_REFERENCES_RENAME_KIND,
+        "references_rename_version": P10_T4_VSCODE_REFERENCES_RENAME_VERSION,
         "extension": {
             "id": CANONICAL_VSCODE_EXTENSION_ID,
             "version": CANONICAL_VSCODE_PACKAGE_VERSION,
         },
-        "method": DEFINITION_METHOD,
-        "provider": DEFINITION_PROVIDER,
+        "methods": (
+            REFERENCES_METHOD,
+            PREPARE_RENAME_METHOD,
+            RENAME_METHOD,
+        ),
+        "providers": (
+            REFERENCES_PROVIDER,
+            RENAME_PROVIDER,
+        ),
         "selector": {
             "language": "apexforge",
             "scheme": "file",
         },
-        "result": "vscode.Location | vscode.Location[] | undefined",
-        "workspace_model": "one server process per workspace folder",
-        "server_contract_sha256": CANONICAL_DEFINITION_SHA256,
-        "frozen_activation_sha256": CANONICAL_VSCODE_LSP_ACTIVATION_SHA256,
-        "frozen_document_symbols_sha256": CANONICAL_VSCODE_DOCUMENT_SYMBOLS_SHA256,
-        "frozen_hover_sha256": CANONICAL_VSCODE_HOVER_SHA256,
-        "frozen_completion_sha256": CANONICAL_VSCODE_COMPLETION_SHA256,
-        "runtime_hashes": {
-            name: _FROZEN_T4_7_RUNTIME_HASHES[name]
-            for name in _RUNTIME_SOURCE_PATHS
+        "results": {
+            "references": "vscode.Location[]",
+            "prepare_rename": "vscode.Range | {range, placeholder} | undefined",
+            "rename": "vscode.WorkspaceEdit | undefined",
         },
+        "workspace_model": "one server process per workspace folder",
+        "server_references_sha256": CANONICAL_REFERENCES_SHA256,
+        "server_rename_sha256": CANONICAL_RENAME_SHA256,
+        "frozen_definition_sha256": CANONICAL_VSCODE_DEFINITION_SHA256,
+        "runtime_hashes": dict(runtime_hashes),
         "features_deferred": (
-            "references",
-            "rename",
+            "workspace_references",
+            "cross_file_rename",
             "workspace_symbols",
             "formatting",
-            "cross_file_resolution",
-            "location_links",
+            "file_and_module_rename",
         ),
     }
 
 
-def definition_fingerprint(runtime_hashes: Mapping[str, str]) -> str:
-    for name in _RUNTIME_SOURCE_PATHS:
-        if name not in runtime_hashes:
-            raise VSCodeDefinitionError(
-                f"T4.7 runtime hash projection is missing {name!r}."
-            )
+def references_rename_fingerprint(runtime_hashes: Mapping[str, str]) -> str:
     payload = json.dumps(
-        definition_contract(runtime_hashes),
+        references_rename_contract(runtime_hashes),
         ensure_ascii=False,
         separators=(",", ":"),
         sort_keys=True,
@@ -199,43 +196,43 @@ def definition_fingerprint(runtime_hashes: Mapping[str, str]) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def audit_vscode_definition(extension_root: Path) -> VSCodeDefinitionAudit:
+def audit_vscode_references_rename(extension_root: Path) -> VSCodeReferencesRenameAudit:
     root = Path(extension_root).resolve()
     if not root.is_dir():
-        raise VSCodeDefinitionError(
+        raise VSCodeReferencesRenameError(
             f"VS Code extension directory does not exist: {root}."
         )
 
     try:
-        completion = audit_vscode_completion(root)
-    except VSCodeCompletionError as error:
-        raise VSCodeDefinitionError(str(error)) from error
-    if completion.completion_sha256 != CANONICAL_VSCODE_COMPLETION_SHA256:
-        raise VSCodeDefinitionError("Frozen T4.6 completion projection changed.")
+        definition = audit_vscode_definition(root)
+    except VSCodeDefinitionError as error:
+        raise VSCodeReferencesRenameError(str(error)) from error
+    if definition.definition_sha256 != CANONICAL_VSCODE_DEFINITION_SHA256:
+        raise VSCodeReferencesRenameError("Frozen T4.7 definition projection changed.")
 
     hashes = _runtime_hashes(root)
-    observed = definition_fingerprint(hashes)
-    if observed != CANONICAL_VSCODE_DEFINITION_SHA256:
-        raise VSCodeDefinitionError(
-            "VS Code definition fingerprint changed; expected "
-            f"{CANONICAL_VSCODE_DEFINITION_SHA256}, received {observed}."
+    observed = references_rename_fingerprint(hashes)
+    if observed != CANONICAL_VSCODE_REFERENCES_RENAME_SHA256:
+        raise VSCodeReferencesRenameError(
+            "VS Code references/rename fingerprint changed; expected "
+            f"{CANONICAL_VSCODE_REFERENCES_RENAME_SHA256}, received {observed}."
         )
 
-    return VSCodeDefinitionAudit(
+    return VSCodeReferencesRenameAudit(
         extension_root=root,
         extension_id=CANONICAL_VSCODE_EXTENSION_ID,
         package_version=CANONICAL_VSCODE_PACKAGE_VERSION,
         runtime_file_count=len(_RUNTIME_SOURCE_PATHS),
-        definition_sha256=observed,
+        references_rename_sha256=observed,
     )
 
 
 def _safe_archive_name(name: str) -> str:
     if type(name) is not str or not name or "\\" in name:
-        raise VSCodeDefinitionError(f"Unsafe VSIX archive path {name!r}.")
+        raise VSCodeReferencesRenameError(f"Unsafe VSIX archive path {name!r}.")
     path = PurePosixPath(name)
     if path.is_absolute() or any(part in ("", ".", "..") for part in path.parts):
-        raise VSCodeDefinitionError(f"Unsafe VSIX archive path {name!r}.")
+        raise VSCodeReferencesRenameError(f"Unsafe VSIX archive path {name!r}.")
     return path.as_posix()
 
 
@@ -247,21 +244,21 @@ def _archive_index(archive: ZipFile) -> Mapping[str, str]:
         normalized = _safe_archive_name(info.filename)
         folded = normalized.casefold()
         if folded in index:
-            raise VSCodeDefinitionError(
+            raise VSCodeReferencesRenameError(
                 f"VSIX contains duplicate case-insensitive path {normalized!r}."
             )
         index[folded] = normalized
     return index
 
 
-def audit_vscode_definition_vsix(
+def audit_vscode_references_rename_vsix(
     extension_root: Path,
     vsix_path: Path,
-) -> VSCodeDefinitionVSIXAudit:
-    source_audit = audit_vscode_definition(extension_root)
+) -> VSCodeReferencesRenameVSIXAudit:
+    source_audit = audit_vscode_references_rename(extension_root)
     package_path = Path(vsix_path).resolve()
     if not package_path.is_file():
-        raise VSCodeDefinitionError(f"VSIX file does not exist: {package_path}.")
+        raise VSCodeReferencesRenameError(f"VSIX file does not exist: {package_path}.")
 
     required = {
         "extension/extension.js": "extension.js",
@@ -273,29 +270,29 @@ def audit_vscode_definition_vsix(
             index = _archive_index(archive)
             missing = tuple(sorted(name for name in required if name not in index))
             if missing:
-                raise VSCodeDefinitionError(
-                    f"VSIX is missing T4.7 runtime files: {missing}."
+                raise VSCodeReferencesRenameError(
+                    f"VSIX is missing T4.8 runtime files: {missing}."
                 )
             for archive_name, source_name in required.items():
                 observed = archive.read(index[archive_name])
                 expected = _read_bytes(
                     Path(extension_root).resolve() / PurePosixPath(source_name),
-                    f"canonical T4.7 source {source_name}",
+                    f"canonical T4.8 source {source_name}",
                 )
                 if observed != expected:
-                    raise VSCodeDefinitionError(
-                        f"VSIX payload differs from T4.7 source {source_name!r}."
+                    raise VSCodeReferencesRenameError(
+                        f"VSIX payload differs from T4.8 source {source_name!r}."
                     )
             archive_count = len(index)
     except (BadZipFile, OSError) as error:
-        raise VSCodeDefinitionError(
+        raise VSCodeReferencesRenameError(
             f"Could not audit VSIX {package_path}: {error}."
         ) from error
 
-    return VSCodeDefinitionVSIXAudit(
+    return VSCodeReferencesRenameVSIXAudit(
         vsix_path=package_path,
         archive_file_count=archive_count,
-        definition_sha256=source_audit.definition_sha256,
+        references_rename_sha256=source_audit.references_rename_sha256,
         vsix_sha256=_sha256_file(package_path),
     )
 
@@ -310,7 +307,7 @@ def check_node_syntax(
         from shutil import which
         selected = which("node")
     if not selected:
-        raise VSCodeDefinitionError("Node.js was not found on PATH.")
+        raise VSCodeReferencesRenameError("Node.js was not found on PATH.")
 
     checked: list[str] = []
     for name in ("extension.js", CANONICAL_RUNTIME_CLIENT_PATH):
@@ -323,7 +320,7 @@ def check_node_syntax(
         )
         if completed.returncode != 0:
             details = (completed.stderr or completed.stdout or "").strip()
-            raise VSCodeDefinitionError(
+            raise VSCodeReferencesRenameError(
                 f"Node.js syntax check failed for {name!r}"
                 + (f": {details}" if details else ".")
             )
@@ -338,8 +335,8 @@ def main(
     stderr: TextIO = sys.stderr,
 ) -> int:
     parser = argparse.ArgumentParser(
-        prog="python -m tooling.vscode_definition",
-        description="Audit AFP-P10-T4.7 VS Code definition integration.",
+        prog="python -m tooling.vscode_references_rename",
+        description="Audit AFP-P10-T4.8 VS Code references and rename integration.",
     )
     parser.add_argument("extension_root", type=Path)
     mode = parser.add_mutually_exclusive_group(required=True)
@@ -350,49 +347,58 @@ def main(
 
     try:
         if arguments.contract:
-            audit_vscode_definition(arguments.extension_root)
-            print(CANONICAL_VSCODE_DEFINITION_SHA256, file=stdout)
+            audit_vscode_references_rename(arguments.extension_root)
+            print(CANONICAL_VSCODE_REFERENCES_RENAME_SHA256, file=stdout)
             return 0
         if arguments.check_vsix is not None:
-            audit = audit_vscode_definition_vsix(
+            audit = audit_vscode_references_rename_vsix(
                 arguments.extension_root,
                 arguments.check_vsix,
             )
-            print("AFP-P10-T4.7 VS Code definition VSIX audit passed.", file=stdout)
+            print("AFP-P10-T4.8 VS Code references/rename VSIX audit passed.", file=stdout)
             print(f"Archive files: {audit.archive_file_count}", file=stdout)
-            print(f"Definition SHA-256: {audit.definition_sha256}", file=stdout)
+            print(
+                f"References/Rename SHA-256: {audit.references_rename_sha256}",
+                file=stdout,
+            )
             print(f"VSIX SHA-256: {audit.vsix_sha256}", file=stdout)
             return 0
 
-        audit = audit_vscode_definition(arguments.extension_root)
+        audit = audit_vscode_references_rename(arguments.extension_root)
         checked = check_node_syntax(arguments.extension_root)
-        print("AFP-P10-T4.7 VS Code definition check passed.", file=stdout)
+        print("AFP-P10-T4.8 VS Code references/rename check passed.", file=stdout)
         print(f"Extension ID: {audit.extension_id}", file=stdout)
         print(f"Runtime files: {audit.runtime_file_count}", file=stdout)
         print(f"Node syntax files: {len(checked)}", file=stdout)
-        print(f"Definition SHA-256: {audit.definition_sha256}", file=stdout)
+        print(
+            f"References/Rename SHA-256: {audit.references_rename_sha256}",
+            file=stdout,
+        )
         return 0
-    except VSCodeDefinitionError as error:
+    except VSCodeReferencesRenameError as error:
         print(str(error), file=stderr)
         return 1
 
 
 __all__ = (
-    "CANONICAL_VSCODE_DEFINITION_SHA256",
-    "DEFINITION_METHOD",
-    "DEFINITION_PROVIDER",
-    "P10_T4_VSCODE_DEFINITION_VERSION",
-    "VSCODE_DEFINITION_KIND",
-    "VSCODE_DEFINITION_SCHEMA",
-    "VSCodeDefinitionAudit",
-    "VSCodeDefinitionError",
-    "VSCodeDefinitionVSIXAudit",
-    "audit_vscode_definition",
-    "audit_vscode_definition_vsix",
+    "CANONICAL_VSCODE_REFERENCES_RENAME_SHA256",
+    "P10_T4_VSCODE_REFERENCES_RENAME_VERSION",
+    "PREPARE_RENAME_METHOD",
+    "REFERENCES_METHOD",
+    "REFERENCES_PROVIDER",
+    "RENAME_METHOD",
+    "RENAME_PROVIDER",
+    "VSCODE_REFERENCES_RENAME_KIND",
+    "VSCODE_REFERENCES_RENAME_SCHEMA",
+    "VSCodeReferencesRenameAudit",
+    "VSCodeReferencesRenameError",
+    "VSCodeReferencesRenameVSIXAudit",
+    "audit_vscode_references_rename",
+    "audit_vscode_references_rename_vsix",
     "check_node_syntax",
-    "definition_contract",
-    "definition_fingerprint",
     "main",
+    "references_rename_contract",
+    "references_rename_fingerprint",
 )
 
 

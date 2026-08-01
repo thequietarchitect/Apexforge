@@ -1,4 +1,4 @@
-/* AFP-P10-T4.7 ApexForge VS Code same-document definition navigation. */
+/* AFP-P10-T4.8 ApexForge VS Code references and safe rename. */
 'use strict';
 
 const fs = require('fs');
@@ -12,7 +12,7 @@ const DIAGNOSTIC_COLLECTION_NAME = 'apexforge';
 const CONFIGURATION_SECTION = 'apexforge.languageServer';
 const DEFAULT_SERVER_PATH = 'apexforge/apexforge_lsp.py';
 const CLIENT_NAME = 'ApexForge VS Code';
-const CLIENT_VERSION = '10-T4.7';
+const CLIENT_VERSION = '10-T4.8';
 
 let activeRuntime = null;
 
@@ -199,6 +199,56 @@ function convertDefinition(raw) {
         return undefined;
     }
     return locations.length === 1 ? locations[0] : locations;
+}
+
+function convertReferences(raw) {
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+    return raw
+        .filter((item) => (
+            item
+            && typeof item.uri === 'string'
+            && item.range
+        ))
+        .map((item) => new vscode.Location(
+            vscode.Uri.parse(item.uri),
+            lspRange(item.range)
+        ));
+}
+
+function convertPrepareRename(raw) {
+    if (!raw || !raw.range) {
+        return undefined;
+    }
+    const range = lspRange(raw.range);
+    if (typeof raw.placeholder === 'string' && raw.placeholder) {
+        return {range, placeholder: raw.placeholder};
+    }
+    return range;
+}
+
+function convertWorkspaceEdit(raw) {
+    if (!raw || typeof raw !== 'object' || !raw.changes) {
+        return undefined;
+    }
+    const edit = new vscode.WorkspaceEdit();
+    for (const [uriText, rawEdits] of Object.entries(raw.changes)) {
+        if (!Array.isArray(rawEdits)) {
+            continue;
+        }
+        const uri = vscode.Uri.parse(uriText);
+        for (const rawEdit of rawEdits) {
+            if (
+                rawEdit
+                && rawEdit.range
+                && typeof rawEdit.newText === 'string'
+            ) {
+                edit.replace(uri, lspRange(rawEdit.range), rawEdit.newText);
+            }
+        }
+    }
+    return edit;
 }
 
 function convertHover(raw) {
@@ -427,6 +477,10 @@ class WorkspaceLanguageServer {
                         },
                         definition: {
                             linkSupport: false,
+                        },
+                        references: {},
+                        rename: {
+                            prepareSupport: true,
                         },
                     },
                 },
@@ -667,6 +721,112 @@ class WorkspaceLanguageServer {
         }
     }
 
+    async references(document, position, context, token) {
+        await this.start();
+        const client = this.client;
+        if (!client || client.state !== 'running') {
+            return [];
+        }
+        if (token && token.isCancellationRequested) {
+            return [];
+        }
+
+        this.didOpen(document);
+        try {
+            const result = await client.sendRequest(
+                'textDocument/references',
+                {
+                    textDocument: {
+                        uri: document.uri.toString(),
+                    },
+                    position: {
+                        line: position.line,
+                        character: position.character,
+                    },
+                    context: {
+                        includeDeclaration: context.includeDeclaration === true,
+                    },
+                }
+            );
+            if (token && token.isCancellationRequested) {
+                return [];
+            }
+            return convertReferences(result);
+        } catch (error) {
+            this.log(`References failed: ${error.message}`);
+            return [];
+        }
+    }
+
+    async prepareRename(document, position, token) {
+        await this.start();
+        const client = this.client;
+        if (!client || client.state !== 'running') {
+            return undefined;
+        }
+        if (token && token.isCancellationRequested) {
+            return undefined;
+        }
+
+        this.didOpen(document);
+        try {
+            const result = await client.sendRequest(
+                'textDocument/prepareRename',
+                {
+                    textDocument: {
+                        uri: document.uri.toString(),
+                    },
+                    position: {
+                        line: position.line,
+                        character: position.character,
+                    },
+                }
+            );
+            if (token && token.isCancellationRequested) {
+                return undefined;
+            }
+            return convertPrepareRename(result);
+        } catch (error) {
+            this.log(`Prepare rename failed: ${error.message}`);
+            return undefined;
+        }
+    }
+
+    async rename(document, position, newName, token) {
+        await this.start();
+        const client = this.client;
+        if (!client || client.state !== 'running') {
+            return undefined;
+        }
+        if (token && token.isCancellationRequested) {
+            return undefined;
+        }
+
+        this.didOpen(document);
+        try {
+            const result = await client.sendRequest(
+                'textDocument/rename',
+                {
+                    textDocument: {
+                        uri: document.uri.toString(),
+                    },
+                    position: {
+                        line: position.line,
+                        character: position.character,
+                    },
+                    newName,
+                }
+            );
+            if (token && token.isCancellationRequested) {
+                return undefined;
+            }
+            return convertWorkspaceEdit(result);
+        } catch (error) {
+            this.log(`Rename failed: ${error.message}`);
+            throw error;
+        }
+    }
+
     async completions(document, position, token, context) {
         await this.start();
         const client = this.client;
@@ -800,7 +960,7 @@ class ApexForgeExtensionRuntime {
     }
 
     async activate() {
-        this.output.appendLine('AFP-P10-T4.7 extension activation started.');
+        this.output.appendLine('AFP-P10-T4.8 extension activation started.');
 
         const folders = vscode.workspace.workspaceFolders || [];
         for (const folder of folders) {
@@ -888,6 +1048,37 @@ class ApexForgeExtensionRuntime {
                     },
                 }
             ),
+            vscode.languages.registerReferenceProvider(
+                {language: LANGUAGE_ID, scheme: 'file'},
+                {
+                    provideReferences: async (document, position, context, token) => {
+                        const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+                        const controller = await this.addFolder(folder);
+                        return controller
+                            ? controller.references(document, position, context, token)
+                            : [];
+                    },
+                }
+            ),
+            vscode.languages.registerRenameProvider(
+                {language: LANGUAGE_ID, scheme: 'file'},
+                {
+                    prepareRename: async (document, position, token) => {
+                        const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+                        const controller = await this.addFolder(folder);
+                        return controller
+                            ? controller.prepareRename(document, position, token)
+                            : undefined;
+                    },
+                    provideRenameEdits: async (document, position, newName, token) => {
+                        const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+                        const controller = await this.addFolder(folder);
+                        return controller
+                            ? controller.rename(document, position, newName, token)
+                            : undefined;
+                    },
+                }
+            ),
             vscode.languages.registerCompletionItemProvider(
                 {language: LANGUAGE_ID, scheme: 'file'},
                 {
@@ -922,7 +1113,7 @@ class ApexForgeExtensionRuntime {
             ...this.disposables
         );
 
-        this.output.appendLine('AFP-P10-T4.7 extension activation completed.');
+        this.output.appendLine('AFP-P10-T4.8 extension activation completed.');
     }
 
     async dispose() {

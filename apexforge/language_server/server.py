@@ -1,9 +1,9 @@
 """AFP-P10-T4.1 ApexForge Language Server foundation.
 
 The foundation implements JSON-RPC/LSP lifecycle handling and full text-document
-synchronization over stdio. Diagnostics, document symbols, hover, completion, and same-document definition
-are layered onto this frozen foundation; references, rename, workspace symbols,
-and formatting remain deliberately deferred to later P10-T4 slices.
+synchronization over stdio. Diagnostics, document symbols, hover, completion, same-document definition,
+references, and safe rename are layered onto this frozen foundation; workspace
+symbols and formatting remain deliberately deferred to later P10-T4 slices.
 """
 
 from __future__ import annotations
@@ -49,6 +49,22 @@ from language_server.definition import (
     DEFINITION_METHOD,
     P10_T4_DEFINITION_VERSION,
     definition,
+)
+
+from language_server.references import (
+    CANONICAL_REFERENCES_SHA256,
+    P10_T4_REFERENCES_VERSION,
+    REFERENCES_METHOD,
+    references,
+)
+
+from language_server.rename import (
+    CANONICAL_RENAME_SHA256,
+    P10_T4_RENAME_VERSION,
+    PREPARE_RENAME_METHOD,
+    RENAME_METHOD,
+    prepare_rename,
+    rename,
 )
 
 from language_server.protocol import (
@@ -256,6 +272,8 @@ def active_server_capabilities(
     hover_enabled: bool = False,
     completion_enabled: bool = False,
     definition_enabled: bool = False,
+    references_enabled: bool = False,
+    rename_enabled: bool = False,
 ) -> dict[str, object]:
     """Return negotiated capabilities without changing the frozen T4.1 projection."""
 
@@ -271,6 +289,10 @@ def active_server_capabilities(
         }
     if definition_enabled:
         capabilities["definitionProvider"] = True
+    if references_enabled:
+        capabilities["referencesProvider"] = True
+    if rename_enabled:
+        capabilities["renameProvider"] = {"prepareProvider": True}
     return capabilities
 
 
@@ -350,6 +372,8 @@ class LanguageServerSession:
         self.hover_enabled = False
         self.completion_enabled = False
         self.definition_enabled = False
+        self.references_enabled = False
+        self.rename_enabled = False
         self._outgoing_notifications: list[dict[str, object]] = []
         self.notification_error_count = 0
         self.last_notification_error: Optional[JsonRpcFault] = None
@@ -585,6 +609,42 @@ class LanguageServerSession:
                 message_id,
                 self._definition(params),
             )
+        if method == REFERENCES_METHOD:
+            if not is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data=f"{REFERENCES_METHOD} must be a request.",
+                    has_data=True,
+                )
+            return result_response(
+                message_id,
+                self._references(params),
+            )
+        if method == PREPARE_RENAME_METHOD:
+            if not is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data=f"{PREPARE_RENAME_METHOD} must be a request.",
+                    has_data=True,
+                )
+            return result_response(
+                message_id,
+                self._prepare_rename(params),
+            )
+        if method == RENAME_METHOD:
+            if not is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data=f"{RENAME_METHOD} must be a request.",
+                    has_data=True,
+                )
+            return result_response(
+                message_id,
+                self._rename(params),
+            )
         if method == DOCUMENT_SYMBOL_METHOD:
             if not is_request:
                 raise JsonRpcFault(
@@ -617,6 +677,8 @@ class LanguageServerSession:
         self._configure_hover(capabilities)
         self._configure_completion(capabilities)
         self._configure_definition(capabilities)
+        self._configure_references(capabilities)
+        self._configure_rename(capabilities)
 
         process_id = value.get("processId")
         if process_id is not None and type(process_id) is not int:
@@ -663,6 +725,8 @@ class LanguageServerSession:
                 hover_enabled=self.hover_enabled,
                 completion_enabled=self.completion_enabled,
                 definition_enabled=self.definition_enabled,
+                references_enabled=self.references_enabled,
+                rename_enabled=self.rename_enabled,
             ),
             "serverInfo": {
                 "name": SERVER_NAME,
@@ -793,6 +857,28 @@ class LanguageServerSession:
         if type(definition_capability) is dict:
             self.definition_enabled = True
 
+    def _configure_references(
+        self,
+        capabilities: Mapping[str, object],
+    ) -> None:
+        text_document = capabilities.get("textDocument")
+        if type(text_document) is not dict:
+            return
+        references_capability = text_document.get("references")
+        if type(references_capability) is dict:
+            self.references_enabled = True
+
+    def _configure_rename(
+        self,
+        capabilities: Mapping[str, object],
+    ) -> None:
+        text_document = capabilities.get("textDocument")
+        if type(text_document) is not dict:
+            return
+        rename_capability = text_document.get("rename")
+        if type(rename_capability) is dict:
+            self.rename_enabled = True
+
     def _hover(self, params: object) -> Optional[dict[str, object]]:
         if not self.hover_enabled:
             raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
@@ -899,6 +985,116 @@ class LanguageServerSession:
             )
         try:
             return definition(document.uri, document.text, position)
+        except (TypeError, ValueError) as error:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=str(error),
+                has_data=True,
+            ) from error
+
+    def _references(self, params: object) -> tuple[dict[str, object], ...]:
+        if not self.references_enabled:
+            raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
+
+        value = self._require_mapping(params, "references params")
+        text_document = self._require_mapping(
+            value.get("textDocument"),
+            "references textDocument",
+        )
+        uri = self._required_uri(
+            text_document.get("uri"),
+            "references textDocument.uri",
+        )
+        position = self._require_mapping(
+            value.get("position"),
+            "references position",
+        )
+        context = self._require_mapping(
+            value.get("context"),
+            "references context",
+        )
+        document = self.documents.get(uri)
+        if document is None:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=f"Document is not open: {uri}.",
+                has_data=True,
+            )
+        try:
+            return references(document.uri, document.text, position, context)
+        except (TypeError, ValueError) as error:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=str(error),
+                has_data=True,
+            ) from error
+
+    def _prepare_rename(self, params: object) -> Optional[dict[str, object]]:
+        if not self.rename_enabled:
+            raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
+
+        value = self._require_mapping(params, "prepareRename params")
+        text_document = self._require_mapping(
+            value.get("textDocument"),
+            "prepareRename textDocument",
+        )
+        uri = self._required_uri(
+            text_document.get("uri"),
+            "prepareRename textDocument.uri",
+        )
+        position = self._require_mapping(
+            value.get("position"),
+            "prepareRename position",
+        )
+        document = self.documents.get(uri)
+        if document is None:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=f"Document is not open: {uri}.",
+                has_data=True,
+            )
+        try:
+            return prepare_rename(document.uri, document.text, position)
+        except (TypeError, ValueError) as error:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=str(error),
+                has_data=True,
+            ) from error
+
+    def _rename(self, params: object) -> Optional[dict[str, object]]:
+        if not self.rename_enabled:
+            raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
+
+        value = self._require_mapping(params, "rename params")
+        text_document = self._require_mapping(
+            value.get("textDocument"),
+            "rename textDocument",
+        )
+        uri = self._required_uri(
+            text_document.get("uri"),
+            "rename textDocument.uri",
+        )
+        position = self._require_mapping(
+            value.get("position"),
+            "rename position",
+        )
+        new_name = value.get("newName")
+        document = self.documents.get(uri)
+        if document is None:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=f"Document is not open: {uri}.",
+                has_data=True,
+            )
+        try:
+            return rename(document.uri, document.text, position, new_name)
         except (TypeError, ValueError) as error:
             raise JsonRpcFault(
                 INVALID_PARAMS,
@@ -1134,6 +1330,16 @@ def main(
         help="print the AFP-P10-T4.7 definition fingerprint",
     )
     mode.add_argument(
+        "--references-contract",
+        action="store_true",
+        help="print the AFP-P10-T4.8 references fingerprint",
+    )
+    mode.add_argument(
+        "--rename-contract",
+        action="store_true",
+        help="print the AFP-P10-T4.8 rename fingerprint",
+    )
+    mode.add_argument(
         "--symbols-contract",
         action="store_true",
         help="print the AFP-P10-T4.4 document-symbol fingerprint",
@@ -1166,6 +1372,14 @@ def main(
         print(CANONICAL_DEFINITION_SHA256, file=stdout)
         return EXIT_SUCCESS
 
+    if arguments.references_contract:
+        print(CANONICAL_REFERENCES_SHA256, file=stdout)
+        return EXIT_SUCCESS
+
+    if arguments.rename_contract:
+        print(CANONICAL_RENAME_SHA256, file=stdout)
+        return EXIT_SUCCESS
+
     if arguments.symbols_contract:
         print(CANONICAL_DOCUMENT_SYMBOLS_SHA256, file=stdout)
         return EXIT_SUCCESS
@@ -1180,12 +1394,17 @@ def main(
 __all__ = (
     "CANONICAL_COMPLETION_SHA256",
     "CANONICAL_DEFINITION_SHA256",
+    "CANONICAL_REFERENCES_SHA256",
+    "CANONICAL_RENAME_SHA256",
     "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
     "CANONICAL_HOVER_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
     "CANONICAL_LSP_FOUNDATION_SHA256",
     "COMPLETION_METHOD",
     "DEFINITION_METHOD",
+    "REFERENCES_METHOD",
+    "PREPARE_RENAME_METHOD",
+    "RENAME_METHOD",
     "DOCUMENT_SYMBOL_METHOD",
     "HOVER_METHOD",
     "DocumentStore",
@@ -1200,6 +1419,8 @@ __all__ = (
     "OpenDocument",
     "P10_T4_COMPLETION_VERSION",
     "P10_T4_DEFINITION_VERSION",
+    "P10_T4_REFERENCES_VERSION",
+    "P10_T4_RENAME_VERSION",
     "P10_T4_DOCUMENT_SYMBOL_VERSION",
     "P10_T4_HOVER_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",
