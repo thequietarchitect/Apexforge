@@ -2,8 +2,8 @@
 
 The foundation implements JSON-RPC/LSP lifecycle handling and full text-document
 synchronization over stdio. Diagnostics, document symbols, hover, completion, same-document definition,
-references, safe rename, and workspace symbols are layered onto this frozen
-foundation; formatting remains deliberately deferred to later P10-T4 slices.
+references, safe rename, and workspace symbols and deterministic whole-document formatting are layered onto
+this frozen foundation; range formatting remains deliberately deferred.
 """
 
 from __future__ import annotations
@@ -65,6 +65,14 @@ from language_server.rename import (
     RENAME_METHOD,
     prepare_rename,
     rename,
+)
+
+
+from language_server.formatting import (
+    CANONICAL_FORMATTING_SHA256,
+    FORMATTING_METHOD,
+    P10_T4_FORMATTING_VERSION,
+    format_document,
 )
 
 from language_server.workspace_symbols import (
@@ -282,6 +290,7 @@ def active_server_capabilities(
     references_enabled: bool = False,
     rename_enabled: bool = False,
     workspace_symbols_enabled: bool = False,
+    formatting_enabled: bool = False,
 ) -> dict[str, object]:
     """Return negotiated capabilities without changing the frozen T4.1 projection."""
 
@@ -303,6 +312,8 @@ def active_server_capabilities(
         capabilities["renameProvider"] = {"prepareProvider": True}
     if workspace_symbols_enabled:
         capabilities["workspaceSymbolProvider"] = True
+    if formatting_enabled:
+        capabilities["documentFormattingProvider"] = True
     return capabilities
 
 
@@ -385,6 +396,7 @@ class LanguageServerSession:
         self.references_enabled = False
         self.rename_enabled = False
         self.workspace_symbols_enabled = False
+        self.formatting_enabled = False
         self._outgoing_notifications: list[dict[str, object]] = []
         self.notification_error_count = 0
         self.last_notification_error: Optional[JsonRpcFault] = None
@@ -668,6 +680,15 @@ class LanguageServerSession:
                 message_id,
                 self._workspace_symbols(params),
             )
+        if method == FORMATTING_METHOD:
+            if not is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data=f"{FORMATTING_METHOD} must be a request.",
+                    has_data=True,
+                )
+            return result_response(message_id, self._formatting(params))
         if method == DOCUMENT_SYMBOL_METHOD:
             if not is_request:
                 raise JsonRpcFault(
@@ -703,6 +724,7 @@ class LanguageServerSession:
         self._configure_references(capabilities)
         self._configure_rename(capabilities)
         self._configure_workspace_symbols(capabilities)
+        self._configure_formatting(capabilities)
 
         process_id = value.get("processId")
         if process_id is not None and type(process_id) is not int:
@@ -752,6 +774,7 @@ class LanguageServerSession:
                 references_enabled=self.references_enabled,
                 rename_enabled=self.rename_enabled,
                 workspace_symbols_enabled=self.workspace_symbols_enabled,
+                formatting_enabled=self.formatting_enabled,
             ),
             "serverInfo": {
                 "name": SERVER_NAME,
@@ -914,6 +937,17 @@ class LanguageServerSession:
         symbol_capability = workspace.get("symbol")
         if type(symbol_capability) is dict:
             self.workspace_symbols_enabled = True
+
+    def _configure_formatting(
+        self,
+        capabilities: Mapping[str, object],
+    ) -> None:
+        text_document = capabilities.get("textDocument")
+        if type(text_document) is not dict:
+            return
+        formatting_capability = text_document.get("formatting")
+        if type(formatting_capability) is dict:
+            self.formatting_enabled = True
 
     def _hover(self, params: object) -> Optional[dict[str, object]]:
         if not self.hover_enabled:
@@ -1166,6 +1200,21 @@ class LanguageServerSession:
                 has_data=True,
             ) from error
 
+    def _formatting(self, params: object) -> tuple[dict[str, object], ...]:
+        if not self.formatting_enabled:
+            raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
+        value = self._require_mapping(params, "formatting params")
+        text_document = self._require_mapping(value.get("textDocument"), "formatting textDocument")
+        uri = self._required_uri(text_document.get("uri"), "formatting textDocument.uri")
+        options = self._require_mapping(value.get("options"), "formatting options")
+        document = self.documents.get(uri)
+        if document is None:
+            raise JsonRpcFault(INVALID_PARAMS, "Invalid params", data=f"Document is not open: {uri}.", has_data=True)
+        try:
+            return format_document(document.uri, document.text, options)
+        except (TypeError, ValueError) as error:
+            raise JsonRpcFault(INVALID_PARAMS, "Invalid params", data=str(error), has_data=True) from error
+
     def _document_symbols(self, params: object) -> list[dict[str, object]]:
         if not self.document_symbols_enabled:
             raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
@@ -1408,6 +1457,11 @@ def main(
         help="print the AFP-P10-T4.9 workspace-symbol fingerprint",
     )
     mode.add_argument(
+        "--formatting-contract",
+        action="store_true",
+        help="print the AFP-P10-T4.10 formatting fingerprint",
+    )
+    mode.add_argument(
         "--symbols-contract",
         action="store_true",
         help="print the AFP-P10-T4.4 document-symbol fingerprint",
@@ -1452,6 +1506,10 @@ def main(
         print(CANONICAL_WORKSPACE_SYMBOLS_SHA256, file=stdout)
         return EXIT_SUCCESS
 
+    if arguments.formatting_contract:
+        print(CANONICAL_FORMATTING_SHA256, file=stdout)
+        return EXIT_SUCCESS
+
     if arguments.symbols_contract:
         print(CANONICAL_DOCUMENT_SYMBOLS_SHA256, file=stdout)
         return EXIT_SUCCESS
@@ -1469,6 +1527,7 @@ __all__ = (
     "CANONICAL_REFERENCES_SHA256",
     "CANONICAL_RENAME_SHA256",
     "CANONICAL_WORKSPACE_SYMBOLS_SHA256",
+    "CANONICAL_FORMATTING_SHA256",
     "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
     "CANONICAL_HOVER_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
@@ -1479,6 +1538,7 @@ __all__ = (
     "PREPARE_RENAME_METHOD",
     "RENAME_METHOD",
     "WORKSPACE_SYMBOL_METHOD",
+    "FORMATTING_METHOD",
     "DOCUMENT_SYMBOL_METHOD",
     "HOVER_METHOD",
     "DocumentStore",
@@ -1496,6 +1556,7 @@ __all__ = (
     "P10_T4_REFERENCES_VERSION",
     "P10_T4_RENAME_VERSION",
     "P10_T4_WORKSPACE_SYMBOL_VERSION",
+    "P10_T4_FORMATTING_VERSION",
     "P10_T4_DOCUMENT_SYMBOL_VERSION",
     "P10_T4_HOVER_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",

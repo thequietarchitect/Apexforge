@@ -40,6 +40,15 @@ _RUNTIME_SOURCE_PATHS: Final[tuple[str, ...]] = (
     CANONICAL_LANGUAGE_SERVER_GUIDE,
 )
 
+
+# Compatibility projection: T4.10 extends the editor runtime while the frozen
+# T4.9 workspace-symbol fingerprint remains scoped to its freeze-time bytes.
+_FROZEN_T4_9_RUNTIME_HASHES: Final[Mapping[str, str]] = {
+    "extension.js": "1db930153c27824fe543610dea3a97defbaa9d796e84cedf1a1a93ddccce6b04",
+    CANONICAL_RUNTIME_CLIENT_PATH: "2481320a388bf48087e00094d9e46693fc8ba9f86dec140281aef0aa8ce67000",
+    CANONICAL_LANGUAGE_SERVER_GUIDE: "d3a011b0038d2c3d45af9842ab3d1f2f989358f30f5ed22afbfd9b8ae1583d4c",
+}
+
 CANONICAL_VSCODE_WORKSPACE_SYMBOLS_SHA256: Final[str] = "ddf809a166f95fed8215a2a6cbcf11f0f318199d5dfb8f719fa09ec49e60c9aa"
 
 
@@ -153,7 +162,7 @@ def workspace_symbols_contract(runtime_hashes: Mapping[str, str]) -> Mapping[str
         "multi_root_merge": "deterministic provider aggregation",
         "server_workspace_symbols_sha256": CANONICAL_WORKSPACE_SYMBOLS_SHA256,
         "frozen_references_rename_sha256": CANONICAL_VSCODE_REFERENCES_RENAME_SHA256,
-        "runtime_hashes": dict(runtime_hashes),
+        "runtime_hashes": {name: _FROZEN_T4_9_RUNTIME_HASHES[name] for name in _RUNTIME_SOURCE_PATHS},
         "features_deferred": (
             "persistent_index",
             "workspace_symbol_resolve",

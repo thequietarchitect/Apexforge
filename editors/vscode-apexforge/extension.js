@@ -1,4 +1,4 @@
-/* AFP-P10-T4.9 ApexForge VS Code workspace symbols. */
+/* AFP-P10-T4.10 ApexForge VS Code document formatting. */
 'use strict';
 
 const fs = require('fs');
@@ -12,7 +12,7 @@ const DIAGNOSTIC_COLLECTION_NAME = 'apexforge';
 const CONFIGURATION_SECTION = 'apexforge.languageServer';
 const DEFAULT_SERVER_PATH = 'apexforge/apexforge_lsp.py';
 const CLIENT_NAME = 'ApexForge VS Code';
-const CLIENT_VERSION = '10-T4.9';
+const CLIENT_VERSION = '10-T4.10';
 
 let activeRuntime = null;
 
@@ -239,6 +239,15 @@ function convertWorkspaceSymbol(raw) {
             lspRange(raw.location.range)
         )
     );
+}
+
+function convertTextEdits(raw) {
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+    return raw
+        .filter((item) => item && item.range && typeof item.newText === 'string')
+        .map((item) => new vscode.TextEdit(lspRange(item.range), item.newText));
 }
 
 function convertPrepareRename(raw) {
@@ -505,6 +514,9 @@ class WorkspaceLanguageServer {
                         references: {},
                         rename: {
                             prepareSupport: true,
+                        },
+                        formatting: {
+                            dynamicRegistration: false,
                         },
                     },
                     workspace: {
@@ -905,6 +917,34 @@ class WorkspaceLanguageServer {
         }
     }
 
+    async formatDocument(document, options, token) {
+        await this.start();
+        const client = this.client;
+        if (!client || client.state !== 'running') {
+            return [];
+        }
+        if (token && token.isCancellationRequested) {
+            return [];
+        }
+        this.didOpen(document);
+        try {
+            const result = await client.sendRequest('textDocument/formatting', {
+                textDocument: {uri: document.uri.toString()},
+                options: {
+                    tabSize: Number.isInteger(options && options.tabSize) ? options.tabSize : 4,
+                    insertSpaces: !options || options.insertSpaces !== false,
+                },
+            });
+            if (token && token.isCancellationRequested) {
+                return [];
+            }
+            return convertTextEdits(result);
+        } catch (error) {
+            this.log(`Formatting failed: ${error.message}`);
+            return [];
+        }
+    }
+
     async workspaceSymbols(query, token) {
         await this.start();
         const client = this.client;
@@ -1019,7 +1059,7 @@ class ApexForgeExtensionRuntime {
     }
 
     async activate() {
-        this.output.appendLine('AFP-P10-T4.9 extension activation started.');
+        this.output.appendLine('AFP-P10-T4.10 extension activation started.');
 
         const folders = vscode.workspace.workspaceFolders || [];
         for (const folder of folders) {
@@ -1135,6 +1175,16 @@ class ApexForgeExtensionRuntime {
                         return controller
                             ? controller.rename(document, position, newName, token)
                             : undefined;
+                    },
+                }
+            ),
+            vscode.languages.registerDocumentFormattingEditProvider(
+                {language: LANGUAGE_ID, scheme: 'file'},
+                {
+                    provideDocumentFormattingEdits: async (document, options, token) => {
+                        const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+                        const controller = await this.addFolder(folder);
+                        return controller ? controller.formatDocument(document, options, token) : [];
                     },
                 }
             ),
