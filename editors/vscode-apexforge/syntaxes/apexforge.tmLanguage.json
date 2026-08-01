@@ -1,0 +1,202 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ApexForge",
+  "scopeName": "source.apexforge",
+  "fileTypes": [
+    "apex"
+  ],
+  "patterns": [
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#moduleHeaders"
+    },
+    {
+      "include": "#functionDeclarations"
+    },
+    {
+      "include": "#namedDeclarations"
+    },
+    {
+      "include": "#variableDeclarations"
+    },
+    {
+      "include": "#memberDeclarations"
+    },
+    {
+      "include": "#typeAnnotations"
+    },
+    {
+      "include": "#builtInTypes"
+    },
+    {
+      "include": "#booleans"
+    },
+    {
+      "include": "#logicalOperators"
+    },
+    {
+      "include": "#controlKeywords"
+    },
+    {
+      "include": "#actionKeywords"
+    },
+    {
+      "include": "#functionCalls"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#punctuation"
+    },
+    {
+      "include": "#keywords"
+    }
+  ],
+  "repository": {
+    "strings": {
+      "name": "string.quoted.double.apexforge",
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.apexforge"
+        }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.apexforge"
+        }
+      },
+      "patterns": [
+        {
+          "name": "constant.character.escape.apexforge",
+          "match": "\\\\(?:n|r|t|\"|\\\\)"
+        }
+      ]
+    },
+    "moduleHeaders": {
+      "match": "^\\s*(module|import)\\s+([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)",
+      "captures": {
+        "1": {
+          "name": "keyword.control.module.apexforge"
+        },
+        "2": {
+          "name": "entity.name.namespace.apexforge"
+        }
+      }
+    },
+    "functionDeclarations": {
+      "match": "^\\s*(function)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "keyword.declaration.function.apexforge"
+        },
+        "2": {
+          "name": "entity.name.function.apexforge"
+        }
+      }
+    },
+    "namedDeclarations": {
+      "match": "^\\s*(directive|workflow|authority|principal|role)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "keyword.declaration.apexforge"
+        },
+        "2": {
+          "name": "entity.name.type.apexforge"
+        }
+      }
+    },
+    "variableDeclarations": {
+      "match": "^\\s*(state|let)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "keyword.declaration.variable.apexforge"
+        },
+        "2": {
+          "name": "variable.other.definition.apexforge"
+        }
+      }
+    },
+    "memberDeclarations": {
+      "match": "^\\s*(event|cause|path|capability)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "keyword.declaration.member.apexforge"
+        },
+        "2": {
+          "name": "entity.name.function.member.apexforge"
+        }
+      }
+    },
+    "typeAnnotations": {
+      "match": "(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "punctuation.separator.type.apexforge"
+        },
+        "3": {
+          "name": "storage.type.apexforge"
+        }
+      }
+    },
+    "builtInTypes": {
+      "name": "storage.type.builtin.apexforge",
+      "match": "\\b(?:int|bool|string|float|void)\\b"
+    },
+    "booleans": {
+      "name": "constant.language.boolean.apexforge",
+      "match": "\\b(?:true|false)\\b"
+    },
+    "logicalOperators": {
+      "name": "keyword.operator.logical.apexforge",
+      "match": "\\b(?:and|or|not)\\b"
+    },
+    "controlKeywords": {
+      "name": "keyword.control.apexforge",
+      "match": "\\b(?:when|otherwise|return)\\b"
+    },
+    "actionKeywords": {
+      "name": "keyword.other.action.apexforge",
+      "match": "\\b(?:add|emit|message|invoke|set|requires|extends)\\b"
+    },
+    "functionCalls": {
+      "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?=(?:<[^>\\r\\n]+>)?\\s*\\()",
+      "captures": {
+        "1": {
+          "name": "support.function.apexforge"
+        }
+      }
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.apexforge",
+          "match": "\\b\\d+\\.\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.apexforge",
+          "match": "\\b\\d+\\b"
+        }
+      ]
+    },
+    "operators": {
+      "name": "keyword.operator.apexforge",
+      "match": "==|!=|<=|>=|[=+\\-*/%@<>]"
+    },
+    "punctuation": {
+      "name": "punctuation.separator.apexforge",
+      "match": "[{}(),:;]"
+    },
+    "keywords": {
+      "name": "keyword.other.apexforge",
+      "match": "\\b(?:directive|workflow|authority|capability|state|event|cause|path|add|emit|message|invoke|requires|extends|principal|role|set|when|otherwise|and|or|not|true|false|function|return|let)\\b"
+    }
+  }
+}

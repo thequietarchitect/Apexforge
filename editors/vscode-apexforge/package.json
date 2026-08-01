@@ -1,7 +1,7 @@
 {
   "name": "apexforge-language",
   "displayName": "ApexForge Language",
-  "description": "ApexForge .apex file recognition and core editor behavior.",
+  "description": "ApexForge .apex file recognition, editor behavior, and TextMate syntax highlighting.",
   "version": "0.1.0",
   "publisher": "gravitas-studios",
   "engines": {
@@ -36,6 +36,13 @@
         "editor.tabSize": 4,
         "editor.detectIndentation": false
       }
-    }
+    },
+    "grammars": [
+      {
+        "language": "apexforge",
+        "scopeName": "source.apexforge",
+        "path": "./syntaxes/apexforge.tmLanguage.json"
+      }
+    ]
   }
 }
