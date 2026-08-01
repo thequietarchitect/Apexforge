@@ -14,6 +14,13 @@ import sys
 from dataclasses import dataclass
 from typing import BinaryIO, Final, Mapping, Optional, Sequence, TextIO
 
+from language_server.diagnostics import (
+    CANONICAL_LSP_DIAGNOSTICS_SHA256,
+    P10_T4_LSP_DIAGNOSTICS_VERSION,
+    analyze_document,
+    publish_diagnostics_notification,
+)
+
 from language_server.protocol import (
     INTERNAL_ERROR,
     INVALID_PARAMS,
@@ -282,8 +289,19 @@ class LanguageServerSession:
         self.client_info: Optional[Mapping[str, object]] = None
         self.root_uri: Optional[str] = None
         self.documents = DocumentStore()
+        self.diagnostics_enabled = False
+        self.diagnostics_related_information = False
+        self.diagnostics_version_support = False
+        self._outgoing_notifications: list[dict[str, object]] = []
         self.notification_error_count = 0
         self.last_notification_error: Optional[JsonRpcFault] = None
+
+    def drain_outgoing_notifications(self) -> tuple[dict[str, object], ...]:
+        """Return queued server notifications and clear the deterministic queue."""
+
+        queued = tuple(self._outgoing_notifications)
+        self._outgoing_notifications.clear()
+        return queued
 
     def process(self, message: Mapping[str, object]) -> Optional[dict[str, object]]:
         """Process one decoded JSON-RPC object and return an optional response."""
@@ -488,6 +506,7 @@ class LanguageServerSession:
                 data="initialize capabilities must be an object.",
                 has_data=True,
             )
+        self._configure_diagnostics(capabilities)
 
         process_id = value.get("processId")
         if process_id is not None and type(process_id) is not int:
@@ -542,26 +561,26 @@ class LanguageServerSession:
             value.get("textDocument"),
             "didOpen textDocument",
         )
-        self.documents.open(
-            OpenDocument(
-                uri=self._required_uri(
-                    text_document.get("uri"),
-                    "didOpen textDocument.uri",
-                ),
-                language_id=self._required_string(
-                    text_document.get("languageId"),
-                    "didOpen textDocument.languageId",
-                ),
-                version=self._required_int(
-                    text_document.get("version"),
-                    "didOpen textDocument.version",
-                ),
-                text=self._required_string_value(
-                    text_document.get("text"),
-                    "didOpen textDocument.text",
-                ),
-            )
+        document = OpenDocument(
+            uri=self._required_uri(
+                text_document.get("uri"),
+                "didOpen textDocument.uri",
+            ),
+            language_id=self._required_string(
+                text_document.get("languageId"),
+                "didOpen textDocument.languageId",
+            ),
+            version=self._required_int(
+                text_document.get("version"),
+                "didOpen textDocument.version",
+            ),
+            text=self._required_string_value(
+                text_document.get("text"),
+                "didOpen textDocument.text",
+            ),
         )
+        self.documents.open(document)
+        self._publish_document_diagnostics(document)
 
     def _did_change(self, params: object) -> None:
         value = self._require_mapping(params, "didChange params")
@@ -569,17 +588,21 @@ class LanguageServerSession:
             value.get("textDocument"),
             "didChange textDocument",
         )
+        uri = self._required_uri(
+            text_document.get("uri"),
+            "didChange textDocument.uri",
+        )
         self.documents.change(
-            uri=self._required_uri(
-                text_document.get("uri"),
-                "didChange textDocument.uri",
-            ),
+            uri=uri,
             version=self._required_int(
                 text_document.get("version"),
                 "didChange textDocument.version",
             ),
             changes=value.get("contentChanges"),
         )
+        document = self.documents.get(uri)
+        assert document is not None
+        self._publish_document_diagnostics(document)
 
     def _did_close(self, params: object) -> None:
         value = self._require_mapping(params, "didClose params")
@@ -587,10 +610,44 @@ class LanguageServerSession:
             value.get("textDocument"),
             "didClose textDocument",
         )
-        self.documents.close(
-            self._required_uri(
-                text_document.get("uri"),
-                "didClose textDocument.uri",
+        uri = self._required_uri(
+            text_document.get("uri"),
+            "didClose textDocument.uri",
+        )
+        self.documents.close(uri)
+        if self.diagnostics_enabled:
+            self._outgoing_notifications.append(
+                publish_diagnostics_notification(uri, ())
+            )
+
+    def _configure_diagnostics(self, capabilities: Mapping[str, object]) -> None:
+        text_document = capabilities.get("textDocument")
+        if type(text_document) is not dict:
+            return
+        publish = text_document.get("publishDiagnostics")
+        if type(publish) is not dict:
+            return
+
+        self.diagnostics_enabled = True
+        self.diagnostics_related_information = (
+            publish.get("relatedInformation") is True
+        )
+        self.diagnostics_version_support = publish.get("versionSupport") is True
+
+    def _publish_document_diagnostics(self, document: OpenDocument) -> None:
+        if not self.diagnostics_enabled:
+            return
+        diagnostics = analyze_document(
+            document.uri,
+            document.text,
+            include_related_information=self.diagnostics_related_information,
+        )
+        version = document.version if self.diagnostics_version_support else None
+        self._outgoing_notifications.append(
+            publish_diagnostics_notification(
+                document.uri,
+                diagnostics,
+                version=version,
             )
         )
 
@@ -724,6 +781,8 @@ def run_language_server(
         response = active.process(message)
         if response is not None:
             write_message(output_stream, response)
+        for notification in active.drain_outgoing_notifications():
+            write_message(output_stream, notification)
 
         if active.exited:
             return active.exit_code if active.exit_code is not None else EXIT_UNCLEAN
@@ -758,6 +817,11 @@ def main(
         action="store_true",
         help="print the frozen foundation fingerprint",
     )
+    mode.add_argument(
+        "--diagnostics-contract",
+        action="store_true",
+        help="print the frozen T4.2 diagnostics fingerprint",
+    )
     arguments = parser.parse_args(tuple(argv) if argv is not None else None)
 
     if arguments.version:
@@ -770,6 +834,9 @@ def main(
     if arguments.contract:
         print(CANONICAL_LSP_FOUNDATION_SHA256, file=stdout)
         return EXIT_SUCCESS
+    if arguments.diagnostics_contract:
+        print(CANONICAL_LSP_DIAGNOSTICS_SHA256, file=stdout)
+        return EXIT_SUCCESS
 
     return run_language_server(
         _binary_reader(stdin),
@@ -779,6 +846,7 @@ def main(
 
 
 __all__ = (
+    "CANONICAL_LSP_DIAGNOSTICS_SHA256",
     "CANONICAL_LSP_FOUNDATION_SHA256",
     "DocumentStore",
     "EXIT_SUCCESS",
@@ -790,6 +858,7 @@ __all__ = (
     "LSP_SPECIFICATION_VERSION",
     "LanguageServerSession",
     "OpenDocument",
+    "P10_T4_LSP_DIAGNOSTICS_VERSION",
     "P10_T4_LSP_FOUNDATION_VERSION",
     "POSITION_ENCODING",
     "SERVER_NAME",
