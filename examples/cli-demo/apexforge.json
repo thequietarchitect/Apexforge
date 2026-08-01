@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "name": "CliDemo",
+  "sources": [
+    "src/main.apex"
+  ],
+  "entry": "Main"
+}
