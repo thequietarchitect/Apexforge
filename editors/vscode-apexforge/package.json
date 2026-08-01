@@ -1,0 +1,41 @@
+{
+  "name": "apexforge-language",
+  "displayName": "ApexForge Language",
+  "description": "ApexForge .apex file recognition and core editor behavior.",
+  "version": "0.1.0",
+  "publisher": "gravitas-studios",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "apexforge",
+    "apex",
+    "language",
+    "dsl"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "apexforge",
+        "aliases": [
+          "ApexForge",
+          "apexforge"
+        ],
+        "extensions": [
+          ".apex"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[apexforge]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.detectIndentation": false
+      }
+    }
+  }
+}
