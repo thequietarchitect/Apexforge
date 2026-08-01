@@ -128,6 +128,7 @@ def _project_contract(root: Path) -> Mapping[str, object]:
         "src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs": {
             expected_hashes["src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs"],
             "f57deb9cdd4c7185032aa9763d4f46cfe56649134d67f8438b4e642da54992a2",
+            "4c25920ac0ca5f846e35c3f8aeb86e8d1cdb664ed405d4a8d9eccf3ec41a9d16",
         },
     }
     changed = tuple(

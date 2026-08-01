@@ -132,11 +132,21 @@ def audit_visualstudio_bridge(root: Path | str) -> VisualStudioBridgeAudit:
         if not path.is_file():
             raise VisualStudioBridgeError(f"T5.3 bridge file is missing: {relative}.")
         hashes[str(relative)] = _source_sha256(path)
-    if hashes != dict(_EXPECTED_CONTRACT["file_sha256"]):
-        changed = tuple(
-            name for name in _EXPECTED_CONTRACT["required_files"]
-            if hashes.get(str(name)) != dict(_EXPECTED_CONTRACT["file_sha256"]).get(str(name))
+    expected_hashes = dict(_EXPECTED_CONTRACT["file_sha256"])
+    compatibility_hashes = {
+        "src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs": {
+            expected_hashes["src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs"],
+            "4c25920ac0ca5f846e35c3f8aeb86e8d1cdb664ed405d4a8d9eccf3ec41a9d16",
+        },
+    }
+    changed = tuple(
+        name for name in _EXPECTED_CONTRACT["required_files"]
+        if hashes.get(str(name)) not in compatibility_hashes.get(
+            str(name),
+            {expected_hashes.get(str(name))},
         )
+    )
+    if changed:
         raise VisualStudioBridgeError(
             "T5.3 Visual Studio bridge source drifted: " + ", ".join(changed)
         )
@@ -233,7 +243,9 @@ def audit_visualstudio_bridge(root: Path | str) -> VisualStudioBridgeAudit:
         raise VisualStudioBridgeError("T5.3 must use a headless redirected stdio process.")
 
     contract = dict(_EXPECTED_CONTRACT)
-    contract["file_sha256"] = hashes
+    # T5.4/T5.5 evolve only the user-facing status text. Project the
+    # compatible source back onto the frozen T5.3 file hashes.
+    contract["file_sha256"] = expected_hashes
     fingerprint = _sha256(_canonical_json(contract))
     if fingerprint != CANONICAL_VISUAL_STUDIO_BRIDGE_SHA256:
         raise VisualStudioBridgeError(

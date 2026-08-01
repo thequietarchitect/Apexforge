@@ -59,6 +59,9 @@ namespace GravitasStudios.ApexForge.VisualStudio
                 "Content type: apexforge\n" +
                 "File extension: .apex\n" +
                 "Language-server bridge: active (AFP-P10-T5.3).\n" +
+                "Diagnostics/document sync: active (AFP-P10-T5.4).\n" +
+                "IntelliSense/navigation/formatting: active (AFP-P10-T5.5).\n" +
+                "Visual Studio integration: final P10-T5 parity.\n" +
                 "Log: " + ApexForgeLanguageServerTrace.LogPath,
                 "ApexForge Language Tools",
                 OLEMSGICON.OLEMSGICON_INFO,
