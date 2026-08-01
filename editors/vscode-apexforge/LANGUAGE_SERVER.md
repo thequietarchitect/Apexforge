@@ -1,6 +1,6 @@
 # ApexForge Language Server
 
-AFP-P10-T4.8 activates one ApexForge language-server process for each file-system
+AFP-P10-T4.9 activates one ApexForge language-server process for each file-system
 workspace folder that contains the configured server entry point.
 
 ## Default launch
@@ -18,6 +18,24 @@ workspace folder that contains the configured server entry point.
 - Reference discovery: same-document `textDocument/references`
 - Rename preparation: guarded `textDocument/prepareRename`
 - Rename edits: safe same-document `textDocument/rename`
+- Workspace declaration search: read-only `workspace/symbol`
+
+Use **Ctrl+T** or **Go to Symbol in Workspace** to search ApexForge declarations
+across every `.apex` file beneath the opened workspace folder. T4.9 searches
+modules, functions, directives, states, events, causes, paths, workflows,
+authorities, capabilities, roles, and principals. Results include their source
+location and containing declaration where applicable.
+
+The workspace-symbol request performs a deterministic recursive scan and overlays
+unsaved open-document text over the on-disk file. It ignores `.git`, build,
+`dist`, virtual-environment, `node_modules`, and cache directories. Search is
+case-insensitive, supports multiple whitespace-separated terms, ranks exact and
+prefix matches first, and returns a bounded result set.
+
+Workspace Symbols are read-only in T4.9. They do not yet enable cross-file Go to
+Definition, Find References, Rename, import resolution, or a persistent index.
+Those operations remain protected until a later cross-file identity layer can
+prove every affected declaration and occurrence.
 
 Find References reuses the exact symbol identity and occurrence graph used by Go
 to Definition. Use **Shift+F12** or the editor's Find All References command on
@@ -31,10 +49,9 @@ state, directive event, cause, or path. The server validates ApexForge identifie
 syntax, rejects reserved words and same-namespace collisions, and returns one
 same-document `WorkspaceEdit`.
 
-Workspace-visible declarations are deliberately protected from rename in T4.8.
-Modules, functions, directives, workflows, authorities, capabilities, roles, and
-principals may be referenced by other files, so they require later cross-file
-indexing before they can be renamed safely.
+Workspace-visible declarations remain protected from rename. Modules, functions,
+directives, workflows, authorities, capabilities, roles, and principals may be
+referenced by other files and cannot yet be renamed safely.
 
 Go to Definition continues to resolve declaration names, function type
 parameters, function parameters and prior local bindings, recursive calls,
@@ -47,10 +64,8 @@ targets, and function or directive expression names. The completion analyzer
 tolerates incomplete source while typing and replaces only the current
 identifier prefix.
 
-Hover, completion, definition, references, and rename remain open-document
-features. Imports, workflow or directive invocation targets, authority, role,
-and capability references require later cross-file resolution. Workspace
-symbols, formatting, compilation, and type inference remain deferred.
+Formatting, cross-file definition, workspace references, cross-file rename,
+compilation, linking, and type inference remain deferred.
 
 The Python launcher and server path can be overridden in workspace settings.
 

@@ -2,8 +2,8 @@
 
 The foundation implements JSON-RPC/LSP lifecycle handling and full text-document
 synchronization over stdio. Diagnostics, document symbols, hover, completion, same-document definition,
-references, and safe rename are layered onto this frozen foundation; workspace
-symbols and formatting remain deliberately deferred to later P10-T4 slices.
+references, safe rename, and workspace symbols are layered onto this frozen
+foundation; formatting remains deliberately deferred to later P10-T4 slices.
 """
 
 from __future__ import annotations
@@ -65,6 +65,13 @@ from language_server.rename import (
     RENAME_METHOD,
     prepare_rename,
     rename,
+)
+
+from language_server.workspace_symbols import (
+    CANONICAL_WORKSPACE_SYMBOLS_SHA256,
+    P10_T4_WORKSPACE_SYMBOL_VERSION,
+    WORKSPACE_SYMBOL_METHOD,
+    workspace_symbols,
 )
 
 from language_server.protocol import (
@@ -274,6 +281,7 @@ def active_server_capabilities(
     definition_enabled: bool = False,
     references_enabled: bool = False,
     rename_enabled: bool = False,
+    workspace_symbols_enabled: bool = False,
 ) -> dict[str, object]:
     """Return negotiated capabilities without changing the frozen T4.1 projection."""
 
@@ -293,6 +301,8 @@ def active_server_capabilities(
         capabilities["referencesProvider"] = True
     if rename_enabled:
         capabilities["renameProvider"] = {"prepareProvider": True}
+    if workspace_symbols_enabled:
+        capabilities["workspaceSymbolProvider"] = True
     return capabilities
 
 
@@ -374,6 +384,7 @@ class LanguageServerSession:
         self.definition_enabled = False
         self.references_enabled = False
         self.rename_enabled = False
+        self.workspace_symbols_enabled = False
         self._outgoing_notifications: list[dict[str, object]] = []
         self.notification_error_count = 0
         self.last_notification_error: Optional[JsonRpcFault] = None
@@ -645,6 +656,18 @@ class LanguageServerSession:
                 message_id,
                 self._rename(params),
             )
+        if method == WORKSPACE_SYMBOL_METHOD:
+            if not is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data=f"{WORKSPACE_SYMBOL_METHOD} must be a request.",
+                    has_data=True,
+                )
+            return result_response(
+                message_id,
+                self._workspace_symbols(params),
+            )
         if method == DOCUMENT_SYMBOL_METHOD:
             if not is_request:
                 raise JsonRpcFault(
@@ -679,6 +702,7 @@ class LanguageServerSession:
         self._configure_definition(capabilities)
         self._configure_references(capabilities)
         self._configure_rename(capabilities)
+        self._configure_workspace_symbols(capabilities)
 
         process_id = value.get("processId")
         if process_id is not None and type(process_id) is not int:
@@ -727,6 +751,7 @@ class LanguageServerSession:
                 definition_enabled=self.definition_enabled,
                 references_enabled=self.references_enabled,
                 rename_enabled=self.rename_enabled,
+                workspace_symbols_enabled=self.workspace_symbols_enabled,
             ),
             "serverInfo": {
                 "name": SERVER_NAME,
@@ -878,6 +903,17 @@ class LanguageServerSession:
         rename_capability = text_document.get("rename")
         if type(rename_capability) is dict:
             self.rename_enabled = True
+
+    def _configure_workspace_symbols(
+        self,
+        capabilities: Mapping[str, object],
+    ) -> None:
+        workspace = capabilities.get("workspace")
+        if type(workspace) is not dict:
+            return
+        symbol_capability = workspace.get("symbol")
+        if type(symbol_capability) is dict:
+            self.workspace_symbols_enabled = True
 
     def _hover(self, params: object) -> Optional[dict[str, object]]:
         if not self.hover_enabled:
@@ -1095,6 +1131,33 @@ class LanguageServerSession:
             )
         try:
             return rename(document.uri, document.text, position, new_name)
+        except (TypeError, ValueError) as error:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=str(error),
+                has_data=True,
+            ) from error
+
+    def _workspace_symbols(self, params: object) -> list[dict[str, object]]:
+        if not self.workspace_symbols_enabled:
+            raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
+
+        value = self._require_mapping(params, "workspace/symbol params")
+        query = value.get("query")
+        if self.root_uri is None:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data="workspace/symbol requires initialize.rootUri.",
+                has_data=True,
+            )
+        overlays = {
+            document.uri: document.text
+            for document in self.documents.snapshot()
+        }
+        try:
+            return list(workspace_symbols(self.root_uri, query, overlays))
         except (TypeError, ValueError) as error:
             raise JsonRpcFault(
                 INVALID_PARAMS,
@@ -1340,6 +1403,11 @@ def main(
         help="print the AFP-P10-T4.8 rename fingerprint",
     )
     mode.add_argument(
+        "--workspace-symbols-contract",
+        action="store_true",
+        help="print the AFP-P10-T4.9 workspace-symbol fingerprint",
+    )
+    mode.add_argument(
         "--symbols-contract",
         action="store_true",
         help="print the AFP-P10-T4.4 document-symbol fingerprint",
@@ -1380,6 +1448,10 @@ def main(
         print(CANONICAL_RENAME_SHA256, file=stdout)
         return EXIT_SUCCESS
 
+    if arguments.workspace_symbols_contract:
+        print(CANONICAL_WORKSPACE_SYMBOLS_SHA256, file=stdout)
+        return EXIT_SUCCESS
+
     if arguments.symbols_contract:
         print(CANONICAL_DOCUMENT_SYMBOLS_SHA256, file=stdout)
         return EXIT_SUCCESS
@@ -1396,6 +1468,7 @@ __all__ = (
     "CANONICAL_DEFINITION_SHA256",
     "CANONICAL_REFERENCES_SHA256",
     "CANONICAL_RENAME_SHA256",
+    "CANONICAL_WORKSPACE_SYMBOLS_SHA256",
     "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
     "CANONICAL_HOVER_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
@@ -1405,6 +1478,7 @@ __all__ = (
     "REFERENCES_METHOD",
     "PREPARE_RENAME_METHOD",
     "RENAME_METHOD",
+    "WORKSPACE_SYMBOL_METHOD",
     "DOCUMENT_SYMBOL_METHOD",
     "HOVER_METHOD",
     "DocumentStore",
@@ -1421,6 +1495,7 @@ __all__ = (
     "P10_T4_DEFINITION_VERSION",
     "P10_T4_REFERENCES_VERSION",
     "P10_T4_RENAME_VERSION",
+    "P10_T4_WORKSPACE_SYMBOL_VERSION",
     "P10_T4_DOCUMENT_SYMBOL_VERSION",
     "P10_T4_HOVER_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",

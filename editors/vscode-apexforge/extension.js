@@ -1,4 +1,4 @@
-/* AFP-P10-T4.8 ApexForge VS Code references and safe rename. */
+/* AFP-P10-T4.9 ApexForge VS Code workspace symbols. */
 'use strict';
 
 const fs = require('fs');
@@ -12,7 +12,7 @@ const DIAGNOSTIC_COLLECTION_NAME = 'apexforge';
 const CONFIGURATION_SECTION = 'apexforge.languageServer';
 const DEFAULT_SERVER_PATH = 'apexforge/apexforge_lsp.py';
 const CLIENT_NAME = 'ApexForge VS Code';
-const CLIENT_VERSION = '10-T4.8';
+const CLIENT_VERSION = '10-T4.9';
 
 let activeRuntime = null;
 
@@ -215,6 +215,30 @@ function convertReferences(raw) {
             vscode.Uri.parse(item.uri),
             lspRange(item.range)
         ));
+}
+
+function convertWorkspaceSymbol(raw) {
+    if (
+        !raw
+        || typeof raw.name !== 'string'
+        || !raw.name
+        || !raw.location
+        || typeof raw.location.uri !== 'string'
+        || !raw.location.range
+    ) {
+        return undefined;
+    }
+    const kind = LSP_SYMBOL_KIND_TO_VSCODE[raw.kind]
+        ?? vscode.SymbolKind.Object;
+    return new vscode.SymbolInformation(
+        raw.name,
+        kind,
+        typeof raw.containerName === 'string' ? raw.containerName : '',
+        new vscode.Location(
+            vscode.Uri.parse(raw.location.uri),
+            lspRange(raw.location.range)
+        )
+    );
 }
 
 function convertPrepareRename(raw) {
@@ -481,6 +505,14 @@ class WorkspaceLanguageServer {
                         references: {},
                         rename: {
                             prepareSupport: true,
+                        },
+                    },
+                    workspace: {
+                        symbol: {
+                            dynamicRegistration: false,
+                            symbolKind: {
+                                valueSet: Array.from({length: 26}, (_, index) => index + 1),
+                            },
                         },
                     },
                 },
@@ -873,6 +905,33 @@ class WorkspaceLanguageServer {
         }
     }
 
+    async workspaceSymbols(query, token) {
+        await this.start();
+        const client = this.client;
+        if (!client || client.state !== 'running') {
+            return [];
+        }
+        if (token && token.isCancellationRequested) {
+            return [];
+        }
+
+        try {
+            const result = await client.sendRequest(
+                'workspace/symbol',
+                {query: typeof query === 'string' ? query : ''}
+            );
+            if (token && token.isCancellationRequested) {
+                return [];
+            }
+            return Array.isArray(result)
+                ? result.map(convertWorkspaceSymbol).filter((item) => item !== undefined)
+                : [];
+        } catch (error) {
+            this.log(`Workspace symbols failed: ${error.message}`);
+            return [];
+        }
+    }
+
     async restart() {
         this.log('Restart requested.');
         await this.stop();
@@ -960,7 +1019,7 @@ class ApexForgeExtensionRuntime {
     }
 
     async activate() {
-        this.output.appendLine('AFP-P10-T4.8 extension activation started.');
+        this.output.appendLine('AFP-P10-T4.9 extension activation started.');
 
         const folders = vscode.workspace.workspaceFolders || [];
         for (const folder of folders) {
@@ -1079,6 +1138,19 @@ class ApexForgeExtensionRuntime {
                     },
                 }
             ),
+            vscode.languages.registerWorkspaceSymbolProvider(
+                {
+                    provideWorkspaceSymbols: async (query, token) => {
+                        const controllers = [...this.controllers.values()].sort(
+                            (left, right) => folderKey(left.folder).localeCompare(folderKey(right.folder))
+                        );
+                        const groups = await Promise.all(
+                            controllers.map((controller) => controller.workspaceSymbols(query, token))
+                        );
+                        return groups.flat();
+                    },
+                }
+            ),
             vscode.languages.registerCompletionItemProvider(
                 {language: LANGUAGE_ID, scheme: 'file'},
                 {
@@ -1113,7 +1185,7 @@ class ApexForgeExtensionRuntime {
             ...this.disposables
         );
 
-        this.output.appendLine('AFP-P10-T4.8 extension activation completed.');
+        this.output.appendLine('AFP-P10-T4.9 extension activation completed.');
     }
 
     async dispose() {
