@@ -1,6 +1,6 @@
 # ApexForge Language Server
 
-AFP-P10-T4.6 activates one ApexForge language-server process for each file-system
+AFP-P10-T4.7 activates one ApexForge language-server process for each file-system
 workspace folder that contains the configured server entry point.
 
 ## Default launch
@@ -14,15 +14,25 @@ workspace folder that contains the configured server entry point.
 - Outline navigation: hierarchical `textDocument/documentSymbol`
 - Hover intelligence: syntax-level `textDocument/hover` with Markdown content
 - Completion: context-aware `textDocument/completion`
+- Definition navigation: same-document `textDocument/definition`
 
-Completion is available for top-level declarations, declaration-body keywords,
-type and generic-constraint positions, directive state and event targets, and
-function or directive expression names. The completion analyzer tolerates
-incomplete source while typing and replaces only the current identifier prefix.
+Go to Definition resolves declaration names, function type parameters, function
+parameters and prior local bindings, recursive function calls, directive state
+actions and expressions, directive event emissions, and identifiers used by
+`message` or `when` expressions. Use **F12**, **Ctrl+Click**, or the editor's
+Go to Definition command on a supported identifier.
 
-Hover and completion remain open-document features. They do not perform
-cross-file resolution, compilation, type inference, definition lookup,
-references, rename, workspace symbols, or formatting.
+Completion remains available for top-level declarations, declaration-body
+keywords, type and generic-constraint positions, directive state and event
+targets, and function or directive expression names. The completion analyzer
+tolerates incomplete source while typing and replaces only the current
+identifier prefix.
+
+Hover, completion, and definition remain open-document features. Definition is
+limited to the current document. Imports, workflow or directive invocation
+targets, authority, role, and capability references require later cross-file
+resolution. References, rename, workspace symbols, formatting, compilation, and
+type inference remain deferred.
 
 The Python launcher and server path can be overridden in workspace settings.
 

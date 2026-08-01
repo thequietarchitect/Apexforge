@@ -1,4 +1,4 @@
-/* AFP-P10-T4.6 ApexForge VS Code context-aware completion. */
+/* AFP-P10-T4.7 ApexForge VS Code same-document definition navigation. */
 'use strict';
 
 const fs = require('fs');
@@ -12,7 +12,7 @@ const DIAGNOSTIC_COLLECTION_NAME = 'apexforge';
 const CONFIGURATION_SECTION = 'apexforge.languageServer';
 const DEFAULT_SERVER_PATH = 'apexforge/apexforge_lsp.py';
 const CLIENT_NAME = 'ApexForge VS Code';
-const CLIENT_VERSION = '10-T4.6';
+const CLIENT_VERSION = '10-T4.7';
 
 let activeRuntime = null;
 
@@ -181,6 +181,24 @@ function convertDocumentSymbol(raw) {
             .filter((item) => item !== undefined);
     }
     return symbol;
+}
+
+function convertDefinition(raw) {
+    const values = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+    const locations = values
+        .filter((item) => (
+            item
+            && typeof item.uri === 'string'
+            && item.range
+        ))
+        .map((item) => new vscode.Location(
+            vscode.Uri.parse(item.uri),
+            lspRange(item.range)
+        ));
+    if (locations.length === 0) {
+        return undefined;
+    }
+    return locations.length === 1 ? locations[0] : locations;
 }
 
 function convertHover(raw) {
@@ -407,6 +425,9 @@ class WorkspaceLanguageServer {
                                 snippetSupport: false,
                             },
                         },
+                        definition: {
+                            linkSupport: false,
+                        },
                     },
                 },
             });
@@ -612,6 +633,40 @@ class WorkspaceLanguageServer {
         }
     }
 
+    async definitions(document, position, token) {
+        await this.start();
+        const client = this.client;
+        if (!client || client.state !== 'running') {
+            return undefined;
+        }
+        if (token && token.isCancellationRequested) {
+            return undefined;
+        }
+
+        this.didOpen(document);
+        try {
+            const result = await client.sendRequest(
+                'textDocument/definition',
+                {
+                    textDocument: {
+                        uri: document.uri.toString(),
+                    },
+                    position: {
+                        line: position.line,
+                        character: position.character,
+                    },
+                }
+            );
+            if (token && token.isCancellationRequested) {
+                return undefined;
+            }
+            return convertDefinition(result);
+        } catch (error) {
+            this.log(`Definition failed: ${error.message}`);
+            return undefined;
+        }
+    }
+
     async completions(document, position, token, context) {
         await this.start();
         const client = this.client;
@@ -745,7 +800,7 @@ class ApexForgeExtensionRuntime {
     }
 
     async activate() {
-        this.output.appendLine('AFP-P10-T4.6 extension activation started.');
+        this.output.appendLine('AFP-P10-T4.7 extension activation started.');
 
         const folders = vscode.workspace.workspaceFolders || [];
         for (const folder of folders) {
@@ -821,6 +876,18 @@ class ApexForgeExtensionRuntime {
                     },
                 }
             ),
+            vscode.languages.registerDefinitionProvider(
+                {language: LANGUAGE_ID, scheme: 'file'},
+                {
+                    provideDefinition: async (document, position, token) => {
+                        const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+                        const controller = await this.addFolder(folder);
+                        return controller
+                            ? controller.definitions(document, position, token)
+                            : undefined;
+                    },
+                }
+            ),
             vscode.languages.registerCompletionItemProvider(
                 {language: LANGUAGE_ID, scheme: 'file'},
                 {
@@ -855,7 +922,7 @@ class ApexForgeExtensionRuntime {
             ...this.disposables
         );
 
-        this.output.appendLine('AFP-P10-T4.6 extension activation completed.');
+        this.output.appendLine('AFP-P10-T4.7 extension activation completed.');
     }
 
     async dispose() {

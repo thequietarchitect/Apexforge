@@ -39,6 +39,16 @@ from language_server.completion import (
     completion_contract,
     completion_fingerprint,
 )
+from language_server.definition import (
+    CANONICAL_DEFINITION_SHA256,
+    DEFINITION_KIND,
+    DEFINITION_METHOD,
+    DEFINITION_SCHEMA,
+    P10_T4_DEFINITION_VERSION,
+    definition,
+    definition_contract,
+    definition_fingerprint,
+)
 from language_server.hover import (
     CANONICAL_HOVER_SHA256,
     HOVER_KIND,
@@ -97,6 +107,7 @@ from language_server.server import (
 
 __all__ = (
     "CANONICAL_COMPLETION_SHA256",
+    "CANONICAL_DEFINITION_SHA256",
     "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
     "CANONICAL_HOVER_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
@@ -105,6 +116,9 @@ __all__ = (
     "COMPLETION_METHOD",
     "COMPLETION_SCHEMA",
     "COMPLETION_TRIGGER_CHARACTERS",
+    "DEFINITION_KIND",
+    "DEFINITION_METHOD",
+    "DEFINITION_SCHEMA",
     "DOCUMENT_SYMBOL_KIND",
     "HOVER_KIND",
     "HOVER_MARKUP_KIND",
@@ -137,6 +151,7 @@ __all__ = (
     "METHOD_NOT_FOUND",
     "OpenDocument",
     "P10_T4_COMPLETION_VERSION",
+    "P10_T4_DEFINITION_VERSION",
     "P10_T4_DOCUMENT_SYMBOL_VERSION",
     "P10_T4_HOVER_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",
@@ -152,6 +167,9 @@ __all__ = (
     "completion",
     "completion_contract",
     "completion_fingerprint",
+    "definition",
+    "definition_contract",
+    "definition_fingerprint",
     "decode_payload",
     "diagnostic_to_lsp",
     "diagnostics_contract",

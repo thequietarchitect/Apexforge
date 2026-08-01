@@ -1,9 +1,9 @@
 """AFP-P10-T4.1 ApexForge Language Server foundation.
 
 The foundation implements JSON-RPC/LSP lifecycle handling and full text-document
-synchronization over stdio. Diagnostics, document symbols, hover, and completion
-are layered onto this frozen foundation; definition, references, rename,
-workspace symbols, and formatting remain deliberately deferred to later P10-T4 slices.
+synchronization over stdio. Diagnostics, document symbols, hover, completion, and same-document definition
+are layered onto this frozen foundation; references, rename, workspace symbols,
+and formatting remain deliberately deferred to later P10-T4 slices.
 """
 
 from __future__ import annotations
@@ -42,6 +42,13 @@ from language_server.completion import (
     COMPLETION_TRIGGER_CHARACTERS,
     P10_T4_COMPLETION_VERSION,
     completion,
+)
+
+from language_server.definition import (
+    CANONICAL_DEFINITION_SHA256,
+    DEFINITION_METHOD,
+    P10_T4_DEFINITION_VERSION,
+    definition,
 )
 
 from language_server.protocol import (
@@ -248,6 +255,7 @@ def active_server_capabilities(
     document_symbols_enabled: bool = False,
     hover_enabled: bool = False,
     completion_enabled: bool = False,
+    definition_enabled: bool = False,
 ) -> dict[str, object]:
     """Return negotiated capabilities without changing the frozen T4.1 projection."""
 
@@ -261,6 +269,8 @@ def active_server_capabilities(
             "resolveProvider": False,
             "triggerCharacters": list(COMPLETION_TRIGGER_CHARACTERS),
         }
+    if definition_enabled:
+        capabilities["definitionProvider"] = True
     return capabilities
 
 
@@ -339,6 +349,7 @@ class LanguageServerSession:
         self.document_symbols_enabled = False
         self.hover_enabled = False
         self.completion_enabled = False
+        self.definition_enabled = False
         self._outgoing_notifications: list[dict[str, object]] = []
         self.notification_error_count = 0
         self.last_notification_error: Optional[JsonRpcFault] = None
@@ -562,6 +573,18 @@ class LanguageServerSession:
                 message_id,
                 self._completion(params),
             )
+        if method == DEFINITION_METHOD:
+            if not is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data=f"{DEFINITION_METHOD} must be a request.",
+                    has_data=True,
+                )
+            return result_response(
+                message_id,
+                self._definition(params),
+            )
         if method == DOCUMENT_SYMBOL_METHOD:
             if not is_request:
                 raise JsonRpcFault(
@@ -593,6 +616,7 @@ class LanguageServerSession:
         self._configure_document_symbols(capabilities)
         self._configure_hover(capabilities)
         self._configure_completion(capabilities)
+        self._configure_definition(capabilities)
 
         process_id = value.get("processId")
         if process_id is not None and type(process_id) is not int:
@@ -638,6 +662,7 @@ class LanguageServerSession:
                 document_symbols_enabled=self.document_symbols_enabled,
                 hover_enabled=self.hover_enabled,
                 completion_enabled=self.completion_enabled,
+                definition_enabled=self.definition_enabled,
             ),
             "serverInfo": {
                 "name": SERVER_NAME,
@@ -757,6 +782,17 @@ class LanguageServerSession:
         if type(completion_capability) is dict:
             self.completion_enabled = True
 
+    def _configure_definition(
+        self,
+        capabilities: Mapping[str, object],
+    ) -> None:
+        text_document = capabilities.get("textDocument")
+        if type(text_document) is not dict:
+            return
+        definition_capability = text_document.get("definition")
+        if type(definition_capability) is dict:
+            self.definition_enabled = True
+
     def _hover(self, params: object) -> Optional[dict[str, object]]:
         if not self.hover_enabled:
             raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
@@ -828,6 +864,41 @@ class LanguageServerSession:
                 position,
                 context,
             )
+        except (TypeError, ValueError) as error:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=str(error),
+                has_data=True,
+            ) from error
+
+    def _definition(self, params: object) -> Optional[dict[str, object]]:
+        if not self.definition_enabled:
+            raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
+
+        value = self._require_mapping(params, "definition params")
+        text_document = self._require_mapping(
+            value.get("textDocument"),
+            "definition textDocument",
+        )
+        uri = self._required_uri(
+            text_document.get("uri"),
+            "definition textDocument.uri",
+        )
+        position = self._require_mapping(
+            value.get("position"),
+            "definition position",
+        )
+        document = self.documents.get(uri)
+        if document is None:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=f"Document is not open: {uri}.",
+                has_data=True,
+            )
+        try:
+            return definition(document.uri, document.text, position)
         except (TypeError, ValueError) as error:
             raise JsonRpcFault(
                 INVALID_PARAMS,
@@ -1058,6 +1129,11 @@ def main(
         help="print the AFP-P10-T4.6 completion fingerprint",
     )
     mode.add_argument(
+        "--definition-contract",
+        action="store_true",
+        help="print the AFP-P10-T4.7 definition fingerprint",
+    )
+    mode.add_argument(
         "--symbols-contract",
         action="store_true",
         help="print the AFP-P10-T4.4 document-symbol fingerprint",
@@ -1086,6 +1162,10 @@ def main(
         print(CANONICAL_COMPLETION_SHA256, file=stdout)
         return EXIT_SUCCESS
 
+    if arguments.definition_contract:
+        print(CANONICAL_DEFINITION_SHA256, file=stdout)
+        return EXIT_SUCCESS
+
     if arguments.symbols_contract:
         print(CANONICAL_DOCUMENT_SYMBOLS_SHA256, file=stdout)
         return EXIT_SUCCESS
@@ -1099,11 +1179,13 @@ def main(
 
 __all__ = (
     "CANONICAL_COMPLETION_SHA256",
+    "CANONICAL_DEFINITION_SHA256",
     "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
     "CANONICAL_HOVER_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
     "CANONICAL_LSP_FOUNDATION_SHA256",
     "COMPLETION_METHOD",
+    "DEFINITION_METHOD",
     "DOCUMENT_SYMBOL_METHOD",
     "HOVER_METHOD",
     "DocumentStore",
@@ -1117,6 +1199,7 @@ __all__ = (
     "LanguageServerSession",
     "OpenDocument",
     "P10_T4_COMPLETION_VERSION",
+    "P10_T4_DEFINITION_VERSION",
     "P10_T4_DOCUMENT_SYMBOL_VERSION",
     "P10_T4_HOVER_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",
