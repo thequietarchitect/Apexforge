@@ -137,6 +137,13 @@ def audit_visualstudio_bridge(root: Path | str) -> VisualStudioBridgeAudit:
         "src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs": {
             expected_hashes["src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs"],
             "4c25920ac0ca5f846e35c3f8aeb86e8d1cdb664ed405d4a8d9eccf3ec41a9d16",
+            "fb01f2da4954848663daf6a127c92bd3b17fcd5309536dfd82e9dbe68a4eeb44",
+        },
+        "src/ApexForge.VisualStudio/LanguageServer/ApexForgeLanguageClient.cs": {
+            expected_hashes["src/ApexForge.VisualStudio/LanguageServer/ApexForgeLanguageClient.cs"],
+            "bbd2703bbb7b96b077a0acb1dfaf75d76d4554d758cb298d220b2c570352db6a",
+            "ef74d97b9bbda8446c457701d5b6269fffdc9c447895d78caac48f54e121d1d9",
+            "b5191aabaf9d2e354e80ee7b2709b914c0aa15beca49a82ac068e0971bab57d1",
         },
     }
     changed = tuple(
@@ -243,8 +250,8 @@ def audit_visualstudio_bridge(root: Path | str) -> VisualStudioBridgeAudit:
         raise VisualStudioBridgeError("T5.3 must use a headless redirected stdio process.")
 
     contract = dict(_EXPECTED_CONTRACT)
-    # T5.4/T5.5 evolve only the user-facing status text. Project the
-    # compatible source back onto the frozen T5.3 file hashes.
+    # T5.4 through T5.6 evolve the status surface and add a host-controlled
+    # restart lifecycle. Project compatible source back onto frozen T5.3 hashes.
     contract["file_sha256"] = expected_hashes
     fingerprint = _sha256(_canonical_json(contract))
     if fingerprint != CANONICAL_VISUAL_STUDIO_BRIDGE_SHA256:

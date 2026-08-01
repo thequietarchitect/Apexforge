@@ -23,6 +23,8 @@ namespace GravitasStudios.ApexForge.VisualStudio
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             await ShowStatusCommand.InitializeAsync(this);
+            await RestartLanguageServerCommand.InitializeAsync(this);
+            await OpenLanguageServerLogCommand.InitializeAsync(this);
         }
     }
 }

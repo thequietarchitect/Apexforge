@@ -17,6 +17,18 @@
           <ButtonText>ApexForge Extension Status</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidApexForgeCommandSet" id="RestartLanguageServerCommandId" priority="0x0110" type="Button">
+        <Parent guid="guidApexForgeCommandSet" id="ApexForgeToolsGroup" />
+        <Strings>
+          <ButtonText>Restart ApexForge Language Server</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidApexForgeCommandSet" id="OpenLanguageServerLogCommandId" priority="0x0120" type="Button">
+        <Parent guid="guidApexForgeCommandSet" id="ApexForgeToolsGroup" />
+        <Strings>
+          <ButtonText>Open ApexForge Language Server Log</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
   </Commands>
 
@@ -25,6 +37,8 @@
     <GuidSymbol name="guidApexForgeCommandSet" value="{744A30FD-DF87-5104-A449-A95DF8E526FA}">
       <IDSymbol name="ApexForgeToolsGroup" value="0x1020" />
       <IDSymbol name="ShowStatusCommandId" value="0x0100" />
+      <IDSymbol name="RestartLanguageServerCommandId" value="0x0101" />
+      <IDSymbol name="OpenLanguageServerLogCommandId" value="0x0102" />
     </GuidSymbol>
   </Symbols>
 </CommandTable>

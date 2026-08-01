@@ -15,9 +15,31 @@ namespace GravitasStudios.ApexForge.VisualStudio.LanguageServer
     [Export(typeof(ILanguageClient))]
     public sealed class ApexForgeLanguageClient : ILanguageClient
     {
+        private static readonly object InstanceGate = new object();
+        private static ApexForgeLanguageClient currentInstance;
+
+        private static readonly TimeSpan RestartInitializationTimeout =
+            TimeSpan.FromSeconds(15);
+        private static readonly TimeSpan DocumentResynchronizationDelay =
+            TimeSpan.FromMilliseconds(350);
+        private static readonly TimeSpan RestartReadinessPollInterval =
+            TimeSpan.FromMilliseconds(50);
+
         private readonly object processGate = new object();
+        private readonly SemaphoreSlim restartGate = new SemaphoreSlim(1, 1);
         private AsyncEventHandler<EventArgs> startAsync;
+        private AsyncEventHandler<EventArgs> stopAsync;
         private Process activeProcess;
+        private int initializationGeneration;
+        private int successfulInitializationGeneration;
+
+        public ApexForgeLanguageClient()
+        {
+            lock (InstanceGate)
+            {
+                currentInstance = this;
+            }
+        }
 
         public string Name => "ApexForge Language Server";
 
@@ -28,7 +50,7 @@ namespace GravitasStudios.ApexForge.VisualStudio.LanguageServer
             apexforge = new
             {
                 client = "visualstudio",
-                milestone = "AFP-P10-T5.3"
+                milestone = "AFP-P10-T5.6"
             }
         };
 
@@ -44,8 +66,37 @@ namespace GravitasStudios.ApexForge.VisualStudio.LanguageServer
 
         public event AsyncEventHandler<EventArgs> StopAsync
         {
-            add { }
-            remove { }
+            add { stopAsync += value; }
+            remove { stopAsync -= value; }
+        }
+
+        internal static bool IsLoaded
+        {
+            get
+            {
+                lock (InstanceGate)
+                {
+                    return currentInstance != null;
+                }
+            }
+        }
+
+        internal static async Task<bool> RequestRestartAsync()
+        {
+            ApexForgeLanguageClient client;
+            lock (InstanceGate)
+            {
+                client = currentInstance;
+            }
+
+            if (client == null)
+            {
+                ApexForgeLanguageServerTrace.Write(
+                    "ApexForge language-server restart was requested before the language client loaded.");
+                return false;
+            }
+
+            return await client.RestartAsync().ConfigureAwait(false);
         }
 
         public async Task<Connection> ActivateAsync(CancellationToken token)
@@ -138,6 +189,7 @@ namespace GravitasStudios.ApexForge.VisualStudio.LanguageServer
             string detail = exception == null ? "Unknown initialization failure." : exception.ToString();
             ApexForgeLanguageServerTrace.Write(
                 "ApexForge language-server initialization failed: " + detail);
+            RecordServerInitialization(false);
             StopActiveProcess();
             return Task.CompletedTask;
         }
@@ -151,15 +203,106 @@ namespace GravitasStudios.ApexForge.VisualStudio.LanguageServer
             ApexForgeLanguageServerTrace.Write(
                 "ApexForge language-server structured initialization failure: "
                 + detail);
+            RecordServerInitialization(false);
             StopActiveProcess();
             return Task.FromResult<InitializationFailureContext>(null);
         }
 
         public Task OnServerInitializedAsync()
         {
+            RecordServerInitialization(true);
             ApexForgeLanguageServerTrace.Write(
                 "ApexForge language server initialized successfully.");
             return Task.CompletedTask;
+        }
+
+        private async Task<bool> RestartAsync()
+        {
+            await restartGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                AsyncEventHandler<EventArgs> startHandler = startAsync;
+                if (startHandler == null)
+                {
+                    ApexForgeLanguageServerTrace.Write(
+                        "ApexForge language-server restart could not begin because StartAsync has no subscriber.");
+                    return false;
+                }
+
+                ApexForgeLanguageServerTrace.Write(
+                    "ApexForge language-server restart requested from Visual Studio.");
+
+                AsyncEventHandler<EventArgs> stopHandler = stopAsync;
+                if (stopHandler != null)
+                {
+                    await stopHandler.InvokeAsync(this, EventArgs.Empty).ConfigureAwait(false);
+                }
+
+                StopActiveProcess();
+                int initializationBaseline = Volatile.Read(
+                    ref initializationGeneration);
+                await startHandler.InvokeAsync(this, EventArgs.Empty).ConfigureAwait(false);
+
+                bool initialized = await WaitForServerInitializationAsync(
+                    initializationBaseline).ConfigureAwait(false);
+                if (!initialized)
+                {
+                    ApexForgeLanguageServerTrace.Write(
+                        "ApexForge language-server restart did not reach initialized state within 15 seconds.");
+                    StopActiveProcess();
+                    return false;
+                }
+
+                await Task.Delay(DocumentResynchronizationDelay).ConfigureAwait(false);
+                ApexForgeLanguageServerTrace.Write(
+                    "ApexForge language-server restart sequence completed after initialization and document resynchronization.");
+                return true;
+            }
+            catch (Exception error)
+            {
+                ApexForgeLanguageServerTrace.Write(
+                    "ApexForge language-server restart failed: " + error);
+                StopActiveProcess();
+                return false;
+            }
+            finally
+            {
+                restartGate.Release();
+            }
+        }
+
+        private void RecordServerInitialization(bool succeeded)
+        {
+            int generation = Interlocked.Increment(
+                ref initializationGeneration);
+            if (succeeded)
+            {
+                Volatile.Write(
+                    ref successfulInitializationGeneration,
+                    generation);
+            }
+        }
+
+        private async Task<bool> WaitForServerInitializationAsync(
+            int initializationBaseline)
+        {
+            var timer = Stopwatch.StartNew();
+            while (timer.Elapsed < RestartInitializationTimeout)
+            {
+                int observedGeneration = Volatile.Read(
+                    ref initializationGeneration);
+                if (observedGeneration > initializationBaseline)
+                {
+                    return Volatile.Read(
+                        ref successfulInitializationGeneration)
+                        == observedGeneration;
+                }
+
+                await Task.Delay(RestartReadinessPollInterval)
+                    .ConfigureAwait(false);
+            }
+
+            return false;
         }
 
         private void OnErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)

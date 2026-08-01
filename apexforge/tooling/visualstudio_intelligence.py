@@ -93,12 +93,15 @@ def audit_visualstudio_intelligence(root: Union[Path, str]) -> VisualStudioIntel
         raise VisualStudioIntelligenceError("T4.11 integrated capabilities changed.")
     status = (selected / "src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs").read_text(encoding="utf-8-sig")
     guide = (selected / "VISUAL_STUDIO_LANGUAGE_FEATURES.md").read_text(encoding="utf-8-sig")
-    for marker in (
-        "IntelliSense/navigation/formatting: active (AFP-P10-T5.5).",
+    marker = "IntelliSense/navigation/formatting: active (AFP-P10-T5.5)."
+    if marker not in status:
+        raise VisualStudioIntelligenceError("ShowStatusCommand.cs omitted {!r}.".format(marker))
+    parity_markers = (
         "Visual Studio integration: final P10-T5 parity.",
-    ):
-        if marker not in status:
-            raise VisualStudioIntelligenceError("ShowStatusCommand.cs omitted {!r}.".format(marker))
+        "Language-intelligence parity: active through AFP-P10-T5.5.",
+    )
+    if not any(item in status for item in parity_markers):
+        raise VisualStudioIntelligenceError("ShowStatusCommand.cs omitted the T5.5 parity marker.")
     for method in _EXPECTED_METHODS:
         if method not in guide:
             # The guide uses readable feature names for some methods; protocol inventory

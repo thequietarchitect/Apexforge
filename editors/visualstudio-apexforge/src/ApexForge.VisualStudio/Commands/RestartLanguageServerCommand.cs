@@ -4,19 +4,20 @@ using System.Threading.Tasks;
 using GravitasStudios.ApexForge.VisualStudio.LanguageServer;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 
 namespace GravitasStudios.ApexForge.VisualStudio
 {
-    internal sealed class ShowStatusCommand
+    internal sealed class RestartLanguageServerCommand
     {
-        public const int CommandId = 0x0100;
+        public const int CommandId = 0x0101;
 
         public static readonly Guid CommandSet =
             new Guid("744A30FD-DF87-5104-A449-A95DF8E526FA");
 
         private readonly AsyncPackage package;
 
-        private ShowStatusCommand(
+        private RestartLanguageServerCommand(
             AsyncPackage package,
             OleMenuCommandService commandService)
         {
@@ -46,27 +47,54 @@ namespace GravitasStudios.ApexForge.VisualStudio
                     "Visual Studio menu command service is unavailable.");
             }
 
-            _ = new ShowStatusCommand(package, commandService);
+            _ = new RestartLanguageServerCommand(package, commandService);
         }
 
         private void Execute(object sender, EventArgs eventArgs)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            package.JoinableTaskFactory.RunAsync(ExecuteAsync).Task.Forget();
+        }
+
+        private async Task ExecuteAsync()
+        {
+            bool restarted = false;
+            string failureDetail = null;
+
+            try
+            {
+                restarted = await ApexForgeLanguageClient.RequestRestartAsync();
+            }
+            catch (Exception error)
+            {
+                failureDetail = error.Message;
+                ApexForgeLanguageServerTrace.Write(
+                    "ApexForge restart command failed: " + error);
+            }
+
+            await package.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            string message;
+            if (restarted)
+            {
+                message =
+                    "The ApexForge language server restarted and completed document resynchronization.";
+            }
+            else if (!string.IsNullOrWhiteSpace(failureDetail))
+            {
+                message = "The ApexForge language-server restart failed: " + failureDetail;
+            }
+            else
+            {
+                message =
+                    "The ApexForge language client is not active or did not become ready. "
+                    + "Open an .apex file and try again.";
+            }
 
             VsShellUtilities.ShowMessageBox(
                 package,
-                "ApexForge Visual Studio foundation is active.\n\n" +
-                "Content type: apexforge\n" +
-                "File extension: .apex\n" +
-                "Language-server bridge: active (AFP-P10-T5.3).\n" +
-                "Diagnostics/document sync: active (AFP-P10-T5.4).\n" +
-                "IntelliSense/navigation/formatting: active (AFP-P10-T5.5).\n" +
-                "Editor commands/restart/log: active (AFP-P10-T5.6).\n" +
-                "Language-intelligence parity: active through AFP-P10-T5.5.\n" +
-                "Language client loaded: " + ApexForgeLanguageClient.IsLoaded + "\n" +
-                "Log: " + ApexForgeLanguageServerTrace.LogPath,
+                message,
                 "ApexForge Language Tools",
-                OLEMSGICON.OLEMSGICON_INFO,
+                restarted ? OLEMSGICON.OLEMSGICON_INFO : OLEMSGICON.OLEMSGICON_WARNING,
                 OLEMSGBUTTON.OLEMSGBUTTON_OK,
                 OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
         }

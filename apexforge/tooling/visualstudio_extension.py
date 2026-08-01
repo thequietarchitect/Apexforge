@@ -117,6 +117,10 @@ def _project_contract(root: Path) -> Mapping[str, object]:
 
     expected_hashes = dict(_EXPECTED_CONTRACT["file_sha256"])
     compatibility_hashes = {
+        "src/ApexForge.VisualStudio/ApexForgePackage.cs": {
+            expected_hashes["src/ApexForge.VisualStudio/ApexForgePackage.cs"],
+            "90a2031cdb6d14cabd17f942a7135c32a500ed579fbc2c517bedd4cde55bda21",
+        },
         "src/ApexForge.VisualStudio/ApexForge.VisualStudio.csproj": {
             expected_hashes["src/ApexForge.VisualStudio/ApexForge.VisualStudio.csproj"],
             "a3480b1b189a2b90b41dde7eb5f736cfb5e3b05412bd97354316659d0e1e41fc",
@@ -129,6 +133,11 @@ def _project_contract(root: Path) -> Mapping[str, object]:
             expected_hashes["src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs"],
             "f57deb9cdd4c7185032aa9763d4f46cfe56649134d67f8438b4e642da54992a2",
             "4c25920ac0ca5f846e35c3f8aeb86e8d1cdb664ed405d4a8d9eccf3ec41a9d16",
+            "fb01f2da4954848663daf6a127c92bd3b17fcd5309536dfd82e9dbe68a4eeb44",
+        },
+        "src/ApexForge.VisualStudio/Resources/ApexForge.vsct": {
+            expected_hashes["src/ApexForge.VisualStudio/Resources/ApexForge.vsct"],
+            "7ee2948a9d39b288975527f89999bfc55489b554f9acecce0b7d31ca97fc3131",
         },
     }
     changed = tuple(
@@ -341,10 +350,9 @@ def _project_contract(root: Path) -> Mapping[str, object]:
         _require_marker(vsct_text, marker, "ApexForge.vsct")
 
     contract = dict(_EXPECTED_CONTRACT)
-    # T5.3 changes only the project dependency declaration, content-type base,
-    # and status text required for Visual Studio LSP activation. Project the current source
-    # back onto the frozen T5.1 hashes so the historical T5.1 fingerprint remains
-    # stable while the T5.3 auditor validates the new source exactly.
+    # Later T5 slices add the language-client bridge, status details, and native
+    # Tools-menu commands. Project compatible evolved source back onto the frozen
+    # T5.1 hashes while the owning milestone auditors validate each additive surface.
     contract["file_sha256"] = expected_hashes
     return contract
 

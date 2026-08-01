@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using GravitasStudios.ApexForge.VisualStudio.LanguageServer;
 using Microsoft.VisualStudio.Shell;
@@ -7,16 +9,16 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 namespace GravitasStudios.ApexForge.VisualStudio
 {
-    internal sealed class ShowStatusCommand
+    internal sealed class OpenLanguageServerLogCommand
     {
-        public const int CommandId = 0x0100;
+        public const int CommandId = 0x0102;
 
         public static readonly Guid CommandSet =
             new Guid("744A30FD-DF87-5104-A449-A95DF8E526FA");
 
         private readonly AsyncPackage package;
 
-        private ShowStatusCommand(
+        private OpenLanguageServerLogCommand(
             AsyncPackage package,
             OleMenuCommandService commandService)
         {
@@ -46,29 +48,48 @@ namespace GravitasStudios.ApexForge.VisualStudio
                     "Visual Studio menu command service is unavailable.");
             }
 
-            _ = new ShowStatusCommand(package, commandService);
+            _ = new OpenLanguageServerLogCommand(package, commandService);
         }
 
         private void Execute(object sender, EventArgs eventArgs)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            VsShellUtilities.ShowMessageBox(
-                package,
-                "ApexForge Visual Studio foundation is active.\n\n" +
-                "Content type: apexforge\n" +
-                "File extension: .apex\n" +
-                "Language-server bridge: active (AFP-P10-T5.3).\n" +
-                "Diagnostics/document sync: active (AFP-P10-T5.4).\n" +
-                "IntelliSense/navigation/formatting: active (AFP-P10-T5.5).\n" +
-                "Editor commands/restart/log: active (AFP-P10-T5.6).\n" +
-                "Language-intelligence parity: active through AFP-P10-T5.5.\n" +
-                "Language client loaded: " + ApexForgeLanguageClient.IsLoaded + "\n" +
-                "Log: " + ApexForgeLanguageServerTrace.LogPath,
-                "ApexForge Language Tools",
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+            string path = ApexForgeLanguageServerTrace.LogPath;
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                Directory.CreateDirectory(directory);
+                if (!File.Exists(path))
+                {
+                    File.WriteAllText(
+                        path,
+                        "ApexForge Visual Studio language-server log."
+                        + Environment.NewLine);
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception error) when (
+                error is IOException
+                || error is UnauthorizedAccessException
+                || error is ArgumentException
+                || error is System.ComponentModel.Win32Exception
+                || error is NotSupportedException)
+            {
+                VsShellUtilities.ShowMessageBox(
+                    package,
+                    "Could not open the ApexForge language-server log: "
+                    + error.Message,
+                    "ApexForge Language Tools",
+                    OLEMSGICON.OLEMSGICON_WARNING,
+                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+            }
         }
     }
 }

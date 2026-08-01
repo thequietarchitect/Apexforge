@@ -27,6 +27,15 @@ VISUAL_STUDIO_DIAGNOSTICS_SCHEMA: Final[int] = 1
 VISUAL_STUDIO_DIAGNOSTICS_KIND: Final[str] = "apexforge.visual-studio-diagnostics"
 _STATUS_SHA256: Final[str] = "4c25920ac0ca5f846e35c3f8aeb86e8d1cdb664ed405d4a8d9eccf3ec41a9d16"
 _GUIDE_SHA256: Final[str] = "65ca7dd79997f7753605765bda6bb2fabcb3cb5f8e2b081e936ef3d3bd59ac85"
+_COMPATIBLE_STATUS_SHA256: Final[tuple[str, ...]] = (
+    _STATUS_SHA256,
+    "fb01f2da4954848663daf6a127c92bd3b17fcd5309536dfd82e9dbe68a4eeb44",
+)
+_COMPATIBLE_GUIDE_SHA256: Final[tuple[str, ...]] = (
+    _GUIDE_SHA256,
+    "99e91925f506df0373a62aeacca80861d93f393aceaf1b9ee4da41e5e7ac56e0",
+    "e921fbcb138e80c3dd7ccc75f4078cbb4e92ca209b7581dc8277002fbfece5b7",
+)
 
 class VisualStudioDiagnosticsError(ValueError):
     code: Final[str] = "APX-VS-004"
@@ -109,9 +118,9 @@ def audit_visualstudio_diagnostics(root: Union[Path, str]) -> VisualStudioDiagno
     guide_path = selected / "VISUAL_STUDIO_LANGUAGE_FEATURES.md"
     status_hash = _sha256_text(status_path)
     guide_hash = _sha256_text(guide_path)
-    if status_hash != _STATUS_SHA256:
-        raise VisualStudioDiagnosticsError("T5.4/T5.5 status source drifted: {}.".format(status_hash))
-    if guide_hash != _GUIDE_SHA256:
+    if status_hash not in _COMPATIBLE_STATUS_SHA256:
+        raise VisualStudioDiagnosticsError("T5.4+ status source drifted: {}.".format(status_hash))
+    if guide_hash not in _COMPATIBLE_GUIDE_SHA256:
         raise VisualStudioDiagnosticsError("Visual Studio language-feature guide drifted: {}.".format(guide_hash))
     status = _read_text(status_path)
     guide = _read_text(guide_path)
