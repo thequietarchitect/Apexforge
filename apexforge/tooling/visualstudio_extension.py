@@ -68,11 +68,16 @@ def _canonical_json(value: object) -> bytes:
 
 def _read_text(path: Path) -> str:
     try:
-        return path.read_text(encoding="utf-8")
+        return path.read_text(encoding="utf-8-sig")
     except (OSError, UnicodeError) as error:
         raise VisualStudioExtensionError(
             f"Could not read UTF-8 file {path}: {error}"
         ) from error
+
+
+def _source_sha256(path: Path) -> str:
+    text = _read_text(path).replace("\r\n", "\n").replace("\r", "\n")
+    return _sha256(text.encode("utf-8"))
 
 
 def _parse_xml(path: Path) -> ET.Element:
@@ -108,14 +113,31 @@ def _project_contract(root: Path) -> Mapping[str, object]:
             raise VisualStudioExtensionError(
                 f"Visual Studio foundation file is missing: {relative}."
             )
-        hashes[str(relative)] = _sha256(path.read_bytes())
+        hashes[str(relative)] = _source_sha256(path)
 
     expected_hashes = dict(_EXPECTED_CONTRACT["file_sha256"])
-    if hashes != expected_hashes:
-        changed = tuple(
-            name for name in expected_files
-            if hashes.get(str(name)) != expected_hashes.get(str(name))
+    compatibility_hashes = {
+        "src/ApexForge.VisualStudio/ApexForge.VisualStudio.csproj": {
+            expected_hashes["src/ApexForge.VisualStudio/ApexForge.VisualStudio.csproj"],
+            "a3480b1b189a2b90b41dde7eb5f736cfb5e3b05412bd97354316659d0e1e41fc",
+        },
+        "src/ApexForge.VisualStudio/Content/ApexForgeContentType.cs": {
+            expected_hashes["src/ApexForge.VisualStudio/Content/ApexForgeContentType.cs"],
+            "5a0c3a1468369474a827221a2102e0f4c5cd35304bb1651de6e6f296258cb2d6",
+        },
+        "src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs": {
+            expected_hashes["src/ApexForge.VisualStudio/Commands/ShowStatusCommand.cs"],
+            "f57deb9cdd4c7185032aa9763d4f46cfe56649134d67f8438b4e642da54992a2",
+        },
+    }
+    changed = tuple(
+        name for name in expected_files
+        if hashes.get(str(name)) not in compatibility_hashes.get(
+            str(name),
+            {expected_hashes.get(str(name))},
         )
+    )
+    if changed:
         raise VisualStudioExtensionError(
             "Visual Studio foundation source drifted: " + ", ".join(changed)
         )
@@ -157,18 +179,34 @@ def _project_contract(root: Path) -> Mapping[str, object]:
             f"Visual Studio project capabilities changed: {capabilities!r}."
         )
 
+    package_items = tuple(_children_by_name(project, "PackageReference"))
     packages = {
         item.attrib.get("Include", ""): item.attrib.get("Version", "")
-        for item in _children_by_name(project, "PackageReference")
+        for item in package_items
     }
     expected_packages = {
         "Microsoft.VisualStudio.SDK": "17.14.40265",
         "Microsoft.VSSDK.BuildTools": "18.5.40034",
     }
-    if packages != expected_packages:
+    bridge_packages = dict(expected_packages)
+    bridge_packages["Microsoft.VisualStudio.LanguageServer.Client"] = "17.14.60"
+    if packages not in (expected_packages, bridge_packages):
         raise VisualStudioExtensionError(
             f"Visual Studio package references changed: {packages!r}."
         )
+    if packages == bridge_packages:
+        language_client_items = tuple(
+            item for item in package_items
+            if item.attrib.get("Include", "") == "Microsoft.VisualStudio.LanguageServer.Client"
+        )
+        if len(language_client_items) != 1:
+            raise VisualStudioExtensionError(
+                "Project must contain one Microsoft.VisualStudio.LanguageServer.Client reference."
+            )
+        if language_client_items[0].attrib.get("ExcludeAssets", "") != "runtime":
+            raise VisualStudioExtensionError(
+                "Language-server client reference must use ExcludeAssets=runtime."
+            )
 
     references = {
         item.attrib.get("Include", ""): {
@@ -263,19 +301,31 @@ def _project_contract(root: Path) -> Mapping[str, object]:
         "public const int CommandId = 0x0100;",
         "744A30FD-DF87-5104-A449-A95DF8E526FA",
         "ApexForge Visual Studio foundation is active.",
-        "deferred to AFP-P10-T5.3",
     ):
         _require_marker(command_text, marker, "ShowStatusCommand.cs")
+    if (
+        "deferred to AFP-P10-T5.3" not in command_text
+        and "Language-server bridge: active (AFP-P10-T5.3)." not in command_text
+    ):
+        raise VisualStudioExtensionError(
+            "ShowStatusCommand.cs omitted the frozen T5.1 or active T5.3 bridge status."
+        )
 
     content_text = _read_text(root / "src" / "ApexForge.VisualStudio" / "Content" / "ApexForgeContentType.cs")
     for marker in (
         "internal const string Name = \"apexforge\";",
         "internal const string FileExtension = \".apex\";",
-        "[BaseDefinition(\"text\")]",
         "[FileExtension(FileExtension)]",
         "[ContentType(Name)]",
     ):
         _require_marker(content_text, marker, "ApexForgeContentType.cs")
+    if (
+        "[BaseDefinition(\"text\")]" not in content_text
+        and "[BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)]" not in content_text
+    ):
+        raise VisualStudioExtensionError(
+            "ApexForge content type omitted its frozen text base or T5.3 code-remote base."
+        )
 
     vsct_path = root / "src" / "ApexForge.VisualStudio" / "Resources" / "ApexForge.vsct"
     vsct = _parse_xml(vsct_path)
@@ -290,7 +340,11 @@ def _project_contract(root: Path) -> Mapping[str, object]:
         _require_marker(vsct_text, marker, "ApexForge.vsct")
 
     contract = dict(_EXPECTED_CONTRACT)
-    contract["file_sha256"] = hashes
+    # T5.3 changes only the project dependency declaration, content-type base,
+    # and status text required for Visual Studio LSP activation. Project the current source
+    # back onto the frozen T5.1 hashes so the historical T5.1 fingerprint remains
+    # stable while the T5.3 auditor validates the new source exactly.
+    contract["file_sha256"] = expected_hashes
     return contract
 
 

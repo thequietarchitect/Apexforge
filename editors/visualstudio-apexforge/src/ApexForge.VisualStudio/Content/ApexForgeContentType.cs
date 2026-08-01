@@ -1,4 +1,5 @@
 using System.ComponentModel.Composition;
+using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Utilities;
 
 namespace GravitasStudios.ApexForge.VisualStudio
@@ -10,7 +11,7 @@ namespace GravitasStudios.ApexForge.VisualStudio
 
         [Export(typeof(ContentTypeDefinition))]
         [Name(Name)]
-        [BaseDefinition("text")]
+        [BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)]
         internal static ContentTypeDefinition ContentTypeDefinition = null;
 
         [Export(typeof(FileExtensionToContentTypeDefinition))]

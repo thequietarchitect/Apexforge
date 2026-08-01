@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.Design;
 using System.Threading.Tasks;
+using GravitasStudios.ApexForge.VisualStudio.LanguageServer;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
@@ -57,7 +58,8 @@ namespace GravitasStudios.ApexForge.VisualStudio
                 "ApexForge Visual Studio foundation is active.\n\n" +
                 "Content type: apexforge\n" +
                 "File extension: .apex\n" +
-                "Language-server bridge: deferred to AFP-P10-T5.3.",
+                "Language-server bridge: active (AFP-P10-T5.3).\n" +
+                "Log: " + ApexForgeLanguageServerTrace.LogPath,
                 "ApexForge Language Tools",
                 OLEMSGICON.OLEMSGICON_INFO,
                 OLEMSGBUTTON.OLEMSGBUTTON_OK,
