@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable">
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+
+  <Commands package="guidApexForgePackage">
+    <Groups>
+      <Group guid="guidApexForgeCommandSet" id="ApexForgeToolsGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidApexForgeCommandSet" id="ShowStatusCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidApexForgeCommandSet" id="ApexForgeToolsGroup" />
+        <Strings>
+          <ButtonText>ApexForge Extension Status</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="guidApexForgePackage" value="{DF54A578-54A2-52F4-8643-4A85DDDFB2F2}" />
+    <GuidSymbol name="guidApexForgeCommandSet" value="{744A30FD-DF87-5104-A449-A95DF8E526FA}">
+      <IDSymbol name="ApexForgeToolsGroup" value="0x1020" />
+      <IDSymbol name="ShowStatusCommandId" value="0x0100" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>
