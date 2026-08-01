@@ -1,4 +1,4 @@
-/* AFP-P10-T4.5 ApexForge VS Code hover intelligence. */
+/* AFP-P10-T4.6 ApexForge VS Code context-aware completion. */
 'use strict';
 
 const fs = require('fs');
@@ -12,7 +12,7 @@ const DIAGNOSTIC_COLLECTION_NAME = 'apexforge';
 const CONFIGURATION_SECTION = 'apexforge.languageServer';
 const DEFAULT_SERVER_PATH = 'apexforge/apexforge_lsp.py';
 const CLIENT_NAME = 'ApexForge VS Code';
-const CLIENT_VERSION = '10-T4.5';
+const CLIENT_VERSION = '10-T4.6';
 
 let activeRuntime = null;
 
@@ -215,6 +215,91 @@ function convertHover(raw) {
     return new vscode.Hover(rendered, range);
 }
 
+const LSP_COMPLETION_KIND_TO_VSCODE = [
+    undefined,
+    vscode.CompletionItemKind.Text,
+    vscode.CompletionItemKind.Method,
+    vscode.CompletionItemKind.Function,
+    vscode.CompletionItemKind.Constructor,
+    vscode.CompletionItemKind.Field,
+    vscode.CompletionItemKind.Variable,
+    vscode.CompletionItemKind.Class,
+    vscode.CompletionItemKind.Interface,
+    vscode.CompletionItemKind.Module,
+    vscode.CompletionItemKind.Property,
+    vscode.CompletionItemKind.Unit,
+    vscode.CompletionItemKind.Value,
+    vscode.CompletionItemKind.Enum,
+    vscode.CompletionItemKind.Keyword,
+    vscode.CompletionItemKind.Snippet,
+    vscode.CompletionItemKind.Color,
+    vscode.CompletionItemKind.File,
+    vscode.CompletionItemKind.Reference,
+    vscode.CompletionItemKind.Folder,
+    vscode.CompletionItemKind.EnumMember,
+    vscode.CompletionItemKind.Constant,
+    vscode.CompletionItemKind.Struct,
+    vscode.CompletionItemKind.Event,
+    vscode.CompletionItemKind.Operator,
+    vscode.CompletionItemKind.TypeParameter,
+];
+
+function convertCompletionDocumentation(raw) {
+    if (typeof raw === 'string') {
+        return raw;
+    }
+    if (
+        raw
+        && typeof raw === 'object'
+        && raw.kind === 'markdown'
+        && typeof raw.value === 'string'
+    ) {
+        const value = new vscode.MarkdownString(raw.value);
+        value.isTrusted = false;
+        value.supportHtml = false;
+        return value;
+    }
+    if (raw && typeof raw === 'object' && typeof raw.value === 'string') {
+        return raw.value;
+    }
+    return undefined;
+}
+
+function convertCompletionItem(raw) {
+    if (!raw || typeof raw.label !== 'string' || !raw.label) {
+        return undefined;
+    }
+    const kind = LSP_COMPLETION_KIND_TO_VSCODE[raw.kind]
+        ?? vscode.CompletionItemKind.Text;
+    const item = new vscode.CompletionItem(raw.label, kind);
+    if (typeof raw.detail === 'string') {
+        item.detail = raw.detail;
+    }
+    item.documentation = convertCompletionDocumentation(raw.documentation);
+    if (typeof raw.sortText === 'string') {
+        item.sortText = raw.sortText;
+    }
+    if (typeof raw.filterText === 'string') {
+        item.filterText = raw.filterText;
+    }
+    if (raw.preselect === true) {
+        item.preselect = true;
+    }
+
+    if (
+        raw.textEdit
+        && typeof raw.textEdit === 'object'
+        && typeof raw.textEdit.newText === 'string'
+        && raw.textEdit.range
+    ) {
+        item.insertText = raw.textEdit.newText;
+        item.range = lspRange(raw.textEdit.range);
+    } else if (typeof raw.insertText === 'string') {
+        item.insertText = raw.insertText;
+    }
+    return item;
+}
+
 class WorkspaceLanguageServer {
     constructor(folder, shared) {
         this.folder = folder;
@@ -315,6 +400,12 @@ class WorkspaceLanguageServer {
                         },
                         hover: {
                             contentFormat: ['markdown', 'plaintext'],
+                        },
+                        completion: {
+                            completionItem: {
+                                documentationFormat: ['markdown', 'plaintext'],
+                                snippetSupport: false,
+                            },
                         },
                     },
                 },
@@ -521,6 +612,52 @@ class WorkspaceLanguageServer {
         }
     }
 
+    async completions(document, position, token, context) {
+        await this.start();
+        const client = this.client;
+        if (!client || client.state !== 'running') {
+            return [];
+        }
+        if (token && token.isCancellationRequested) {
+            return [];
+        }
+
+        this.didOpen(document);
+        try {
+            const params = {
+                textDocument: {
+                    uri: document.uri.toString(),
+                },
+                position: {
+                    line: position.line,
+                    character: position.character,
+                },
+            };
+            if (context) {
+                params.context = {
+                    triggerKind: context.triggerKind,
+                    triggerCharacter: context.triggerCharacter,
+                };
+            }
+            const result = await client.sendRequest(
+                'textDocument/completion',
+                params
+            );
+            if (token && token.isCancellationRequested) {
+                return [];
+            }
+            const rawItems = Array.isArray(result)
+                ? result
+                : (result && Array.isArray(result.items) ? result.items : []);
+            return rawItems
+                .map(convertCompletionItem)
+                .filter((item) => item !== undefined);
+        } catch (error) {
+            this.log(`Completion failed: ${error.message}`);
+            return [];
+        }
+    }
+
     async restart() {
         this.log('Restart requested.');
         await this.stop();
@@ -608,7 +745,7 @@ class ApexForgeExtensionRuntime {
     }
 
     async activate() {
-        this.output.appendLine('AFP-P10-T4.5 extension activation started.');
+        this.output.appendLine('AFP-P10-T4.6 extension activation started.');
 
         const folders = vscode.workspace.workspaceFolders || [];
         for (const folder of folders) {
@@ -684,6 +821,20 @@ class ApexForgeExtensionRuntime {
                     },
                 }
             ),
+            vscode.languages.registerCompletionItemProvider(
+                {language: LANGUAGE_ID, scheme: 'file'},
+                {
+                    provideCompletionItems: async (document, position, token, context) => {
+                        const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+                        const controller = await this.addFolder(folder);
+                        return controller
+                            ? controller.completions(document, position, token, context)
+                            : [];
+                    },
+                },
+                '@',
+                ':'
+            ),
             vscode.commands.registerCommand(
                 'apexforge.showLanguageServerOutput',
                 () => this.output.show(true)
@@ -704,7 +855,7 @@ class ApexForgeExtensionRuntime {
             ...this.disposables
         );
 
-        this.output.appendLine('AFP-P10-T4.5 extension activation completed.');
+        this.output.appendLine('AFP-P10-T4.6 extension activation completed.');
     }
 
     async dispose() {

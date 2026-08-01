@@ -1,9 +1,9 @@
 """AFP-P10-T4.1 ApexForge Language Server foundation.
 
 The foundation implements JSON-RPC/LSP lifecycle handling and full text-document
-synchronization over stdio. Diagnostics, document symbols, and hover are layered onto this frozen
-foundation; completion, definition, references, rename, workspace symbols, and
-formatting remain deliberately deferred to later P10-T4 slices.
+synchronization over stdio. Diagnostics, document symbols, hover, and completion
+are layered onto this frozen foundation; definition, references, rename,
+workspace symbols, and formatting remain deliberately deferred to later P10-T4 slices.
 """
 
 from __future__ import annotations
@@ -34,6 +34,14 @@ from language_server.hover import (
     HOVER_METHOD,
     P10_T4_HOVER_VERSION,
     hover,
+)
+
+from language_server.completion import (
+    CANONICAL_COMPLETION_SHA256,
+    COMPLETION_METHOD,
+    COMPLETION_TRIGGER_CHARACTERS,
+    P10_T4_COMPLETION_VERSION,
+    completion,
 )
 
 from language_server.protocol import (
@@ -239,6 +247,7 @@ def active_server_capabilities(
     *,
     document_symbols_enabled: bool = False,
     hover_enabled: bool = False,
+    completion_enabled: bool = False,
 ) -> dict[str, object]:
     """Return negotiated capabilities without changing the frozen T4.1 projection."""
 
@@ -247,6 +256,11 @@ def active_server_capabilities(
         capabilities["documentSymbolProvider"] = True
     if hover_enabled:
         capabilities["hoverProvider"] = True
+    if completion_enabled:
+        capabilities["completionProvider"] = {
+            "resolveProvider": False,
+            "triggerCharacters": list(COMPLETION_TRIGGER_CHARACTERS),
+        }
     return capabilities
 
 
@@ -324,6 +338,7 @@ class LanguageServerSession:
         self.diagnostics_version_support = False
         self.document_symbols_enabled = False
         self.hover_enabled = False
+        self.completion_enabled = False
         self._outgoing_notifications: list[dict[str, object]] = []
         self.notification_error_count = 0
         self.last_notification_error: Optional[JsonRpcFault] = None
@@ -535,6 +550,18 @@ class LanguageServerSession:
                 message_id,
                 self._hover(params),
             )
+        if method == COMPLETION_METHOD:
+            if not is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data=f"{COMPLETION_METHOD} must be a request.",
+                    has_data=True,
+                )
+            return result_response(
+                message_id,
+                self._completion(params),
+            )
         if method == DOCUMENT_SYMBOL_METHOD:
             if not is_request:
                 raise JsonRpcFault(
@@ -565,6 +592,7 @@ class LanguageServerSession:
         self._configure_diagnostics(capabilities)
         self._configure_document_symbols(capabilities)
         self._configure_hover(capabilities)
+        self._configure_completion(capabilities)
 
         process_id = value.get("processId")
         if process_id is not None and type(process_id) is not int:
@@ -609,6 +637,7 @@ class LanguageServerSession:
             "capabilities": active_server_capabilities(
                 document_symbols_enabled=self.document_symbols_enabled,
                 hover_enabled=self.hover_enabled,
+                completion_enabled=self.completion_enabled,
             ),
             "serverInfo": {
                 "name": SERVER_NAME,
@@ -717,6 +746,17 @@ class LanguageServerSession:
         if type(hover_capability) is dict:
             self.hover_enabled = True
 
+    def _configure_completion(
+        self,
+        capabilities: Mapping[str, object],
+    ) -> None:
+        text_document = capabilities.get("textDocument")
+        if type(text_document) is not dict:
+            return
+        completion_capability = text_document.get("completion")
+        if type(completion_capability) is dict:
+            self.completion_enabled = True
+
     def _hover(self, params: object) -> Optional[dict[str, object]]:
         if not self.hover_enabled:
             raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
@@ -744,6 +784,50 @@ class LanguageServerSession:
             )
         try:
             return hover(document.uri, document.text, position)
+        except (TypeError, ValueError) as error:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=str(error),
+                has_data=True,
+            ) from error
+
+    def _completion(self, params: object) -> dict[str, object]:
+        if not self.completion_enabled:
+            raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
+
+        value = self._require_mapping(params, "completion params")
+        text_document = self._require_mapping(
+            value.get("textDocument"),
+            "completion textDocument",
+        )
+        uri = self._required_uri(
+            text_document.get("uri"),
+            "completion textDocument.uri",
+        )
+        position = self._require_mapping(
+            value.get("position"),
+            "completion position",
+        )
+        context = value.get("context")
+        if context is not None:
+            context = self._require_mapping(context, "completion context")
+
+        document = self.documents.get(uri)
+        if document is None:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=f"Document is not open: {uri}.",
+                has_data=True,
+            )
+        try:
+            return completion(
+                document.uri,
+                document.text,
+                position,
+                context,
+            )
         except (TypeError, ValueError) as error:
             raise JsonRpcFault(
                 INVALID_PARAMS,
@@ -966,7 +1050,12 @@ def main(
     mode.add_argument(
         "--hover-contract",
         action="store_true",
-        help="print the AFP-P10-T4.5 hover fingerprint",
+        help="print the frozen AFP-P10-T4.5 hover fingerprint",
+    )
+    mode.add_argument(
+        "--completion-contract",
+        action="store_true",
+        help="print the AFP-P10-T4.6 completion fingerprint",
     )
     mode.add_argument(
         "--symbols-contract",
@@ -993,6 +1082,10 @@ def main(
         print(CANONICAL_HOVER_SHA256, file=stdout)
         return EXIT_SUCCESS
 
+    if arguments.completion_contract:
+        print(CANONICAL_COMPLETION_SHA256, file=stdout)
+        return EXIT_SUCCESS
+
     if arguments.symbols_contract:
         print(CANONICAL_DOCUMENT_SYMBOLS_SHA256, file=stdout)
         return EXIT_SUCCESS
@@ -1005,10 +1098,12 @@ def main(
 
 
 __all__ = (
+    "CANONICAL_COMPLETION_SHA256",
     "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
     "CANONICAL_HOVER_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
     "CANONICAL_LSP_FOUNDATION_SHA256",
+    "COMPLETION_METHOD",
     "DOCUMENT_SYMBOL_METHOD",
     "HOVER_METHOD",
     "DocumentStore",
@@ -1021,6 +1116,7 @@ __all__ = (
     "LSP_SPECIFICATION_VERSION",
     "LanguageServerSession",
     "OpenDocument",
+    "P10_T4_COMPLETION_VERSION",
     "P10_T4_DOCUMENT_SYMBOL_VERSION",
     "P10_T4_HOVER_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",
