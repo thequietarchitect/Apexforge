@@ -1,6 +1,6 @@
 # ApexForge Language Server
 
-AFP-P10-T4.3 activates one ApexForge language-server process for each file-system
+AFP-P10-T4.4 activates one ApexForge language-server process for each file-system
 workspace folder that contains the configured server entry point.
 
 ## Default launch
@@ -11,6 +11,7 @@ workspace folder that contains the configured server entry point.
 - Transport: JSON-RPC 2.0 over LSP `Content-Length` framing
 - Document synchronization: full text
 - Diagnostics: `textDocument/publishDiagnostics`
+- Outline navigation: hierarchical `textDocument/documentSymbol`
 
 The Python launcher and server path can be overridden in workspace settings.
 

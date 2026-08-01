@@ -18,6 +18,16 @@ from language_server.diagnostics import (
     publish_diagnostics_notification,
     span_to_lsp_range,
 )
+from language_server.symbols import (
+    CANONICAL_DOCUMENT_SYMBOLS_SHA256,
+    DOCUMENT_SYMBOL_KIND,
+    DOCUMENT_SYMBOL_METHOD,
+    DOCUMENT_SYMBOL_SCHEMA,
+    P10_T4_DOCUMENT_SYMBOL_VERSION,
+    document_symbols,
+    document_symbols_contract,
+    document_symbols_fingerprint,
+)
 from language_server.protocol import (
     INTERNAL_ERROR,
     INVALID_PARAMS,
@@ -54,6 +64,7 @@ from language_server.server import (
     DocumentStore,
     LanguageServerSession,
     OpenDocument,
+    active_server_capabilities,
     foundation_contract,
     foundation_fingerprint,
     run_language_server,
@@ -62,8 +73,12 @@ from language_server.server import (
 
 
 __all__ = (
+    "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
     "CANONICAL_LSP_FOUNDATION_SHA256",
+    "DOCUMENT_SYMBOL_KIND",
+    "DOCUMENT_SYMBOL_METHOD",
+    "DOCUMENT_SYMBOL_SCHEMA",
     "DocumentStore",
     "EXIT_SUCCESS",
     "EXIT_TRANSPORT_ERROR",
@@ -88,6 +103,7 @@ __all__ = (
     "LanguageServerSession",
     "METHOD_NOT_FOUND",
     "OpenDocument",
+    "P10_T4_DOCUMENT_SYMBOL_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",
     "P10_T4_LSP_FOUNDATION_VERSION",
     "PARSE_ERROR",
@@ -102,8 +118,12 @@ __all__ = (
     "diagnostic_to_lsp",
     "diagnostics_contract",
     "diagnostics_fingerprint",
+    "document_symbols",
+    "document_symbols_contract",
+    "document_symbols_fingerprint",
     "encode_message",
     "error_response",
+    "active_server_capabilities",
     "foundation_contract",
     "foundation_fingerprint",
     "offset_to_lsp_position",

@@ -21,6 +21,13 @@ from language_server.diagnostics import (
     publish_diagnostics_notification,
 )
 
+from language_server.symbols import (
+    CANONICAL_DOCUMENT_SYMBOLS_SHA256,
+    DOCUMENT_SYMBOL_METHOD,
+    P10_T4_DOCUMENT_SYMBOL_VERSION,
+    document_symbols,
+)
+
 from language_server.protocol import (
     INTERNAL_ERROR,
     INVALID_PARAMS,
@@ -220,6 +227,15 @@ def server_capabilities() -> dict[str, object]:
     }
 
 
+def active_server_capabilities(*, document_symbols_enabled: bool = False) -> dict[str, object]:
+    """Return negotiated capabilities without changing the frozen T4.1 projection."""
+
+    capabilities = server_capabilities()
+    if document_symbols_enabled:
+        capabilities["documentSymbolProvider"] = True
+    return capabilities
+
+
 def foundation_contract() -> dict[str, object]:
     """Return the deterministic public T4.1 protocol contract."""
 
@@ -292,6 +308,7 @@ class LanguageServerSession:
         self.diagnostics_enabled = False
         self.diagnostics_related_information = False
         self.diagnostics_version_support = False
+        self.document_symbols_enabled = False
         self._outgoing_notifications: list[dict[str, object]] = []
         self.notification_error_count = 0
         self.last_notification_error: Optional[JsonRpcFault] = None
@@ -491,6 +508,18 @@ class LanguageServerSession:
             self._require_notification(is_request, method)
             self._did_close(params)
             return None
+        if method == DOCUMENT_SYMBOL_METHOD:
+            if not is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data=f"{DOCUMENT_SYMBOL_METHOD} must be a request.",
+                    has_data=True,
+                )
+            return result_response(
+                message_id,
+                self._document_symbols(params),
+            )
 
         if is_request:
             raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
@@ -507,6 +536,7 @@ class LanguageServerSession:
                 has_data=True,
             )
         self._configure_diagnostics(capabilities)
+        self._configure_document_symbols(capabilities)
 
         process_id = value.get("processId")
         if process_id is not None and type(process_id) is not int:
@@ -548,7 +578,9 @@ class LanguageServerSession:
         self.root_uri = root_uri
         self.initialized = True
         return {
-            "capabilities": server_capabilities(),
+            "capabilities": active_server_capabilities(
+                document_symbols_enabled=self.document_symbols_enabled,
+            ),
             "serverInfo": {
                 "name": SERVER_NAME,
                 "version": SERVER_VERSION,
@@ -633,6 +665,40 @@ class LanguageServerSession:
             publish.get("relatedInformation") is True
         )
         self.diagnostics_version_support = publish.get("versionSupport") is True
+
+    def _configure_document_symbols(
+        self,
+        capabilities: Mapping[str, object],
+    ) -> None:
+        text_document = capabilities.get("textDocument")
+        if type(text_document) is not dict:
+            return
+        document_symbol = text_document.get("documentSymbol")
+        if type(document_symbol) is dict:
+            self.document_symbols_enabled = True
+
+    def _document_symbols(self, params: object) -> list[dict[str, object]]:
+        if not self.document_symbols_enabled:
+            raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
+
+        value = self._require_mapping(params, "documentSymbol params")
+        text_document = self._require_mapping(
+            value.get("textDocument"),
+            "documentSymbol textDocument",
+        )
+        uri = self._required_uri(
+            text_document.get("uri"),
+            "documentSymbol textDocument.uri",
+        )
+        document = self.documents.get(uri)
+        if document is None:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=f"Document is not open: {uri}.",
+                has_data=True,
+            )
+        return list(document_symbols(document.uri, document.text))
 
     def _publish_document_diagnostics(self, document: OpenDocument) -> None:
         if not self.diagnostics_enabled:
@@ -822,6 +888,11 @@ def main(
         action="store_true",
         help="print the frozen T4.2 diagnostics fingerprint",
     )
+    mode.add_argument(
+        "--symbols-contract",
+        action="store_true",
+        help="print the AFP-P10-T4.4 document-symbol fingerprint",
+    )
     arguments = parser.parse_args(tuple(argv) if argv is not None else None)
 
     if arguments.version:
@@ -838,6 +909,10 @@ def main(
         print(CANONICAL_LSP_DIAGNOSTICS_SHA256, file=stdout)
         return EXIT_SUCCESS
 
+    if arguments.symbols_contract:
+        print(CANONICAL_DOCUMENT_SYMBOLS_SHA256, file=stdout)
+        return EXIT_SUCCESS
+
     return run_language_server(
         _binary_reader(stdin),
         _binary_writer(stdout),
@@ -846,8 +921,10 @@ def main(
 
 
 __all__ = (
+    "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
     "CANONICAL_LSP_FOUNDATION_SHA256",
+    "DOCUMENT_SYMBOL_METHOD",
     "DocumentStore",
     "EXIT_SUCCESS",
     "EXIT_TRANSPORT_ERROR",
@@ -858,12 +935,14 @@ __all__ = (
     "LSP_SPECIFICATION_VERSION",
     "LanguageServerSession",
     "OpenDocument",
+    "P10_T4_DOCUMENT_SYMBOL_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",
     "P10_T4_LSP_FOUNDATION_VERSION",
     "POSITION_ENCODING",
     "SERVER_NAME",
     "SERVER_VERSION",
     "TEXT_DOCUMENT_SYNC_FULL",
+    "active_server_capabilities",
     "foundation_contract",
     "foundation_fingerprint",
     "main",

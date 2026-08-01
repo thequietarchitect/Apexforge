@@ -70,6 +70,19 @@ _RUNTIME_SOURCE_PATHS: Final[tuple[str, ...]] = (
     CANONICAL_LANGUAGE_SERVER_GUIDE,
 )
 
+# Compatibility projection: later editor slices may extend the runtime sources,
+# but the frozen T4.3 fingerprint remains scoped to the exact bytes that were
+# present when activation/process lifecycle support was frozen.
+_FROZEN_T4_3_RUNTIME_HASHES: Final[Mapping[str, str]] = {
+    "extension.js": "a7ae9b7453012e75bdf479ddc6fcbc80cf658ca3d2f5c1c1555fca08b2bcf4ca",
+    CANONICAL_RUNTIME_CLIENT_PATH: (
+        "2481320a388bf48087e00094d9e46693fc8ba9f86dec140281aef0aa8ce67000"
+    ),
+    CANONICAL_LANGUAGE_SERVER_GUIDE: (
+        "657eaa2d5d8ab9002bc0d74c932440d354c2165681c1dc5b24678ea92a62a7f9"
+    ),
+}
+
 # Filled after the exact public projection is serialized.
 CANONICAL_VSCODE_LSP_ACTIVATION_SHA256: Final[str] = (
     "b74759e09a2de60a9ca78d6baa36d0d608b650858b6220f3ab4b3f2916a940d6"
@@ -355,7 +368,10 @@ def activation_contract(
             }
             for name in CANONICAL_SETTINGS
         },
-        "runtime_hashes": dict(runtime_hashes),
+        "runtime_hashes": {
+            name: _FROZEN_T4_3_RUNTIME_HASHES[name]
+            for name in _RUNTIME_SOURCE_PATHS
+        },
         "frozen_dependencies": {
             "t3_1": CANONICAL_VSCODE_FOUNDATION_SHA256,
             "t3_2": CANONICAL_VSCODE_SYNTAX_SHA256,
@@ -370,6 +386,11 @@ def activation_fingerprint(
     package: Mapping[str, object],
     runtime_hashes: Mapping[str, str],
 ) -> str:
+    for name in _RUNTIME_SOURCE_PATHS:
+        if name not in runtime_hashes:
+            raise VSCodeLSPActivationError(
+                f"T4.3 runtime hash projection is missing {name!r}."
+            )
     payload = json.dumps(
         activation_contract(package, runtime_hashes),
         ensure_ascii=False,

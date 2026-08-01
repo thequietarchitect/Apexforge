@@ -12,7 +12,7 @@ const DIAGNOSTIC_COLLECTION_NAME = 'apexforge';
 const CONFIGURATION_SECTION = 'apexforge.languageServer';
 const DEFAULT_SERVER_PATH = 'apexforge/apexforge_lsp.py';
 const CLIENT_NAME = 'ApexForge VS Code';
-const CLIENT_VERSION = '10-T4.3';
+const CLIENT_VERSION = '10-T4.4';
 
 let activeRuntime = null;
 
@@ -130,6 +130,59 @@ function convertDiagnostic(raw) {
     return diagnostic;
 }
 
+const LSP_SYMBOL_KIND_TO_VSCODE = [
+    undefined,
+    vscode.SymbolKind.File,
+    vscode.SymbolKind.Module,
+    vscode.SymbolKind.Namespace,
+    vscode.SymbolKind.Package,
+    vscode.SymbolKind.Class,
+    vscode.SymbolKind.Method,
+    vscode.SymbolKind.Property,
+    vscode.SymbolKind.Field,
+    vscode.SymbolKind.Constructor,
+    vscode.SymbolKind.Enum,
+    vscode.SymbolKind.Interface,
+    vscode.SymbolKind.Function,
+    vscode.SymbolKind.Variable,
+    vscode.SymbolKind.Constant,
+    vscode.SymbolKind.String,
+    vscode.SymbolKind.Number,
+    vscode.SymbolKind.Boolean,
+    vscode.SymbolKind.Array,
+    vscode.SymbolKind.Object,
+    vscode.SymbolKind.Key,
+    vscode.SymbolKind.Null,
+    vscode.SymbolKind.EnumMember,
+    vscode.SymbolKind.Struct,
+    vscode.SymbolKind.Event,
+    vscode.SymbolKind.Operator,
+    vscode.SymbolKind.TypeParameter,
+];
+
+function convertDocumentSymbol(raw) {
+    if (!raw || typeof raw.name !== 'string') {
+        return undefined;
+    }
+    const range = lspRange(raw.range);
+    const selectionRange = lspRange(raw.selectionRange || raw.range);
+    const kind = LSP_SYMBOL_KIND_TO_VSCODE[raw.kind]
+        ?? vscode.SymbolKind.Object;
+    const symbol = new vscode.DocumentSymbol(
+        raw.name,
+        typeof raw.detail === 'string' ? raw.detail : '',
+        kind,
+        range,
+        selectionRange
+    );
+    if (Array.isArray(raw.children)) {
+        symbol.children = raw.children
+            .map(convertDocumentSymbol)
+            .filter((item) => item !== undefined);
+    }
+    return symbol;
+}
+
 class WorkspaceLanguageServer {
     constructor(folder, shared) {
         this.folder = folder;
@@ -221,6 +274,12 @@ class WorkspaceLanguageServer {
                         publishDiagnostics: {
                             relatedInformation: true,
                             versionSupport: true,
+                        },
+                        documentSymbol: {
+                            hierarchicalDocumentSymbolSupport: true,
+                            symbolKind: {
+                                valueSet: Array.from({length: 26}, (_, index) => index + 1),
+                            },
                         },
                     },
                 },
@@ -361,6 +420,38 @@ class WorkspaceLanguageServer {
         this.diagnostics.delete(document.uri);
     }
 
+    async documentSymbols(document, token) {
+        await this.start();
+        const client = this.client;
+        if (!client || client.state !== 'running') {
+            return [];
+        }
+        if (token && token.isCancellationRequested) {
+            return [];
+        }
+
+        this.didOpen(document);
+        try {
+            const result = await client.sendRequest(
+                'textDocument/documentSymbol',
+                {
+                    textDocument: {
+                        uri: document.uri.toString(),
+                    },
+                }
+            );
+            if (token && token.isCancellationRequested) {
+                return [];
+            }
+            return Array.isArray(result)
+                ? result.map(convertDocumentSymbol).filter((item) => item !== undefined)
+                : [];
+        } catch (error) {
+            this.log(`Document symbols failed: ${error.message}`);
+            return [];
+        }
+    }
+
     async restart() {
         this.log('Restart requested.');
         await this.stop();
@@ -448,7 +539,7 @@ class ApexForgeExtensionRuntime {
     }
 
     async activate() {
-        this.output.appendLine('AFP-P10-T4.3 extension activation started.');
+        this.output.appendLine('AFP-P10-T4.4 extension activation started.');
 
         const folders = vscode.workspace.workspaceFolders || [];
         for (const folder of folders) {
@@ -499,6 +590,19 @@ class ApexForgeExtensionRuntime {
                     await controller.restart();
                 }
             }),
+            vscode.languages.registerDocumentSymbolProvider(
+                {language: LANGUAGE_ID, scheme: 'file'},
+                {
+                    provideDocumentSymbols: async (document, token) => {
+                        const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+                        const controller = await this.addFolder(folder);
+                        return controller
+                            ? controller.documentSymbols(document, token)
+                            : [];
+                    },
+                },
+                {label: 'ApexForge'}
+            ),
             vscode.commands.registerCommand(
                 'apexforge.showLanguageServerOutput',
                 () => this.output.show(true)
@@ -519,7 +623,7 @@ class ApexForgeExtensionRuntime {
             ...this.disposables
         );
 
-        this.output.appendLine('AFP-P10-T4.3 extension activation completed.');
+        this.output.appendLine('AFP-P10-T4.4 extension activation completed.');
     }
 
     async dispose() {
