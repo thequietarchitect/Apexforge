@@ -43,6 +43,47 @@
         "scopeName": "source.apexforge",
         "path": "./syntaxes/apexforge.tmLanguage.json"
       }
-    ]
-  }
+    ],
+    "commands": [
+      {
+        "command": "apexforge.showLanguageServerOutput",
+        "title": "ApexForge: Show Language Server Output"
+      },
+      {
+        "command": "apexforge.restartLanguageServer",
+        "title": "ApexForge: Restart Language Server"
+      }
+    ],
+    "configuration": {
+      "title": "ApexForge Language Server",
+      "properties": {
+        "apexforge.languageServer.pythonCommand": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "description": "Python launcher used for the ApexForge language server. Leave empty to use py on Windows or python3 elsewhere."
+        },
+        "apexforge.languageServer.serverPath": {
+          "type": "string",
+          "default": "apexforge/apexforge_lsp.py",
+          "scope": "resource",
+          "description": "Workspace-relative or absolute path to the ApexForge language-server entry point."
+        },
+        "apexforge.languageServer.trace": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Write document synchronization and protocol lifecycle details to the ApexForge Language Server output channel."
+        }
+      }
+    }
+  },
+  "main": "./extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onLanguage:apexforge",
+    "workspaceContains:apexforge/apexforge_lsp.py"
+  ]
 }

@@ -194,6 +194,44 @@ def _validate_ignore_file(extension_root: Path) -> tuple[str, ...]:
     return patterns
 
 
+def _frozen_t3_package_bytes(data: bytes) -> bytes:
+    """Project an evolved manifest back onto the frozen T3.3 package surface.
+
+    Later editor milestones may add runtime activation, commands, and settings.
+    The T3.3 fingerprint remains scoped to the syntax-only manifest fields that
+    existed when T3.3 was frozen.
+    """
+
+    package = _read_json_bytes(data, "VS Code package manifest")
+    contributes = _require_mapping(
+        package.get("contributes"),
+        "package contributes",
+    )
+    projection = {
+        "name": package.get("name"),
+        "displayName": package.get("displayName"),
+        "description": package.get("description"),
+        "version": package.get("version"),
+        "publisher": package.get("publisher"),
+        "engines": package.get("engines"),
+        "categories": package.get("categories"),
+        "keywords": package.get("keywords"),
+        "contributes": {
+            "languages": contributes.get("languages"),
+            "configurationDefaults": contributes.get("configurationDefaults"),
+            "grammars": contributes.get("grammars"),
+        },
+    }
+    return (
+        json.dumps(
+            projection,
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n"
+    ).encode("utf-8")
+
+
 def _source_payload_hashes(extension_root: Path) -> Mapping[str, str]:
     values: dict[str, str] = {}
     for archive_name, source_name in sorted(_PACKAGED_SOURCE_PATHS.items()):
@@ -201,6 +239,8 @@ def _source_payload_hashes(extension_root: Path) -> Mapping[str, str]:
             extension_root / PurePosixPath(source_name),
             f"packaged source {source_name}",
         )
+        if source_name == "package.json":
+            data = _frozen_t3_package_bytes(data)
         values[archive_name] = _sha256_bytes(data)
     return values
 
