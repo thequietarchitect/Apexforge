@@ -1,4 +1,4 @@
-/* AFP-P10-T4.3 ApexForge VS Code language-server activation. */
+/* AFP-P10-T4.5 ApexForge VS Code hover intelligence. */
 'use strict';
 
 const fs = require('fs');
@@ -12,7 +12,7 @@ const DIAGNOSTIC_COLLECTION_NAME = 'apexforge';
 const CONFIGURATION_SECTION = 'apexforge.languageServer';
 const DEFAULT_SERVER_PATH = 'apexforge/apexforge_lsp.py';
 const CLIENT_NAME = 'ApexForge VS Code';
-const CLIENT_VERSION = '10-T4.4';
+const CLIENT_VERSION = '10-T4.5';
 
 let activeRuntime = null;
 
@@ -183,6 +183,38 @@ function convertDocumentSymbol(raw) {
     return symbol;
 }
 
+function convertHover(raw) {
+    if (!raw || !raw.contents) {
+        return undefined;
+    }
+
+    const contents = raw.contents;
+    let rendered;
+    if (
+        contents
+        && typeof contents === 'object'
+        && contents.kind === 'markdown'
+        && typeof contents.value === 'string'
+    ) {
+        rendered = new vscode.MarkdownString(contents.value);
+        rendered.isTrusted = false;
+        rendered.supportHtml = false;
+    } else if (
+        contents
+        && typeof contents === 'object'
+        && typeof contents.value === 'string'
+    ) {
+        rendered = contents.value;
+    } else if (typeof contents === 'string') {
+        rendered = contents;
+    } else {
+        return undefined;
+    }
+
+    const range = raw.range ? lspRange(raw.range) : undefined;
+    return new vscode.Hover(rendered, range);
+}
+
 class WorkspaceLanguageServer {
     constructor(folder, shared) {
         this.folder = folder;
@@ -280,6 +312,9 @@ class WorkspaceLanguageServer {
                             symbolKind: {
                                 valueSet: Array.from({length: 26}, (_, index) => index + 1),
                             },
+                        },
+                        hover: {
+                            contentFormat: ['markdown', 'plaintext'],
                         },
                     },
                 },
@@ -452,6 +487,40 @@ class WorkspaceLanguageServer {
         }
     }
 
+    async hover(document, position, token) {
+        await this.start();
+        const client = this.client;
+        if (!client || client.state !== 'running') {
+            return undefined;
+        }
+        if (token && token.isCancellationRequested) {
+            return undefined;
+        }
+
+        this.didOpen(document);
+        try {
+            const result = await client.sendRequest(
+                'textDocument/hover',
+                {
+                    textDocument: {
+                        uri: document.uri.toString(),
+                    },
+                    position: {
+                        line: position.line,
+                        character: position.character,
+                    },
+                }
+            );
+            if (token && token.isCancellationRequested) {
+                return undefined;
+            }
+            return convertHover(result);
+        } catch (error) {
+            this.log(`Hover failed: ${error.message}`);
+            return undefined;
+        }
+    }
+
     async restart() {
         this.log('Restart requested.');
         await this.stop();
@@ -539,7 +608,7 @@ class ApexForgeExtensionRuntime {
     }
 
     async activate() {
-        this.output.appendLine('AFP-P10-T4.4 extension activation started.');
+        this.output.appendLine('AFP-P10-T4.5 extension activation started.');
 
         const folders = vscode.workspace.workspaceFolders || [];
         for (const folder of folders) {
@@ -603,6 +672,18 @@ class ApexForgeExtensionRuntime {
                 },
                 {label: 'ApexForge'}
             ),
+            vscode.languages.registerHoverProvider(
+                {language: LANGUAGE_ID, scheme: 'file'},
+                {
+                    provideHover: async (document, position, token) => {
+                        const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+                        const controller = await this.addFolder(folder);
+                        return controller
+                            ? controller.hover(document, position, token)
+                            : undefined;
+                    },
+                }
+            ),
             vscode.commands.registerCommand(
                 'apexforge.showLanguageServerOutput',
                 () => this.output.show(true)
@@ -623,7 +704,7 @@ class ApexForgeExtensionRuntime {
             ...this.disposables
         );
 
-        this.output.appendLine('AFP-P10-T4.4 extension activation completed.');
+        this.output.appendLine('AFP-P10-T4.5 extension activation completed.');
     }
 
     async dispose() {

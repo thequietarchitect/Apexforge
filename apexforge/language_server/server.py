@@ -1,8 +1,9 @@
 """AFP-P10-T4.1 ApexForge Language Server foundation.
 
 The foundation implements JSON-RPC/LSP lifecycle handling and full text-document
-synchronization over stdio. Diagnostics, completion, hover, definition, and all
-other language intelligence remain deliberately deferred to later P10-T4 slices.
+synchronization over stdio. Diagnostics, document symbols, and hover are layered onto this frozen
+foundation; completion, definition, references, rename, workspace symbols, and
+formatting remain deliberately deferred to later P10-T4 slices.
 """
 
 from __future__ import annotations
@@ -26,6 +27,13 @@ from language_server.symbols import (
     DOCUMENT_SYMBOL_METHOD,
     P10_T4_DOCUMENT_SYMBOL_VERSION,
     document_symbols,
+)
+
+from language_server.hover import (
+    CANONICAL_HOVER_SHA256,
+    HOVER_METHOD,
+    P10_T4_HOVER_VERSION,
+    hover,
 )
 
 from language_server.protocol import (
@@ -227,12 +235,18 @@ def server_capabilities() -> dict[str, object]:
     }
 
 
-def active_server_capabilities(*, document_symbols_enabled: bool = False) -> dict[str, object]:
+def active_server_capabilities(
+    *,
+    document_symbols_enabled: bool = False,
+    hover_enabled: bool = False,
+) -> dict[str, object]:
     """Return negotiated capabilities without changing the frozen T4.1 projection."""
 
     capabilities = server_capabilities()
     if document_symbols_enabled:
         capabilities["documentSymbolProvider"] = True
+    if hover_enabled:
+        capabilities["hoverProvider"] = True
     return capabilities
 
 
@@ -309,6 +323,7 @@ class LanguageServerSession:
         self.diagnostics_related_information = False
         self.diagnostics_version_support = False
         self.document_symbols_enabled = False
+        self.hover_enabled = False
         self._outgoing_notifications: list[dict[str, object]] = []
         self.notification_error_count = 0
         self.last_notification_error: Optional[JsonRpcFault] = None
@@ -508,6 +523,18 @@ class LanguageServerSession:
             self._require_notification(is_request, method)
             self._did_close(params)
             return None
+        if method == HOVER_METHOD:
+            if not is_request:
+                raise JsonRpcFault(
+                    INVALID_REQUEST,
+                    "Invalid Request",
+                    data=f"{HOVER_METHOD} must be a request.",
+                    has_data=True,
+                )
+            return result_response(
+                message_id,
+                self._hover(params),
+            )
         if method == DOCUMENT_SYMBOL_METHOD:
             if not is_request:
                 raise JsonRpcFault(
@@ -537,6 +564,7 @@ class LanguageServerSession:
             )
         self._configure_diagnostics(capabilities)
         self._configure_document_symbols(capabilities)
+        self._configure_hover(capabilities)
 
         process_id = value.get("processId")
         if process_id is not None and type(process_id) is not int:
@@ -580,6 +608,7 @@ class LanguageServerSession:
         return {
             "capabilities": active_server_capabilities(
                 document_symbols_enabled=self.document_symbols_enabled,
+                hover_enabled=self.hover_enabled,
             ),
             "serverInfo": {
                 "name": SERVER_NAME,
@@ -676,6 +705,52 @@ class LanguageServerSession:
         document_symbol = text_document.get("documentSymbol")
         if type(document_symbol) is dict:
             self.document_symbols_enabled = True
+
+    def _configure_hover(
+        self,
+        capabilities: Mapping[str, object],
+    ) -> None:
+        text_document = capabilities.get("textDocument")
+        if type(text_document) is not dict:
+            return
+        hover_capability = text_document.get("hover")
+        if type(hover_capability) is dict:
+            self.hover_enabled = True
+
+    def _hover(self, params: object) -> Optional[dict[str, object]]:
+        if not self.hover_enabled:
+            raise JsonRpcFault(METHOD_NOT_FOUND, "Method not found")
+
+        value = self._require_mapping(params, "hover params")
+        text_document = self._require_mapping(
+            value.get("textDocument"),
+            "hover textDocument",
+        )
+        uri = self._required_uri(
+            text_document.get("uri"),
+            "hover textDocument.uri",
+        )
+        position = self._require_mapping(
+            value.get("position"),
+            "hover position",
+        )
+        document = self.documents.get(uri)
+        if document is None:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=f"Document is not open: {uri}.",
+                has_data=True,
+            )
+        try:
+            return hover(document.uri, document.text, position)
+        except (TypeError, ValueError) as error:
+            raise JsonRpcFault(
+                INVALID_PARAMS,
+                "Invalid params",
+                data=str(error),
+                has_data=True,
+            ) from error
 
     def _document_symbols(self, params: object) -> list[dict[str, object]]:
         if not self.document_symbols_enabled:
@@ -889,6 +964,11 @@ def main(
         help="print the frozen T4.2 diagnostics fingerprint",
     )
     mode.add_argument(
+        "--hover-contract",
+        action="store_true",
+        help="print the AFP-P10-T4.5 hover fingerprint",
+    )
+    mode.add_argument(
         "--symbols-contract",
         action="store_true",
         help="print the AFP-P10-T4.4 document-symbol fingerprint",
@@ -909,6 +989,10 @@ def main(
         print(CANONICAL_LSP_DIAGNOSTICS_SHA256, file=stdout)
         return EXIT_SUCCESS
 
+    if arguments.hover_contract:
+        print(CANONICAL_HOVER_SHA256, file=stdout)
+        return EXIT_SUCCESS
+
     if arguments.symbols_contract:
         print(CANONICAL_DOCUMENT_SYMBOLS_SHA256, file=stdout)
         return EXIT_SUCCESS
@@ -922,9 +1006,11 @@ def main(
 
 __all__ = (
     "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
+    "CANONICAL_HOVER_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
     "CANONICAL_LSP_FOUNDATION_SHA256",
     "DOCUMENT_SYMBOL_METHOD",
+    "HOVER_METHOD",
     "DocumentStore",
     "EXIT_SUCCESS",
     "EXIT_TRANSPORT_ERROR",
@@ -936,6 +1022,7 @@ __all__ = (
     "LanguageServerSession",
     "OpenDocument",
     "P10_T4_DOCUMENT_SYMBOL_VERSION",
+    "P10_T4_HOVER_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",
     "P10_T4_LSP_FOUNDATION_VERSION",
     "POSITION_ENCODING",

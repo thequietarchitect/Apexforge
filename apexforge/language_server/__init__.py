@@ -28,6 +28,18 @@ from language_server.symbols import (
     document_symbols_contract,
     document_symbols_fingerprint,
 )
+from language_server.hover import (
+    CANONICAL_HOVER_SHA256,
+    HOVER_KIND,
+    HOVER_MARKUP_KIND,
+    HOVER_METHOD,
+    HOVER_SCHEMA,
+    P10_T4_HOVER_VERSION,
+    hover,
+    hover_contract,
+    hover_fingerprint,
+    lsp_position_to_offset,
+)
 from language_server.protocol import (
     INTERNAL_ERROR,
     INVALID_PARAMS,
@@ -74,9 +86,14 @@ from language_server.server import (
 
 __all__ = (
     "CANONICAL_DOCUMENT_SYMBOLS_SHA256",
+    "CANONICAL_HOVER_SHA256",
     "CANONICAL_LSP_DIAGNOSTICS_SHA256",
     "CANONICAL_LSP_FOUNDATION_SHA256",
     "DOCUMENT_SYMBOL_KIND",
+    "HOVER_KIND",
+    "HOVER_MARKUP_KIND",
+    "HOVER_METHOD",
+    "HOVER_SCHEMA",
     "DOCUMENT_SYMBOL_METHOD",
     "DOCUMENT_SYMBOL_SCHEMA",
     "DocumentStore",
@@ -104,6 +121,7 @@ __all__ = (
     "METHOD_NOT_FOUND",
     "OpenDocument",
     "P10_T4_DOCUMENT_SYMBOL_VERSION",
+    "P10_T4_HOVER_VERSION",
     "P10_T4_LSP_DIAGNOSTICS_VERSION",
     "P10_T4_LSP_FOUNDATION_VERSION",
     "PARSE_ERROR",
@@ -126,6 +144,10 @@ __all__ = (
     "active_server_capabilities",
     "foundation_contract",
     "foundation_fingerprint",
+    "hover",
+    "hover_contract",
+    "hover_fingerprint",
+    "lsp_position_to_offset",
     "offset_to_lsp_position",
     "publish_diagnostics_notification",
     "read_message",
