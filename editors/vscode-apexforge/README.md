@@ -1,19 +1,35 @@
 # ApexForge Language for Visual Studio Code
 
-AFP-P10-T3.1 establishes the VS Code language-extension foundation for
-ApexForge source files.
+The ApexForge language extension recognizes canonical lowercase `.apex` source
+files and provides editor behavior synchronized with the frozen P10-T2 grammar.
 
-## Included in T3.1
+## Language support
 
 - Language ID: `apexforge`
 - Canonical source extension: `.apex`
-- Display name: `ApexForge`
 - Brace and parenthesis matching
 - Automatic closing for braces, parentheses, and strings
 - Four-space indentation defaults
-- Block indentation for lines ending in `{`
+- TextMate highlighting for declarations, module headers, types, literals,
+  operators, actions, control flow, and function calls
 
-ApexForge comments remain unsupported by the frozen P10-T2 grammar, so this
-configuration intentionally does not declare comment syntax.
+ApexForge comments remain unsupported by the frozen P10-T2 grammar, so the
+extension intentionally does not declare or highlight comment syntax.
 
-Syntax highlighting is added separately in AFP-P10-T3.2.
+## Local VSIX packaging
+
+AFP-P10-T3.3 packages this syntax-only extension with the official
+`@vscode/vsce` tool and audits the resulting VSIX payload before installation.
+The deterministic audit checks the embedded package manifest, TextMate grammar,
+language configuration, documentation, archive safety, and installed extension
+identity.
+
+The local extension ID is:
+
+```text
+gravitas-studios.apexforge-language
+```
+
+The publisher field identifies the package namespace only. Marketplace
+publication and publisher registration are outside the T3.3 local-install
+milestone.

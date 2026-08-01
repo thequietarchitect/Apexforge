@@ -2,14 +2,19 @@
 
 ## 0.1.0
 
+### AFP-P10-T3.3
+
+- Add deterministic VSIX payload and archive validation.
+- Add official `@vscode/vsce` packaging support.
+- Add local VS Code installation and installed-version verification.
+
 ### AFP-P10-T3.2
 
-- Add the canonical `source.apexforge` TextMate grammar.
-- Highlight module headers, declarations, members, types, literals, operators,
-  and function calls.
-- Synchronize the TextMate keyword inventory with the frozen P10-T2 grammar.
-- Preserve the no-comment syntax boundary.
-- Add deterministic syntax and conformance-corpus validation.
+- Add the `source.apexforge` TextMate grammar.
+- Synchronize highlighting with all 27 frozen lexer keywords.
+- Highlight declarations, module headers, types, literals, operators, actions,
+  control flow, and function calls.
+- Preserve the frozen no-comment syntax boundary.
 
 ### AFP-P10-T3.1
 
