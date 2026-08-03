@@ -456,8 +456,11 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
     require(
         p11_4e_owned.issubset(p11_4e_files)
         and p11_4e_successors
-        == {"apexforge/language/resolution_context.py"},
-        "P11.4E ownership or its single P11.4F successor consumer changed",
+        == {
+            "apexforge/language/resolution_context.py",
+            "apexforge/language/resolution_visibility.py",
+        },
+        "P11.4E ownership or its reviewed successor consumers changed",
     )
     require(
         candidate_files
@@ -466,11 +469,13 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
             "apexforge/language/project.py",
             "apexforge/language/resolution_queries.py",
             "apexforge/language/resolution_context.py",
+            "apexforge/language/resolution_visibility.py",
         }
         and candidate_files
         - {
             "apexforge/language/resolution_queries.py",
             "apexforge/language/resolution_context.py",
+            "apexforge/language/resolution_visibility.py",
         }
         == {
             "apexforge/language/resolution_candidates.py",
@@ -485,8 +490,11 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
         "resolve_project_query" not in project_text
         and "ProjectResolutionQuery" not in project_text
         and "ProjectResolutionContext" not in project_text
-        and "collect_project_visibility_evidence" not in project_text,
-        "ProjectBuild or ProjectBuilder acquired automatic query/context integration",
+        and "collect_project_visibility_evidence" not in project_text
+        and "ProjectVisibilityDecision" not in project_text
+        and "evaluate_project_visibility" not in project_text
+        and "filter_project_visible_candidates" not in project_text,
+        "ProjectBuild or ProjectBuilder acquired automatic resolution integration",
     )
 
 

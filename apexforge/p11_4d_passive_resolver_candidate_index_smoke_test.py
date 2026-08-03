@@ -629,6 +629,7 @@ def test_production_boundary_is_exact() -> None:
             "apexforge/language/project.py",
             "apexforge/language/resolution_queries.py",
             "apexforge/language/resolution_context.py",
+            "apexforge/language/resolution_visibility.py",
         },
         "a production consumer exists outside the reviewed successor boundary",
     )
@@ -643,6 +644,7 @@ def test_production_boundary_is_exact() -> None:
         == {
             "apexforge/language/resolution_queries.py",
             "apexforge/language/resolution_context.py",
+            "apexforge/language/resolution_visibility.py",
         },
         "P11.4D ownership or its reviewed successor consumers changed",
     )
