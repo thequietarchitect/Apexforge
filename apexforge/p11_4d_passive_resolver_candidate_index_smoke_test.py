@@ -627,8 +627,20 @@ def test_production_boundary_is_exact() -> None:
         == {
             "apexforge/language/resolution_candidates.py",
             "apexforge/language/project.py",
+            "apexforge/language/resolution_queries.py",
         },
-        "a production consumer exists outside the P11.4D boundary",
+        "a production consumer exists outside the reviewed successor boundary",
+    )
+    p11_4d_owned = {
+        "apexforge/language/resolution_candidates.py",
+        "apexforge/language/project.py",
+    }
+    successor_consumers = observed - p11_4d_owned
+    require(
+        p11_4d_owned.issubset(observed)
+        and successor_consumers
+        == {"apexforge/language/resolution_queries.py"},
+        "P11.4D ownership or its single P11.4E successor consumer changed",
     )
 
 
