@@ -340,6 +340,417 @@ class ModuleGraph:
         )
 
 
+@dataclass(frozen=True)
+class ProjectDocument:
+    """One physical source document in a resolved project."""
+
+    source_name: str
+    module_name: Optional[str] = None
+    module_span: Optional[SourceSpan] = None
+    imports: tuple[ModuleImport, ...] = ()
+
+    def __post_init__(self) -> None:
+        source_name = _normalize_source_name(
+            self.source_name
+        )
+        module_name = self.module_name
+
+        if module_name is not None:
+            module_name = _normalize_module_name(
+                module_name
+            )
+
+        if (module_name is None) != (self.module_span is None):
+            raise ValueError(
+                "ProjectDocument module name and span must both be "
+                "present or both be absent."
+            )
+
+        if self.module_span is not None:
+            if not isinstance(
+                self.module_span,
+                SourceSpan,
+            ):
+                raise TypeError(
+                    "ProjectDocument.module_span must be SourceSpan or None."
+                )
+            if self.module_span.source_name != source_name:
+                raise ValueError(
+                    "ProjectDocument.module_span must belong to its source."
+                )
+
+        imports = tuple(
+            self.imports
+        )
+
+        if any(
+            not isinstance(
+                dependency,
+                ModuleImport,
+            )
+            for dependency in imports
+        ):
+            raise TypeError(
+                "ProjectDocument.imports must contain ModuleImport values."
+            )
+
+        if module_name is None and imports:
+            raise ValueError(
+                "A legacy ProjectDocument cannot contain imports."
+            )
+
+        if any(
+            dependency.span.source_name != source_name
+            for dependency in imports
+        ):
+            raise ValueError(
+                "ProjectDocument import spans must belong to its source."
+            )
+
+        object.__setattr__(
+            self,
+            "source_name",
+            source_name,
+        )
+        object.__setattr__(
+            self,
+            "module_name",
+            module_name,
+        )
+        object.__setattr__(
+            self,
+            "imports",
+            imports,
+        )
+
+
+@dataclass(frozen=True)
+class ResolvedImportEdge:
+    """One resolved module import between physical project documents."""
+
+    importer_source_name: str
+    imported_module_name: str
+    target_source_name: str
+    import_span: SourceSpan
+
+    def __post_init__(self) -> None:
+        importer = _normalize_source_name(
+            self.importer_source_name
+        )
+        target = _normalize_source_name(
+            self.target_source_name
+        )
+
+        if not isinstance(
+            self.import_span,
+            SourceSpan,
+        ):
+            raise TypeError(
+                "ResolvedImportEdge.import_span must be SourceSpan."
+            )
+
+        if self.import_span.source_name != importer:
+            raise ValueError(
+                "ResolvedImportEdge.import_span must belong to its importer."
+            )
+
+        object.__setattr__(
+            self,
+            "importer_source_name",
+            importer,
+        )
+        object.__setattr__(
+            self,
+            "imported_module_name",
+            _normalize_module_name(
+                self.imported_module_name
+            ),
+        )
+        object.__setattr__(
+            self,
+            "target_source_name",
+            target,
+        )
+
+
+@dataclass(frozen=True)
+class ProjectDocumentGraph:
+    """Immutable physical-document projection of a validated ModuleGraph."""
+
+    documents: tuple[ProjectDocument, ...] = ()
+    resolved_import_edges: tuple[ResolvedImportEdge, ...] = ()
+    canonical_order: tuple[str, ...] = ()
+    dependency_order: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        documents = tuple(
+            self.documents
+        )
+        edges = tuple(
+            self.resolved_import_edges
+        )
+        canonical_order = tuple(
+            self.canonical_order
+        )
+        dependency_order = tuple(
+            self.dependency_order
+        )
+
+        if any(
+            not isinstance(
+                document,
+                ProjectDocument,
+            )
+            for document in documents
+        ):
+            raise TypeError(
+                "ProjectDocumentGraph.documents must contain "
+                "ProjectDocument values."
+            )
+
+        if any(
+            not isinstance(
+                edge,
+                ResolvedImportEdge,
+            )
+            for edge in edges
+        ):
+            raise TypeError(
+                "ProjectDocumentGraph.resolved_import_edges must contain "
+                "ResolvedImportEdge values."
+            )
+
+        names = tuple(
+            document.source_name
+            for document in documents
+        )
+        folded_names = tuple(
+            name.casefold()
+            for name in names
+        )
+
+        if len(set(folded_names)) != len(folded_names):
+            raise ValueError(
+                "ProjectDocumentGraph contains duplicate source names."
+            )
+
+        expected_canonical_order = tuple(
+            sorted(
+                names,
+                key=lambda value: (
+                    value.casefold(),
+                    value,
+                ),
+            )
+        )
+
+        if canonical_order != expected_canonical_order:
+            raise ValueError(
+                "ProjectDocumentGraph.canonical_order must contain every "
+                "source in canonical physical-source order."
+            )
+
+        if (
+            len(dependency_order) != len(names)
+            or set(dependency_order) != set(names)
+        ):
+            raise ValueError(
+                "ProjectDocumentGraph.dependency_order must contain each "
+                "source exactly once."
+            )
+
+        explicit_count = sum(
+            document.module_name is not None
+            for document in documents
+        )
+
+        if explicit_count not in {
+            0,
+            len(documents),
+        }:
+            raise ValueError(
+                "ProjectDocumentGraph cannot mix legacy and module documents."
+            )
+
+        by_source = {
+            document.source_name: document
+            for document in documents
+        }
+        by_module = {
+            document.module_name: document
+            for document in documents
+            if document.module_name is not None
+        }
+
+        expected_edges: list[ResolvedImportEdge] = []
+        for source_name in canonical_order:
+            document = by_source[
+                source_name
+            ]
+            for dependency in document.imports:
+                target = by_module.get(
+                    dependency.name
+                )
+                if target is None:
+                    raise ValueError(
+                        "ProjectDocumentGraph contains an unresolved import."
+                    )
+                expected_edges.append(
+                    ResolvedImportEdge(
+                        importer_source_name=document.source_name,
+                        imported_module_name=dependency.name,
+                        target_source_name=target.source_name,
+                        import_span=dependency.span,
+                    )
+                )
+
+        if edges != tuple(expected_edges):
+            raise ValueError(
+                "ProjectDocumentGraph resolved edges must cover imports in "
+                "canonical document and declaration order."
+            )
+
+        if explicit_count == 0:
+            if edges:
+                raise ValueError(
+                    "A legacy ProjectDocumentGraph cannot contain import edges."
+                )
+            if dependency_order != canonical_order:
+                raise ValueError(
+                    "Legacy dependency order must equal canonical source order."
+                )
+        else:
+            dependency_index = {
+                source_name: index
+                for index, source_name in enumerate(
+                    dependency_order
+                )
+            }
+            if any(
+                dependency_index[edge.target_source_name]
+                >= dependency_index[edge.importer_source_name]
+                for edge in edges
+            ):
+                raise ValueError(
+                    "ProjectDocumentGraph dependency order must place every "
+                    "import target before its importer."
+                )
+
+        object.__setattr__(
+            self,
+            "documents",
+            documents,
+        )
+        object.__setattr__(
+            self,
+            "resolved_import_edges",
+            edges,
+        )
+        object.__setattr__(
+            self,
+            "canonical_order",
+            canonical_order,
+        )
+        object.__setattr__(
+            self,
+            "dependency_order",
+            dependency_order,
+        )
+
+    @property
+    def is_legacy(self) -> bool:
+        return not self.documents or all(
+            document.module_name is None
+            for document in self.documents
+        )
+
+    def find(
+        self,
+        source_name: str,
+    ) -> Optional[ProjectDocument]:
+        normalized = _normalize_source_name(
+            source_name
+        )
+
+        for document in self.documents:
+            if document.source_name == normalized:
+                return document
+
+        return None
+
+    def canonical_source_order(
+        self,
+    ) -> tuple[str, ...]:
+        return self.canonical_order
+
+    def dependency_first_source_order(
+        self,
+    ) -> tuple[str, ...]:
+        return self.dependency_order
+
+    def direct_document_dependencies(
+        self,
+        source_name: str,
+    ) -> tuple[ProjectDocument, ...]:
+        normalized = _normalize_source_name(
+            source_name
+        )
+        by_source = {
+            document.source_name: document
+            for document in self.documents
+        }
+
+        if normalized not in by_source:
+            return ()
+
+        return tuple(
+            by_source[edge.target_source_name]
+            for edge in self.resolved_import_edges
+            if edge.importer_source_name == normalized
+        )
+
+    def transitive_document_dependencies(
+        self,
+        source_name: str,
+    ) -> tuple[ProjectDocument, ...]:
+        normalized = _normalize_source_name(
+            source_name
+        )
+        by_source = {
+            document.source_name: document
+            for document in self.documents
+        }
+
+        if normalized not in by_source:
+            return ()
+
+        reachable: set[str] = set()
+        pending = [normalized]
+
+        while pending:
+            importer = pending.pop()
+            for edge in self.resolved_import_edges:
+                if edge.importer_source_name != importer:
+                    continue
+                if edge.target_source_name in reachable:
+                    continue
+                reachable.add(
+                    edge.target_source_name
+                )
+                pending.append(
+                    edge.target_source_name
+                )
+
+        reachable.discard(
+            normalized
+        )
+        return tuple(
+            by_source[name]
+            for name in self.dependency_order
+            if name in reachable
+        )
+
+
 def _normalize_module_name(
     name: str,
 ) -> str:
@@ -359,6 +770,27 @@ def _normalize_module_name(
     ) is None:
         raise ValueError(
             f"Invalid ApexForge module name {name!r}."
+        )
+
+    return normalized
+
+
+def _normalize_source_name(
+    source_name: str,
+) -> str:
+    if not isinstance(
+        source_name,
+        str,
+    ):
+        raise TypeError(
+            "Source name must be a string."
+        )
+
+    normalized = source_name.strip()
+
+    if not normalized:
+        raise ValueError(
+            "Source name must be a non-empty string."
         )
 
     return normalized
@@ -793,6 +1225,138 @@ def build_module_graph(
     )
 
 
+def build_project_document_graph(
+    sources: Iterable[ModuleSource],
+    module_graph: ModuleGraph,
+) -> ProjectDocumentGraph:
+    """Project already parsed and validated module data onto documents."""
+
+    units = tuple(
+        sources
+    )
+
+    if any(
+        not isinstance(
+            unit,
+            ModuleSource,
+        )
+        for unit in units
+    ):
+        raise TypeError(
+            "build_project_document_graph requires ModuleSource values."
+        )
+
+    if not isinstance(
+        module_graph,
+        ModuleGraph,
+    ):
+        raise TypeError(
+            "build_project_document_graph requires ModuleGraph."
+        )
+
+    ordered_units = tuple(
+        sorted(
+            units,
+            key=lambda unit: (
+                unit.source_name.casefold(),
+                unit.source_name,
+            ),
+        )
+    )
+    folded_names = tuple(
+        unit.source_name.casefold()
+        for unit in ordered_units
+    )
+
+    if len(set(folded_names)) != len(folded_names):
+        raise ValueError(
+            "Project document sources must have unique physical names."
+        )
+
+    documents = tuple(
+        ProjectDocument(
+            source_name=unit.source_name,
+            module_name=unit.module_name,
+            module_span=unit.module_span,
+            imports=unit.imports,
+        )
+        for unit in ordered_units
+    )
+    canonical_order = tuple(
+        document.source_name
+        for document in documents
+    )
+
+    explicit_count = sum(
+        document.module_name is not None
+        for document in documents
+    )
+
+    if module_graph.is_legacy:
+        if explicit_count:
+            raise ValueError(
+                "A legacy ModuleGraph cannot project explicit module sources."
+            )
+
+        return ProjectDocumentGraph(
+            documents=documents,
+            canonical_order=canonical_order,
+            dependency_order=canonical_order,
+        )
+
+    if explicit_count != len(documents):
+        raise ValueError(
+            "An explicit ModuleGraph requires a module on every document."
+        )
+
+    module_by_source = {
+        module.source_name: module
+        for module in module_graph.modules
+    }
+    document_by_module = {
+        document.module_name: document
+        for document in documents
+    }
+
+    if set(module_by_source) != set(canonical_order):
+        raise ValueError(
+            "ModuleGraph sources do not match project documents."
+        )
+
+    for document in documents:
+        module = module_by_source[
+            document.source_name
+        ]
+        if (
+            module.name != document.module_name
+            or module.span != document.module_span
+            or module.imports != document.imports
+        ):
+            raise ValueError(
+                "ModuleGraph records do not match parsed project documents."
+            )
+
+    edges = tuple(
+        ResolvedImportEdge(
+            importer_source_name=document.source_name,
+            imported_module_name=dependency.name,
+            target_source_name=document_by_module[
+                dependency.name
+            ].source_name,
+            import_span=dependency.span,
+        )
+        for document in documents
+        for dependency in document.imports
+    )
+
+    return ProjectDocumentGraph(
+        documents=documents,
+        resolved_import_edges=edges,
+        canonical_order=canonical_order,
+        dependency_order=module_graph.source_order(),
+    )
+
+
 def validate_module_visibility(
     graph: ModuleGraph,
     compiled_by_module: dict[str, object],
@@ -1163,7 +1727,11 @@ __all__ = (
     "ModuleImport",
     "ModuleRecord",
     "ModuleSource",
+    "ProjectDocument",
+    "ProjectDocumentGraph",
+    "ResolvedImportEdge",
     "build_module_graph",
+    "build_project_document_graph",
     "parse_module_source",
     "validate_module_visibility",
 )

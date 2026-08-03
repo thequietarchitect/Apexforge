@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import inspect
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import (
     Any,
     Iterable,
@@ -32,7 +32,9 @@ from language.modules import (
     ModuleError,
     ModuleGraph,
     ModuleSource,
+    ProjectDocumentGraph,
     build_module_graph,
+    build_project_document_graph,
     parse_module_source,
     validate_module_visibility,
 )
@@ -494,6 +496,10 @@ class ProjectBuild:
     source_map: SourceMap
     module_graph: ModuleGraph = ModuleGraph()
     entry_directive: Optional[str] = None
+    document_graph: ProjectDocumentGraph = field(
+        default_factory=ProjectDocumentGraph,
+        compare=False,
+    )
 
     def __post_init__(
         self,
@@ -544,6 +550,15 @@ class ProjectBuild:
             raise TypeError(
                 "ProjectBuild.module_graph must be "
                 "ModuleGraph."
+            )
+
+        if not isinstance(
+            self.document_graph,
+            ProjectDocumentGraph,
+        ):
+            raise TypeError(
+                "ProjectBuild.document_graph must be "
+                "ProjectDocumentGraph."
             )
 
         if self.entry_directive is not None:
@@ -791,6 +806,10 @@ class ProjectBuilder:
         analyzed, graph = self._analyze_modules(
             units
         )
+        document_graph = build_project_document_graph(
+            analyzed,
+            graph,
+        )
 
         units_by_source = {
             unit.name: unit
@@ -918,6 +937,7 @@ class ProjectBuilder:
             source_map=source_map,
             module_graph=graph,
             entry_directive=resolved_entry,
+            document_graph=document_graph,
         )
 
     def _normalize_sources(
