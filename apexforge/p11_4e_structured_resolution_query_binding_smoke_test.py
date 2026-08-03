@@ -451,9 +451,13 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
             "APX-RESOLVE-" not in text,
             f"production file {path.name} introduced a resolver diagnostic",
         )
+    p11_4e_owned = {"apexforge/language/resolution_queries.py"}
+    p11_4e_successors = p11_4e_files - p11_4e_owned
     require(
-        p11_4e_files == {"apexforge/language/resolution_queries.py"},
-        "P11.4E acquired another production file",
+        p11_4e_owned.issubset(p11_4e_files)
+        and p11_4e_successors
+        == {"apexforge/language/resolution_context.py"},
+        "P11.4E ownership or its single P11.4F successor consumer changed",
     )
     require(
         candidate_files
@@ -461,21 +465,28 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
             "apexforge/language/resolution_candidates.py",
             "apexforge/language/project.py",
             "apexforge/language/resolution_queries.py",
+            "apexforge/language/resolution_context.py",
         }
-        and candidate_files - {"apexforge/language/resolution_queries.py"}
+        and candidate_files
+        - {
+            "apexforge/language/resolution_queries.py",
+            "apexforge/language/resolution_context.py",
+        }
         == {
             "apexforge/language/resolution_candidates.py",
             "apexforge/language/project.py",
         },
-        "P11.4D ownership or its one successor consumer changed",
+        "P11.4D ownership or its reviewed successor consumers changed",
     )
     project_text = (PACKAGE_DIRECTORY / "language" / "project.py").read_text(
         encoding="utf-8"
     )
     require(
         "resolve_project_query" not in project_text
-        and "ProjectResolutionQuery" not in project_text,
-        "ProjectBuild or ProjectBuilder acquired automatic query integration",
+        and "ProjectResolutionQuery" not in project_text
+        and "ProjectResolutionContext" not in project_text
+        and "collect_project_visibility_evidence" not in project_text,
+        "ProjectBuild or ProjectBuilder acquired automatic query/context integration",
     )
 
 

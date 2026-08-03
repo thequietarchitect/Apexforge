@@ -539,6 +539,11 @@ def test_artifact_cli_tooling_and_no_resolver_consumers() -> None:
             "ResolvedBinding",
             "language.resolution",
         },
+        "apexforge/language/resolution_context.py": {
+            "ResolutionCandidate",
+            "ResolvedBinding",
+            "language.resolution",
+        },
     }
     observed_authorized_markers = set()
     for root in relevant_roots:
@@ -574,8 +579,20 @@ def test_artifact_cli_tooling_and_no_resolver_consumers() -> None:
                 "apexforge/language/resolution_queries.py",
                 "language.resolution",
             ),
+            (
+                "apexforge/language/resolution_context.py",
+                "ResolutionCandidate",
+            ),
+            (
+                "apexforge/language/resolution_context.py",
+                "ResolvedBinding",
+            ),
+            (
+                "apexforge/language/resolution_context.py",
+                "language.resolution",
+            ),
         },
-        "the P11.4D/P11.4E successor production boundary changed",
+        "the reviewed P11.4D/P11.4E/P11.4F production boundary changed",
     )
 
 
