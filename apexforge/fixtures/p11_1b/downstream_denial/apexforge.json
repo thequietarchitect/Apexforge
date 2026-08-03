@@ -1,0 +1,9 @@
+{
+  "entry": "Caller",
+  "name": "DownstreamDenial",
+  "schema": 1,
+  "sources": [
+    "src/callee.apex",
+    "src/caller.apex"
+  ]
+}

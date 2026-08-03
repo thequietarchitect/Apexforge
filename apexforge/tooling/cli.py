@@ -24,6 +24,7 @@ EXIT_SUCCESS = 0
 EXIT_USAGE = 2
 EXIT_PROJECT = 10
 EXIT_CHECK = 20
+EXIT_RUNTIME = 30
 EXIT_INTERNAL = 70
 
 
@@ -76,6 +77,21 @@ def _parser() -> _ArgumentParser:
         nargs="?",
         default=".",
         help="project directory, source path, or apexforge.json path",
+    )
+
+    run = commands.add_parser(
+        "run",
+        help="build and execute one canonical project entry directive",
+    )
+    run.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="project directory, source path, or apexforge.json path",
+    )
+    run.add_argument(
+        "--entry",
+        help="entry directive, overriding the manifest entry",
     )
 
     new = commands.add_parser(
@@ -177,6 +193,115 @@ def _run_check(
     return EXIT_SUCCESS
 
 
+def _entry_execution_context(
+    build: Any,
+    entry_directive: str,
+) -> Any:
+    """Construct the deny-by-default context for one public entry run."""
+
+    from authority.engine import AuthorityEngine
+    from authority.model import AuthorityGrant
+    from runtime.context import ExecutionContext
+    from runtime.state import StateSnapshot
+
+    directive = next(
+        (
+            item
+            for item in tuple(build.program.directives)
+            if item.id == entry_directive
+        ),
+        None,
+    )
+
+    if directive is None:
+        raise ValueError(
+            f"Resolved entry directive {entry_directive!r} is not linked."
+        )
+
+    capability = f"directive.invoke:{directive.name}"
+    grant = AuthorityGrant(
+        principal=directive.principal,
+        capability=capability,
+        resource=directive.id,
+    )
+
+    return ExecutionContext(
+        state=StateSnapshot.from_program_initials(build.program),
+        authority=AuthorityEngine.from_grants((grant,)),
+    )
+
+
+def _render_runtime_diagnostics(
+    diagnostics: Sequence[Any],
+    *,
+    stream: TextIO,
+) -> None:
+    for diagnostic in sorted(tuple(diagnostics)):
+        location = diagnostic.node_id or "<runtime>"
+        print(
+            f"{location} [{diagnostic.code}] {diagnostic.message}",
+            file=stream,
+        )
+
+
+def _run_execute(
+    path: str,
+    entry: Optional[str],
+    *,
+    stdout: TextIO,
+    stderr: TextIO,
+    builder: Optional[ProjectBuilder],
+) -> int:
+    from language.project import ProjectBuildError
+
+    loaded = load_project(Path(path))
+    selected_builder = builder or _default_project_builder
+    selected_entry = (
+        entry
+        if entry is not None
+        else loaded.manifest.entry
+    )
+
+    try:
+        build = selected_builder(
+            loaded.source_mapping(),
+            selected_entry,
+        )
+    except CLIProjectCheckError:
+        raise
+    except Exception as exc:
+        raise CLIProjectCheckError(str(exc)) from exc
+
+    try:
+        resolved_entry = build.resolve_entry()
+    except ProjectBuildError as exc:
+        raise CLIProjectCheckError(str(exc)) from exc
+
+    context = _entry_execution_context(
+        build,
+        resolved_entry,
+    )
+    result = build.execute(
+        context,
+        entry=resolved_entry,
+    )
+
+    if result.diagnostics:
+        _render_runtime_diagnostics(
+            result.diagnostics,
+            stream=stderr,
+        )
+        return EXIT_RUNTIME
+
+    print(
+        f"ApexForge run succeeded: {loaded.manifest.name}",
+        file=stdout,
+    )
+    print(f"Entry: {resolved_entry}", file=stdout)
+    print("Runtime diagnostics: 0", file=stdout)
+    return EXIT_SUCCESS
+
+
 def main(
     argv: Optional[Sequence[str]] = None,
     *,
@@ -215,6 +340,14 @@ def main(
                 stdout=output,
                 builder=project_builder,
             )
+        if namespace.command == "run":
+            return _run_execute(
+                namespace.path,
+                namespace.entry,
+                stdout=output,
+                stderr=errors,
+                builder=project_builder,
+            )
         if namespace.command == "new":
             return _run_new(
                 namespace.name,
@@ -251,6 +384,7 @@ __all__ = (
     "EXIT_CHECK",
     "EXIT_INTERNAL",
     "EXIT_PROJECT",
+    "EXIT_RUNTIME",
     "EXIT_SUCCESS",
     "EXIT_USAGE",
     "P10_T1_CLI_VERSION",

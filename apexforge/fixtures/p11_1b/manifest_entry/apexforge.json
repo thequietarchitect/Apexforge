@@ -1,0 +1,9 @@
+{
+  "entry": "Main",
+  "name": "ManifestEntry",
+  "schema": 1,
+  "sources": [
+    "src/alternate.apex",
+    "src/main.apex"
+  ]
+}

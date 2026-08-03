@@ -1,0 +1,8 @@
+{
+  "name": "AmbiguousRun",
+  "schema": 1,
+  "sources": [
+    "src/first.apex",
+    "src/second.apex"
+  ]
+}

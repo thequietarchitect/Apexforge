@@ -1,0 +1,7 @@
+{
+  "name": "SingleFallback",
+  "schema": 1,
+  "sources": [
+    "src/solo.apex"
+  ]
+}

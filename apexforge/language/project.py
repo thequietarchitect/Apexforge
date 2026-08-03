@@ -555,13 +555,12 @@ class ProjectBuild:
                 ),
             )
 
-    def execute(
+    def resolve_entry(
         self,
-        context: ExecutionContext,
-        *,
         entry: Optional[str] = None,
-        engine: Optional[RuntimeEngine] = None,
-    ) -> ExecutionResult:
+    ) -> str:
+        """Resolve one canonical project entry without executing it."""
+
         selected = (
             entry
             if entry is not None
@@ -586,9 +585,20 @@ class ProjectBuild:
                     "directive."
                 )
 
-        entry_id = _resolve_entry_directive(
+        return _resolve_entry_directive(
             self.program,
             selected,
+        )
+
+    def execute(
+        self,
+        context: ExecutionContext,
+        *,
+        entry: Optional[str] = None,
+        engine: Optional[RuntimeEngine] = None,
+    ) -> ExecutionResult:
+        entry_id = self.resolve_entry(
+            entry,
         )
         runtime = (
             engine
