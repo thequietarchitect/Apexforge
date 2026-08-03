@@ -13,9 +13,9 @@
 - Preserve all frozen behavior unless the active task explicitly introduces a tested compatibility change.
 
 ## Current program
-- Current stage: P11.1B Canonical Public Run Command.
-- P11.1A Performance Baseline Harness is accepted at commit bba89ab.
-- Immediate target: implement P11.1B without beginning P11.1C or later work.
+- Current stage: P11.1C Canonical Multi-Source Build Artifact.
+- P11.1A is accepted at commit bba89ab; P11.1B is accepted at commit 214b899.
+- Immediate target: implement P11.1C without beginning P11.1D or later work.
 
 ## Required engineering behavior
 - Inspect existing implementation and tests before editing.

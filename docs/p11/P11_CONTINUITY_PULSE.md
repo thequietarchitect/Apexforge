@@ -7,10 +7,10 @@ VARENIC-CREST-PULSE: APEXFORGE-P11 / TAM-v3 / QV-AETHER / STORY-SEMANTICS / APEX
 P10 Standard Library and P10-T1 through P10-T5 are frozen at commit 38a3778.
 
 ## Current stage
-P11.1B Canonical Public Run Command. P11.1A is accepted at commit bba89ab.
+P11.1C Canonical Multi-Source Build Artifact. P11.1A is accepted at bba89ab and P11.1B is accepted at 214b899.
 
 ## Immediate next stage
-Implement P11.1B Canonical Public Run Command without beginning the P11.1C build-artifact slice.
+Implement P11.1C without beginning P11.1D integration and freeze work.
 
 ## Governing architecture
 Documents -> Compiler TAM -> Declaration and Symbol Graph -> Narrative Semantic Graph -> Quad-Vector Analysis -> Parametric Semantic Lattice -> AETHER-AIR 2.0 -> Optimized AIR or Native Backend -> Runtime, Storytelling, Simulation, ApexMotion, or Fabrication.
