@@ -110,20 +110,20 @@ def repository_status() -> str:
     return completed.stdout
 
 
-def tracked_changes(*, cached: bool = False) -> tuple[str, ...]:
-    command = ["git", "diff", "--name-only"]
-    if cached:
-        command.append("--cached")
-    completed = subprocess.run(
-        command,
-        cwd=REPOSITORY_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-    )
-    require(completed.stderr == "", "git diff wrote unexpected stderr")
-    return tuple(line for line in completed.stdout.splitlines() if line)
+def repository_bytecode_state() -> tuple[tuple[str, int, int], ...]:
+    records: list[tuple[str, int, int]] = []
+    for path in REPOSITORY_ROOT.rglob("*"):
+        if not path.is_file() or path.suffix.casefold() not in {".pyc", ".pyo"}:
+            continue
+        details = path.stat()
+        records.append(
+            (
+                path.relative_to(REPOSITORY_ROOT).as_posix(),
+                details.st_size,
+                details.st_mtime_ns,
+            )
+        )
+    return tuple(sorted(records))
 
 
 def recursive_call_targets(value: object):
@@ -582,15 +582,12 @@ def test_external_compatibility_and_repository_boundaries() -> None:
         and visual_studio.method_count == 9,
         "Visual Studio diagnostics/intelligence integration changed",
     )
-    require(
-        tracked_changes() == () and tracked_changes(cached=True) == (),
-        "a tracked or staged file changed during the audit",
-    )
 
 
 def main() -> None:
     original_directory = Path.cwd().resolve()
     status_before = repository_status()
+    bytecode_before = repository_bytecode_state()
 
     def forbidden_network(*_args, **_kwargs):
         raise AssertionError("P11.4A audit attempted network access")
@@ -606,6 +603,10 @@ def main() -> None:
 
     require(Path.cwd().resolve() == original_directory, "working directory changed")
     require(repository_status() == status_before, "running the audit changed repository status")
+    require(
+        repository_bytecode_state() == bytecode_before,
+        "running the audit created, removed, or changed repository bytecode",
+    )
 
     print("AFP-P11.4A identity and nesting architecture audit smoke test passed.")
     print("Declaration and identity-layer inventory: PASS")

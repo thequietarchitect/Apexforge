@@ -32,6 +32,10 @@ from language.declarations import (
     ProjectDeclarationOwner,
     ProjectDeclarationOwnership,
 )
+from language.identities import (
+    ProjectDeclaredIdentity,
+    ProjectIdentityIndex,
+)
 from language.modules import (
     ModuleError,
     ModuleGraph,
@@ -508,6 +512,10 @@ class ProjectBuild:
         default_factory=ProjectDeclarationOwnership,
         compare=False,
     )
+    identity_index: ProjectIdentityIndex = field(
+        default_factory=ProjectIdentityIndex,
+        compare=False,
+    )
 
     def __post_init__(
         self,
@@ -576,6 +584,15 @@ class ProjectBuild:
             raise TypeError(
                 "ProjectBuild.declaration_ownership must be "
                 "ProjectDeclarationOwnership."
+            )
+
+        if not isinstance(
+            self.identity_index,
+            ProjectIdentityIndex,
+        ):
+            raise TypeError(
+                "ProjectBuild.identity_index must be "
+                "ProjectIdentityIndex."
             )
 
         if self.entry_directive is not None:
@@ -808,12 +825,13 @@ class ProjectBuilder:
             graph,
         )
 
-    def _build_declaration_ownership(
+    def _build_declaration_metadata(
         self,
         artifacts_by_source: Mapping[str, CompiledSource],
         module_by_source: Mapping[str, str],
-    ) -> ProjectDeclarationOwnership:
+    ) -> tuple[ProjectDeclarationOwnership, ProjectIdentityIndex]:
         declarations: list[ProjectDeclarationOwner] = []
+        identities: list[ProjectDeclaredIdentity] = []
 
         for source_name, artifact in artifacts_by_source.items():
             declaration_ids = {
@@ -834,22 +852,45 @@ class ProjectBuilder:
                 ):
                     continue
 
+                module_name = module_by_source.get(
+                    source_name
+                )
                 declarations.append(
                     ProjectDeclarationOwner(
                         kind=entry.kind,
                         air_id=entry.air_id,
                         source_name=source_name,
-                        module_name=module_by_source.get(
-                            source_name
+                        module_name=module_name,
+                        span=entry.span,
+                    )
+                )
+                identities.append(
+                    ProjectDeclaredIdentity(
+                        kind=entry.kind,
+                        declared_name=entry.reference,
+                        current_air_id=entry.air_id,
+                        source_name=source_name,
+                        module_name=module_name,
+                        qualified_display_name=(
+                            entry.reference
+                            if module_name is None
+                            else f"{module_name}.{entry.reference}"
                         ),
                         span=entry.span,
                     )
                 )
 
-        return ProjectDeclarationOwnership(
-            tuple(
-                declarations
-            )
+        return (
+            ProjectDeclarationOwnership(
+                tuple(
+                    declarations
+                )
+            ),
+            ProjectIdentityIndex(
+                tuple(
+                    identities
+                )
+            ),
         )
 
     def build(
@@ -940,7 +981,7 @@ class ProjectBuilder:
                 for module in graph.modules
             }
         )
-        declaration_ownership = self._build_declaration_ownership(
+        declaration_ownership, identity_index = self._build_declaration_metadata(
             artifacts_by_source,
             module_by_source,
         )
@@ -1009,6 +1050,7 @@ class ProjectBuilder:
             entry_directive=resolved_entry,
             document_graph=document_graph,
             declaration_ownership=declaration_ownership,
+            identity_index=identity_index,
         )
 
     def _normalize_sources(

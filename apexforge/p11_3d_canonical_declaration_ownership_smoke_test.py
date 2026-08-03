@@ -304,11 +304,23 @@ def test_legacy_projection_and_project_build_compatibility() -> None:
     )
 
     project_fields = fields(ProjectBuild)
+    project_field_names = tuple(item.name for item in project_fields)
+    document_graph_index = project_field_names.index("document_graph")
+    declaration_ownership_index = project_field_names.index(
+        "declaration_ownership"
+    )
+    document_graph_field = project_fields[document_graph_index]
+    declaration_ownership_field = project_fields[declaration_ownership_index]
     require(
-        tuple(item.name for item in project_fields[-2:])
-        == ("document_graph", "declaration_ownership")
-        and project_fields[-1].compare is False,
-        "ProjectBuild ownership field was not appended with compare=False",
+        declaration_ownership_index == document_graph_index + 1
+        and document_graph_field.default_factory is ProjectDocumentGraph
+        and document_graph_field.compare is False
+        and (
+            declaration_ownership_field.default_factory
+            is ProjectDeclarationOwnership
+        )
+        and declaration_ownership_field.compare is False,
+        "ProjectBuild graph/ownership field order or properties changed",
     )
     positional = ProjectBuild(
         build.source_units,
@@ -327,6 +339,16 @@ def test_legacy_projection_and_project_build_compatibility() -> None:
         build.entry_directive,
         build.document_graph,
     )
+    positional_with_ownership = ProjectBuild(
+        build.source_units,
+        build.program,
+        build.verified,
+        build.source_map,
+        build.module_graph,
+        build.entry_directive,
+        build.document_graph,
+        build.declaration_ownership,
+    )
     require(
         positional == build
         and positional.document_graph == ProjectDocumentGraph()
@@ -339,6 +361,13 @@ def test_legacy_projection_and_project_build_compatibility() -> None:
         and positional_with_document_graph.declaration_ownership
         == ProjectDeclarationOwnership(),
         "P11.3B positional ProjectBuild compatibility changed",
+    )
+    require(
+        positional_with_ownership == build
+        and positional_with_ownership.document_graph == build.document_graph
+        and positional_with_ownership.declaration_ownership
+        == build.declaration_ownership,
+        "P11.3D positional ProjectBuild compatibility changed",
     )
 
 
