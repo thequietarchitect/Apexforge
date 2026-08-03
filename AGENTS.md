@@ -1,4 +1,4 @@
-﻿# ApexForge Agent Instructions
+# ApexForge Agent Instructions
 
 ## Repository authority
 - The repository owner and human reviewer retain final authority.
@@ -13,9 +13,9 @@
 - Preserve all frozen behavior unless the active task explicitly introduces a tested compatibility change.
 
 ## Current program
-- Current stage: P11.0-C Codex Engineering Onboarding.
-- P11.1 has not begun.
-- Immediate future target: P11.1 Performance Baseline and Canonical Build/Run Protocol.
+- Current stage: P11.1B Canonical Public Run Command.
+- P11.1A Performance Baseline Harness is accepted at commit bba89ab.
+- Immediate target: implement P11.1B without beginning P11.1C or later work.
 
 ## Required engineering behavior
 - Inspect existing implementation and tests before editing.
