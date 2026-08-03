@@ -13,9 +13,9 @@
 - Preserve all frozen behavior unless the active task explicitly introduces a tested compatibility change.
 
 ## Current program
-- Current stage: P11.3D Canonical Declaration Ownership Index.
-- P11.3C is accepted at commit 40a5d21; P11.3B is accepted at commit 3811b21; P11.3A is accepted at commit 697e3b2; P11.2 is frozen at commit 6b82f79 under tag afp-p11.2-freeze; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
-- Immediate target: introduce an immutable canonical declaration ownership index for successfully compiled directives and functions, preserving exact source and optional module spelling, current canonical short AIR IDs, top-level declaration spans, deterministic ordering, and duplicate-owner retention alongside the project document graph; do not add export syntax, visibility enforcement, public/private modifiers, re-exports, aliases, namespaces, qualified identities, new diagnostics, grammar or parser behavior, AIR, artifact, or manifest fields, CLI or language-server changes, P11.4 work, or later behavior.
+- Current stage: P11.4A Identity and Nesting Architecture Audit.
+- P11.3 is frozen at commit 05d836a under tag afp-p11.3-freeze; P11.2 is frozen at commit 6b82f79 under tag afp-p11.2-freeze; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
+- Immediate target: Audit identity and nesting architecture on top of the frozen P11.3 module, document-graph, and declaration-ownership foundation, including declared, alias, qualified, canonical, display, and composite identities; ownership and module/import visibility; duplicate, collision, and ambiguity handling; generic specialization identities; nested declaration scope; diagnostics; CLI, manifest, and artifact compatibility; and language-server impacts; do not change production code or begin P11.4B, P11.5, or later work.
 
 ## Required engineering behavior
 - Inspect existing implementation and tests before editing.
