@@ -28,6 +28,10 @@ from language.diagnostics import (
     diagnostics_from_exception,
     render_diagnostics,
 )
+from language.declarations import (
+    ProjectDeclarationOwner,
+    ProjectDeclarationOwnership,
+)
 from language.modules import (
     ModuleError,
     ModuleGraph,
@@ -500,6 +504,10 @@ class ProjectBuild:
         default_factory=ProjectDocumentGraph,
         compare=False,
     )
+    declaration_ownership: ProjectDeclarationOwnership = field(
+        default_factory=ProjectDeclarationOwnership,
+        compare=False,
+    )
 
     def __post_init__(
         self,
@@ -559,6 +567,15 @@ class ProjectBuild:
             raise TypeError(
                 "ProjectBuild.document_graph must be "
                 "ProjectDocumentGraph."
+            )
+
+        if not isinstance(
+            self.declaration_ownership,
+            ProjectDeclarationOwnership,
+        ):
+            raise TypeError(
+                "ProjectBuild.declaration_ownership must be "
+                "ProjectDeclarationOwnership."
             )
 
         if self.entry_directive is not None:
@@ -791,6 +808,50 @@ class ProjectBuilder:
             graph,
         )
 
+    def _build_declaration_ownership(
+        self,
+        artifacts_by_source: Mapping[str, CompiledSource],
+        module_by_source: Mapping[str, str],
+    ) -> ProjectDeclarationOwnership:
+        declarations: list[ProjectDeclarationOwner] = []
+
+        for source_name, artifact in artifacts_by_source.items():
+            declaration_ids = {
+                "directive": {
+                    directive.id
+                    for directive in artifact.program.directives
+                },
+                "function": {
+                    function.id
+                    for function in artifact.program.functions
+                },
+            }
+
+            for entry in artifact.source_map.entries:
+                if entry.air_id not in declaration_ids.get(
+                    entry.kind,
+                    set(),
+                ):
+                    continue
+
+                declarations.append(
+                    ProjectDeclarationOwner(
+                        kind=entry.kind,
+                        air_id=entry.air_id,
+                        source_name=source_name,
+                        module_name=module_by_source.get(
+                            source_name
+                        ),
+                        span=entry.span,
+                    )
+                )
+
+        return ProjectDeclarationOwnership(
+            tuple(
+                declarations
+            )
+        )
+
     def build(
         self,
         sources: (
@@ -871,11 +932,20 @@ class ProjectBuilder:
             )
         )
 
-        if not graph.is_legacy:
-            module_by_source = {
+        module_by_source = (
+            {}
+            if graph.is_legacy
+            else {
                 module.source_name: module.name
                 for module in graph.modules
             }
+        )
+        declaration_ownership = self._build_declaration_ownership(
+            artifacts_by_source,
+            module_by_source,
+        )
+
+        if not graph.is_legacy:
             compiled_by_module = {
                 module_by_source[
                     source_name
@@ -938,6 +1008,7 @@ class ProjectBuilder:
             module_graph=graph,
             entry_directive=resolved_entry,
             document_graph=document_graph,
+            declaration_ownership=declaration_ownership,
         )
 
     def _normalize_sources(
