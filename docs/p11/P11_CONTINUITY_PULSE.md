@@ -7,10 +7,10 @@ VARENIC-CREST-PULSE: APEXFORGE-P11 / TAM-v3 / QV-AETHER / STORY-SEMANTICS / APEX
 P10 Standard Library and P10-T1 through P10-T5 are frozen at commit 38a3778.
 
 ## Current stage
-P11.2C Final Integration and Freeze Gate. P11.2B is accepted at commit fa5836d; P11.2A is accepted at commit b6f9277; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
+P11.3A Module, Import, Export, and Document-Graph Architecture Audit. P11.2 is frozen at commit 6b82f79 under tag afp-p11.2-freeze; P11.2B is accepted at commit fa5836d; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
 
 ## Immediate next stage
-Integrate and freeze P11.2 through governance review, focused validation, full regression, and tag verification; do not change production code or begin P11.3 or later work.
+Audit the existing module/import architecture, export status, dependency and document-graph behavior, ordering, diagnostics, symbol visibility, CLI/artifact interactions, and language-server integration; do not change production code or begin P11.3B, P11.4, or later work.
 
 ## Governing architecture
 Documents -> Compiler TAM -> Declaration and Symbol Graph -> Narrative Semantic Graph -> Quad-Vector Analysis -> Parametric Semantic Lattice -> AETHER-AIR 2.0 -> Optimized AIR or Native Backend -> Runtime, Storytelling, Simulation, ApexMotion, or Fabrication.

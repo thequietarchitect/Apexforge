@@ -13,9 +13,9 @@
 - Preserve all frozen behavior unless the active task explicitly introduces a tested compatibility change.
 
 ## Current program
-- Current stage: P11.2C Final Integration and Freeze Gate.
-- P11.2B is accepted at commit fa5836d; P11.2A is accepted at commit b6f9277; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
-- Immediate target: integrate and freeze P11.2 through governance review, focused validation, full regression, and tag verification; do not change production code or begin P11.3 or later work.
+- Current stage: P11.3A Module, Import, Export, and Document-Graph Architecture Audit.
+- P11.2 is frozen at commit 6b82f79 under tag afp-p11.2-freeze; P11.2B is accepted at commit fa5836d; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
+- Immediate target: audit the existing module/import architecture, export status, dependency and document-graph behavior, ordering, diagnostics, symbol visibility, CLI/artifact interactions, and language-server integration; do not change production code or begin P11.3B, P11.4, or later work.
 
 ## Required engineering behavior
 - Inspect existing implementation and tests before editing.
