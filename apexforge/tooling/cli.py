@@ -12,6 +12,12 @@ from pathlib import Path
 import sys
 from typing import Any, Callable, Mapping, Optional, Sequence, TextIO
 
+from tooling.build_artifact import (
+    BUILD_ARTIFACT_SCHEMA,
+    BuildArtifactOutputError,
+    construct_build_artifact,
+    write_build_artifact_atomic,
+)
 from tooling.project_loader import LoadedProject, load_project
 from tooling.project_manifest import ProjectManifestError
 from tooling.project_scaffold import create_project_scaffold
@@ -25,6 +31,7 @@ EXIT_USAGE = 2
 EXIT_PROJECT = 10
 EXIT_CHECK = 20
 EXIT_RUNTIME = 30
+EXIT_ARTIFACT_OUTPUT = 40
 EXIT_INTERNAL = 70
 
 
@@ -90,6 +97,26 @@ def _parser() -> _ArgumentParser:
         help="project directory, source path, or apexforge.json path",
     )
     run.add_argument(
+        "--entry",
+        help="entry directive, overriding the manifest entry",
+    )
+
+    build = commands.add_parser(
+        "build",
+        help="write one canonical linked multi-source build artifact",
+    )
+    build.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="project directory, source path, or apexforge.json path",
+    )
+    build.add_argument(
+        "--output",
+        required=True,
+        help="explicit build-artifact output file",
+    )
+    build.add_argument(
         "--entry",
         help="entry directive, overriding the manifest entry",
     )
@@ -302,6 +329,48 @@ def _run_execute(
     return EXIT_SUCCESS
 
 
+def _run_build(
+    path: str,
+    output_path: str,
+    entry: Optional[str],
+    *,
+    stdout: TextIO,
+) -> int:
+    from language.project import ProjectBuildError
+
+    loaded = load_project(Path(path))
+    selected_entry = entry if entry is not None else loaded.manifest.entry
+    build = _default_project_builder(
+        loaded.source_mapping(),
+        selected_entry,
+    )
+
+    try:
+        artifact = construct_build_artifact(loaded, build)
+    except ProjectBuildError as exc:
+        raise CLIProjectCheckError(str(exc)) from exc
+
+    write_build_artifact_atomic(artifact, Path(output_path))
+
+    print(
+        f"ApexForge build succeeded: {loaded.manifest.name}",
+        file=stdout,
+    )
+    print(f"Schema: {BUILD_ARTIFACT_SCHEMA}", file=stdout)
+    print(
+        f"Entry: {artifact.entry if artifact.entry is not None else '<none>'}",
+        file=stdout,
+    )
+    print(f"Sources: {artifact.source_count}", file=stdout)
+    print(
+        "Fingerprint: "
+        f"sha256:{artifact.fingerprint}",
+        file=stdout,
+    )
+    print("Artifact written.", file=stdout)
+    return EXIT_SUCCESS
+
+
 def main(
     argv: Optional[Sequence[str]] = None,
     *,
@@ -348,6 +417,13 @@ def main(
                 stderr=errors,
                 builder=project_builder,
             )
+        if namespace.command == "build":
+            return _run_build(
+                namespace.path,
+                namespace.output,
+                namespace.entry,
+                stdout=output,
+            )
         if namespace.command == "new":
             return _run_new(
                 namespace.name,
@@ -360,6 +436,9 @@ def main(
     except CLIProjectCheckError as exc:
         print(str(exc), file=errors)
         return EXIT_CHECK
+    except BuildArtifactOutputError as exc:
+        print(str(exc), file=errors)
+        return EXIT_ARTIFACT_OUTPUT
     except KeyboardInterrupt:
         print("ApexForge command interrupted.", file=errors)
         return 130
@@ -381,6 +460,7 @@ __all__ = (
     "CLI_PROGRAM_NAME",
     "CLIProjectCheckError",
     "CLIUsageError",
+    "EXIT_ARTIFACT_OUTPUT",
     "EXIT_CHECK",
     "EXIT_INTERNAL",
     "EXIT_PROJECT",

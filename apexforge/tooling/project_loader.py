@@ -22,6 +22,7 @@ class LoadedProjectSource:
     name: str
     path: Path
     source: str
+    source_bytes: bytes = b""
 
     def __post_init__(self) -> None:
         if type(self.name) is not str or not self.name:
@@ -30,6 +31,15 @@ class LoadedProjectSource:
             raise TypeError("LoadedProjectSource.path must be pathlib.Path.")
         if type(self.source) is not str:
             raise TypeError("LoadedProjectSource.source must be a string.")
+        if type(self.source_bytes) is not bytes:
+            raise TypeError("LoadedProjectSource.source_bytes must be bytes.")
+
+        if not self.source_bytes and self.source:
+            object.__setattr__(
+                self,
+                "source_bytes",
+                self.source.encode("utf-8"),
+            )
 
 
 @dataclass(frozen=True)
@@ -147,7 +157,8 @@ def load_project(
             )
 
         try:
-            source_text = source_path.read_text(encoding="utf-8")
+            source_bytes = source_path.read_bytes()
+            source_text = source_bytes.decode("utf-8")
         except UnicodeDecodeError as exc:
             raise ProjectManifestError(
                 code="APX-TOOL-007",
@@ -167,11 +178,16 @@ def load_project(
                 manifest_path=manifest_path,
             ) from exc
 
+        # Preserve the existing universal-newline source-text contract while
+        # retaining the exact loaded bytes for content-addressed tooling.
+        source_text = source_text.replace("\r\n", "\n").replace("\r", "\n")
+
         loaded.append(
             LoadedProjectSource(
                 name=relative_name,
                 path=source_path,
                 source=source_text,
+                source_bytes=source_bytes,
             )
         )
 
