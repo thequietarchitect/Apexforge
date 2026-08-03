@@ -13,9 +13,9 @@
 - Preserve all frozen behavior unless the active task explicitly introduces a tested compatibility change.
 
 ## Current program
-- Current stage: P11.2A Declaration Model Audit and Compatibility Contract.
-- P11.1 is frozen at commit 5ba048a under tag afp-p11.1-freeze.
-- Immediate target: audit existing declaration behavior and define the first P11.2 implementation boundary without beginning P11.2B, P11.3, or later work.
+- Current stage: P11.2B Multi-Directive Headerless Source Unit.
+- P11.2A is accepted at commit b6f9277; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
+- Immediate target: support sequential existing directive declarations in one headerless legacy source unit while preserving split-source equivalence and all frozen behavior; do not add functions, modules/imports, identity redesign, P11.3, or later work.
 
 ## Required engineering behavior
 - Inspect existing implementation and tests before editing.
