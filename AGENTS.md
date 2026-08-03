@@ -13,9 +13,9 @@
 - Preserve all frozen behavior unless the active task explicitly introduces a tested compatibility change.
 
 ## Current program
-- Current stage: P11.1C Canonical Multi-Source Build Artifact.
-- P11.1A is accepted at commit bba89ab; P11.1B is accepted at commit 214b899.
-- Immediate target: implement P11.1C without beginning P11.1D or later work.
+- Current stage: P11.1D Integration and Freeze Gate.
+- P11.1A, P11.1B, and P11.1C are accepted at commits bba89ab, 214b899, and 01f51f4.
+- Immediate target: integrate and verify P11.1 without beginning P11.2 or later work.
 
 ## Required engineering behavior
 - Inspect existing implementation and tests before editing.
