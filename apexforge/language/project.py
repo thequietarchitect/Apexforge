@@ -36,6 +36,11 @@ from language.identities import (
     ProjectDeclaredIdentity,
     ProjectIdentityIndex,
 )
+from language.resolution_candidates import (
+    ProjectQualification,
+    ProjectResolutionCandidate,
+    ProjectResolutionCandidateIndex,
+)
 from language.modules import (
     ModuleError,
     ModuleGraph,
@@ -516,6 +521,10 @@ class ProjectBuild:
         default_factory=ProjectIdentityIndex,
         compare=False,
     )
+    resolution_candidate_index: ProjectResolutionCandidateIndex = field(
+        default_factory=ProjectResolutionCandidateIndex,
+        compare=False,
+    )
 
     def __post_init__(
         self,
@@ -593,6 +602,15 @@ class ProjectBuild:
             raise TypeError(
                 "ProjectBuild.identity_index must be "
                 "ProjectIdentityIndex."
+            )
+
+        if not isinstance(
+            self.resolution_candidate_index,
+            ProjectResolutionCandidateIndex,
+        ):
+            raise TypeError(
+                "ProjectBuild.resolution_candidate_index must be "
+                "ProjectResolutionCandidateIndex."
             )
 
         if self.entry_directive is not None:
@@ -893,6 +911,65 @@ class ProjectBuilder:
             ),
         )
 
+    def _build_resolution_candidate_index(
+        self,
+        declaration_ownership: ProjectDeclarationOwnership,
+        identity_index: ProjectIdentityIndex,
+    ) -> ProjectResolutionCandidateIndex:
+        owners_by_fact: dict[
+            tuple[object, ...],
+            list[ProjectDeclarationOwner],
+        ] = {}
+        for owner in declaration_ownership.declarations:
+            key = (
+                owner.kind,
+                owner.air_id,
+                owner.source_name,
+                owner.module_name,
+                owner.span,
+            )
+            owners_by_fact.setdefault(key, []).append(owner)
+
+        candidates: list[ProjectResolutionCandidate] = []
+        for identity in identity_index.identities:
+            key = (
+                identity.kind,
+                identity.current_air_id,
+                identity.source_name,
+                identity.module_name,
+                identity.span,
+            )
+            matching_owners = owners_by_fact.get(key, [])
+            if len(matching_owners) != 1:
+                raise ValueError(
+                    "Successful project identity metadata requires exactly one "
+                    "matching declaration owner."
+                )
+            owner = matching_owners[0]
+            candidates.append(
+                ProjectResolutionCandidate(
+                    identity=identity,
+                    owner=owner,
+                    qualification=ProjectQualification(
+                        kind=identity.kind,
+                        module_segments=(
+                            ()
+                            if owner.module_name is None
+                            else tuple(owner.module_name.split("."))
+                        ),
+                        declaration_path=(identity.declared_name,),
+                        legacy=owner.module_name is None,
+                    ),
+                )
+            )
+
+        if len(candidates) != len(declaration_ownership.declarations):
+            raise ValueError(
+                "Successful project ownership and identity metadata must be "
+                "one-to-one."
+            )
+        return ProjectResolutionCandidateIndex(tuple(candidates))
+
     def build(
         self,
         sources: (
@@ -1041,6 +1118,11 @@ class ProjectBuilder:
             else None
         )
 
+        resolution_candidate_index = self._build_resolution_candidate_index(
+            declaration_ownership,
+            identity_index,
+        )
+
         return ProjectBuild(
             source_units=units,
             program=program,
@@ -1051,6 +1133,7 @@ class ProjectBuilder:
             document_graph=document_graph,
             declaration_ownership=declaration_ownership,
             identity_index=identity_index,
+            resolution_candidate_index=resolution_candidate_index,
         )
 
     def _normalize_sources(

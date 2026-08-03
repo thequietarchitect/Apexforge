@@ -429,11 +429,27 @@ def test_collection_determinism_families_and_project_compatibility() -> None:
     )
 
     project_fields = fields(ProjectBuild)
+    project_field_names = tuple(item.name for item in project_fields)
+    document_graph_index = project_field_names.index("document_graph")
+    identity_index_field = project_fields[
+        project_field_names.index("identity_index")
+    ]
     require(
-        tuple(item.name for item in project_fields[-3:])
+        project_field_names[:document_graph_index]
+        == (
+            "source_units",
+            "program",
+            "verified",
+            "source_map",
+            "module_graph",
+            "entry_directive",
+        )
+        and project_field_names[
+            document_graph_index:document_graph_index + 3
+        ]
         == ("document_graph", "declaration_ownership", "identity_index")
-        and project_fields[-1].compare is False,
-        "ProjectBuild identity_index was not appended with compare=False",
+        and identity_index_field.compare is False,
+        "ProjectBuild P11.4B metadata sequence or compatibility changed",
     )
     positional = ProjectBuild(
         first.source_units,

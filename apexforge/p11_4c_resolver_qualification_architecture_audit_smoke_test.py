@@ -526,12 +526,40 @@ def test_artifact_cli_tooling_and_no_resolver_consumers() -> None:
         "language.resolver",
         "language.resolution",
     )
+    authorized_markers = {
+        "apexforge/language/resolution_candidates.py": {
+            "ResolutionCandidate",
+        },
+        "apexforge/language/project.py": {
+            "ResolutionCandidate",
+            "language.resolution",
+        },
+    }
+    observed_authorized_markers = set()
     for root in relevant_roots:
         for path in root.rglob("*.py"):
-            require(
-                not any(marker in path.read_text(encoding="utf-8") for marker in forbidden),
-                f"production file {path.name} consumes a new resolver abstraction",
-            )
+            relative = path.relative_to(REPOSITORY_ROOT).as_posix()
+            text = path.read_text(encoding="utf-8")
+            for marker in forbidden:
+                if marker not in text:
+                    continue
+                require(
+                    marker in authorized_markers.get(relative, set()),
+                    f"production file {path.name} consumes a new resolver abstraction",
+                )
+                observed_authorized_markers.add((relative, marker))
+    require(
+        observed_authorized_markers
+        == {
+            (
+                "apexforge/language/resolution_candidates.py",
+                "ResolutionCandidate",
+            ),
+            ("apexforge/language/project.py", "ResolutionCandidate"),
+            ("apexforge/language/project.py", "language.resolution"),
+        },
+        "the P11.4D successor production boundary changed",
+    )
 
 
 def main() -> None:
