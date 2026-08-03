@@ -442,6 +442,45 @@ class Parser:
         )
         raise AssertionError("unreachable")
 
+    def parse_headerless_directive_source_unit(
+        self,
+    ) -> tuple[DirectiveNode, ...]:
+        """Parse only the narrow P11.2B headerless directive sequence."""
+
+        if self.current().kind != "DIRECTIVE":
+            self._raise(
+                code="APX-PARSE-002",
+                message=(
+                    "A headerless multi-directive source unit must begin "
+                    "with a directive declaration."
+                ),
+            )
+
+        directives: list[DirectiveNode] = [self.parse_directive()]
+
+        while self.current().kind != "EOF":
+            comments: list[Token] = []
+            while self.current().kind == "LINE_COMMENT":
+                comments.append(self.consume("LINE_COMMENT"))
+
+            if comments and self.current().kind == "EOF":
+                self._raise(
+                    code="APX-PARSE-001",
+                    message=(
+                        "Inter-directive line comments must be followed by "
+                        "another directive declaration."
+                    ),
+                    token=comments[0],
+                )
+
+            if self.current().kind != "DIRECTIVE":
+                self.consume("EOF")
+
+            directives.append(self.parse_directive())
+
+        self.consume("EOF")
+        return tuple(directives)
+
     # ======================================================================
     # Top-level declarations
     # ======================================================================
@@ -1429,6 +1468,24 @@ def parse(
     return node
 
 
+def parse_headerless_directive_source_unit(
+    source: str,
+    *,
+    source_name: str = "<memory>",
+) -> tuple[DirectiveNode, ...]:
+    """Return original directive nodes in deterministic P11.2B source order."""
+
+    parser = Parser(
+        lex(
+            source,
+            source_name=source_name,
+            inter_directive_line_comments=True,
+        ),
+        source_name=source_name,
+    )
+    return parser.parse_headerless_directive_source_unit()
+
+
 __all__ = [
     "ParseError",
     "ExpressionNode",
@@ -1470,4 +1527,5 @@ __all__ = [
     "PrincipalNode",
     "Parser",
     "parse",
+    "parse_headerless_directive_source_unit",
 ]

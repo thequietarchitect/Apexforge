@@ -168,6 +168,7 @@ def lex(
     source: str,
     *,
     source_name: str = "<memory>",
+    inter_directive_line_comments: bool = False,
 ) -> List[Token]:
     if not isinstance(source, str):
         raise TypeError(
@@ -184,6 +185,25 @@ def lex(
 
         if char.isspace():
             i += 1
+            continue
+
+        # P11.2B recognizes line comments only as trivia between sequential
+        # directives. The default preserves the frozen ordinary lexer.
+        if (
+            inter_directive_line_comments
+            and source.startswith("//", i)
+        ):
+            start = i
+            i += 2
+            while i < len(source) and source[i] not in {"\r", "\n"}:
+                i += 1
+            tokens.append(
+                Token(
+                    kind="LINE_COMMENT",
+                    value=source[start:i],
+                    span=source_text.span(start, i),
+                )
+            )
             continue
 
         if char == '"':

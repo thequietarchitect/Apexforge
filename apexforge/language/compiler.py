@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Mapping, Optional
 
 from role_compiler import compile_role
@@ -23,6 +23,7 @@ from air.types import AIR_VERSION
 from authority.model import AuthorityCheck, Principal
 from causality.model import CausalDecision, CausalPath, DirectiveInvocation
 from language.diagnostics import BuildDiagnostic
+from language.lexer import lex
 from language.parser import (
     AddActionNode,
     DirectiveNode,
@@ -48,6 +49,7 @@ from language.parser import (
     RoleNode,
     SetActionNode,
     parse,
+    parse_headerless_directive_source_unit,
 )
 from air.expressions import (
     AIRExpression,
@@ -1871,12 +1873,96 @@ def compile_node(
     ).program
 
 
+def _compile_directive_source_unit_with_map(
+    nodes: tuple[DirectiveNode, ...],
+    *,
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
+) -> CompiledSource:
+    """Compose existing directive lowerings into one local AIR program."""
+
+    artifacts = tuple(
+        _compile_directive_with_map(
+            node,
+            function_signatures=function_signatures,
+        )
+        for node in nodes
+    )
+    programs = tuple(artifact.program for artifact in artifacts)
+    directives = tuple(
+        replace(directive, order=local_order)
+        for local_order, program in enumerate(programs)
+        for directive in tuple(program.directives)
+    )
+
+    return CompiledSource(
+        program=AIRProgram(
+            version=AIR_VERSION,
+            states=tuple(
+                item for program in programs for item in tuple(program.states)
+            ),
+            events=tuple(
+                item for program in programs for item in tuple(program.events)
+            ),
+            authority_checks=tuple(
+                item
+                for program in programs
+                for item in tuple(program.authority_checks)
+            ),
+            causal_decisions=tuple(
+                item
+                for program in programs
+                for item in tuple(program.causal_decisions)
+            ),
+            directives=directives,
+            requirements=tuple(
+                item
+                for program in programs
+                for item in tuple(program.requirements)
+            ),
+            authorities=tuple(
+                item
+                for program in programs
+                for item in tuple(program.authorities)
+            ),
+            principals=tuple(
+                item
+                for program in programs
+                for item in tuple(program.principals)
+            ),
+            roles=tuple(
+                item for program in programs for item in tuple(program.roles)
+            ),
+            functions=tuple(
+                item
+                for program in programs
+                for item in tuple(program.functions)
+            ),
+        ),
+        source_map=SourceMap.merge(
+            *(artifact.source_map for artifact in artifacts)
+        ),
+    )
+
+
 def compile_source_with_map(
     source: str,
     *,
     source_name: str = "<memory>",
     function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
+    allow_headerless_multi_directive: bool = True,
 ) -> CompiledSource:
+    if allow_headerless_multi_directive:
+        tokens = lex(source, source_name=source_name)
+        if tokens[0].kind == "DIRECTIVE":
+            nodes = parse_headerless_directive_source_unit(
+                source,
+                source_name=source_name,
+            )
+            return _compile_directive_source_unit_with_map(
+                nodes,
+                function_signatures=function_signatures,
+            )
+
     node = parse(source, source_name=source_name)
     return compile_node_with_map(
         node,
@@ -1888,12 +1974,14 @@ def compile_source(
     source: str,
     *,
     function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
+    allow_headerless_multi_directive: bool = True,
 ) -> AIRProgram | AIRRole:
     """Backward-compatible one-source compiler returning AIR only."""
 
     return compile_source_with_map(
         source,
         function_signatures=function_signatures,
+        allow_headerless_multi_directive=allow_headerless_multi_directive,
     ).program
 
 

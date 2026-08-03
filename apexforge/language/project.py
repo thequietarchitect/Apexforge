@@ -442,6 +442,7 @@ class _Compiler(Protocol):
         source: str,
         *,
         source_name: str = "<memory>",
+        allow_headerless_multi_directive: bool = True,
     ) -> Any:
         ...
 
@@ -647,6 +648,7 @@ class ProjectBuilder:
         unit: SourceUnit,
         *,
         compiler_source: Optional[str] = None,
+        allow_headerless_multi_directive: bool = True,
     ) -> CompiledSource:
         source = (
             unit.source
@@ -668,22 +670,34 @@ class ProjectBuilder:
                     in signature.parameters.values()
                 )
             )
+            accepts_multi_directive = (
+                "allow_headerless_multi_directive"
+                in signature.parameters
+                or any(
+                    parameter.kind
+                    == inspect.Parameter.VAR_KEYWORD
+                    for parameter
+                    in signature.parameters.values()
+                )
+            )
         except (
             TypeError,
             ValueError,
         ):
             accepts_source_name = True
+            accepts_multi_directive = True
 
         try:
-            compiled = (
-                self._compiler(
-                    source,
-                    source_name=unit.name,
-                )
-                if accepts_source_name
-                else self._compiler(
-                    source
-                )
+            compiler_arguments: dict[str, object] = {}
+            if accepts_source_name:
+                compiler_arguments["source_name"] = unit.name
+            if accepts_multi_directive:
+                compiler_arguments[
+                    "allow_headerless_multi_directive"
+                ] = allow_headerless_multi_directive
+            compiled = self._compiler(
+                source,
+                **compiler_arguments,
             )
         except Exception as exc:
             raise ProjectCompilationError(
@@ -812,6 +826,7 @@ class ProjectBuilder:
             ] = self._compile_unit(
                 unit,
                 compiler_source=analysis.masked_source,
+                allow_headerless_multi_directive=graph.is_legacy,
             )
 
         if graph.is_legacy:

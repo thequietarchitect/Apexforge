@@ -218,8 +218,23 @@ def test_cross_source_declarations_and_ordering() -> None:
 
 
 def test_one_source_boundary_and_invalid_nesting() -> None:
+    # P11.2B is the one reviewed exception to the P11.2A snapshot: sequential
+    # directives are now accepted in a headerless legacy source.
+    combined = build_project(
+        {
+            "two-directives.apex": (
+                "directive First {}\n"
+                "directive Second {}\n"
+            )
+        }
+    )
+    require(
+        tuple(item.id for item in combined.program.directives)
+        == ("directive:First", "directive:Second"),
+        "the P11.2B headerless directive exception is unavailable",
+    )
+
     scenarios = (
-        ("two-directives.apex", ENTRY_SOURCE + "\n" + WORKER_SOURCE),
         ("two-functions.apex", CALLER_SOURCE + "\n" + CALLEE_SOURCE),
         ("mixed-function-first.apex", CALLER_SOURCE + "\n" + ENTRY_SOURCE),
         ("mixed-directive-first.apex", ENTRY_SOURCE + "\n" + CALLER_SOURCE),
@@ -231,7 +246,7 @@ def test_one_source_boundary_and_invalid_nesting() -> None:
             lambda source_name=source_name, source=source: build_project(
                 {source_name: source}
             ),
-            "a source containing two top-level declarations was accepted",
+            "an unsupported multi-declaration source was accepted",
         )
         diagnostic = diagnostic_of(error)
         require(

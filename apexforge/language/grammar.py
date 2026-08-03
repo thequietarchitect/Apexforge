@@ -14,6 +14,7 @@ from typing import Final, Mapping
 
 
 P10_T2_GRAMMAR_VERSION: Final[str] = "10-T2.1"
+P11_2B_COMPATIBILITY_VERSION: Final[str] = "11.2B"
 
 CANONICAL_SOURCE_EXTENSION: Final[str] = ".apex"
 CANONICAL_SOURCE_GLOB: Final[str] = "*.apex"
@@ -267,6 +268,28 @@ GRAMMAR_CONTRACT_NOTES: Final[tuple[str, ...]] = (
 )
 
 
+# The frozen P10 EBNF and fingerprint remain the historical base contract.
+# P11.2B adds this narrow overlay instead of redefining every source as a
+# general declaration list or changing module/import source-unit semantics.
+P11_2B_HEADERLESS_DIRECTIVE_SOURCE_EBNF: Final[str] = r'''P11_2B_Source =
+    HeaderlessDirectiveSequence | P10_OrdinarySource ;
+P10_OrdinarySource = HeaderSection? Declaration EOF ;
+HeaderlessDirectiveSequence = DirectiveDeclaration
+                              InterDirectiveTrivia DirectiveDeclaration
+                              (InterDirectiveTrivia DirectiveDeclaration)* EOF ;
+InterDirectiveTrivia = (Whitespace | LineComment)+ ;
+LineComment = "//" LineCharacter* LineEnd ;
+'''
+
+P11_2B_GRAMMAR_COMPATIBILITY_NOTES: Final[tuple[str, ...]] = (
+    "The historical P10 ordinary source rule remains one declaration.",
+    "A headerless legacy source may additionally contain two or more sequential directives.",
+    "Only // line comments between complete directives are P11.2B trivia; general comments remain unsupported.",
+    "A module/import header retains the ordinary one-declaration boundary.",
+    "Functions and mixed declaration families do not use the directive sequence exception.",
+)
+
+
 def _grammar_payload() -> bytes:
     value = {
         "ebnf": APEXFORGE_EBNF,
@@ -315,6 +338,9 @@ __all__ = (
     "MODULE_HEADER_SEMICOLONS_OPTIONAL",
     "ORDINARY_SEMICOLONS_SUPPORTED",
     "P10_T2_GRAMMAR_VERSION",
+    "P11_2B_COMPATIBILITY_VERSION",
+    "P11_2B_GRAMMAR_COMPATIBILITY_NOTES",
+    "P11_2B_HEADERLESS_DIRECTIVE_SOURCE_EBNF",
     "STRING_ESCAPE_SEQUENCES",
     "TOP_LEVEL_DECLARATIONS",
     "canonicalize_source_name",
