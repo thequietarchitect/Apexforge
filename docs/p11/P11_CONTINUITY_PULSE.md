@@ -7,10 +7,10 @@ VARENIC-CREST-PULSE: APEXFORGE-P11 / TAM-v3 / QV-AETHER / STORY-SEMANTICS / APEX
 P10 Standard Library and P10-T1 through P10-T5 are frozen at commit 38a3778.
 
 ## Current stage
-P11.3A Module, Import, Export, and Document-Graph Architecture Audit. P11.2 is frozen at commit 6b82f79 under tag afp-p11.2-freeze; P11.2B is accepted at commit fa5836d; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
+P11.3B Canonical Project Document-Graph Foundation. P11.3A is accepted at commit 697e3b2; P11.2 is frozen at commit 6b82f79 under tag afp-p11.2-freeze; P11.2B is accepted at commit fa5836d; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
 
 ## Immediate next stage
-Audit the existing module/import architecture, export status, dependency and document-graph behavior, ordering, diagnostics, symbol visibility, CLI/artifact interactions, and language-server integration; do not change production code or begin P11.3B, P11.4, or later work.
+Introduce an immutable canonical project document graph alongside ModuleGraph, representing every physical source exactly once in legacy and module projects while preserving module/import spellings, spans, resolved edges, canonical source order, dependency order, and distinct direct/transitive dependency queries; do not add exports, visibility rules, aliases, namespaces, qualified identities, multiple declarations in module sources, P11.4 work, artifact or manifest fields, new CLI commands, cross-file LSP resolution, or runtime-authority changes.
 
 ## Governing architecture
 Documents -> Compiler TAM -> Declaration and Symbol Graph -> Narrative Semantic Graph -> Quad-Vector Analysis -> Parametric Semantic Lattice -> AETHER-AIR 2.0 -> Optimized AIR or Native Backend -> Runtime, Storytelling, Simulation, ApexMotion, or Fabrication.

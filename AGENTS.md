@@ -13,9 +13,9 @@
 - Preserve all frozen behavior unless the active task explicitly introduces a tested compatibility change.
 
 ## Current program
-- Current stage: P11.3A Module, Import, Export, and Document-Graph Architecture Audit.
-- P11.2 is frozen at commit 6b82f79 under tag afp-p11.2-freeze; P11.2B is accepted at commit fa5836d; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
-- Immediate target: audit the existing module/import architecture, export status, dependency and document-graph behavior, ordering, diagnostics, symbol visibility, CLI/artifact interactions, and language-server integration; do not change production code or begin P11.3B, P11.4, or later work.
+- Current stage: P11.3B Canonical Project Document-Graph Foundation.
+- P11.3A is accepted at commit 697e3b2; P11.2 is frozen at commit 6b82f79 under tag afp-p11.2-freeze; P11.2B is accepted at commit fa5836d; P11.1 remains frozen at commit 5ba048a under tag afp-p11.1-freeze.
+- Immediate target: introduce an immutable canonical project document graph alongside ModuleGraph, representing every physical source exactly once in legacy and module projects while preserving module/import spellings, spans, resolved edges, canonical source order, dependency order, and distinct direct/transitive dependency queries; do not add exports, visibility rules, aliases, namespaces, qualified identities, multiple declarations in module sources, P11.4 work, artifact or manifest fields, new CLI commands, cross-file LSP resolution, or runtime-authority changes.
 
 ## Required engineering behavior
 - Inspect existing implementation and tests before editing.
