@@ -13,9 +13,9 @@
 - Preserve all frozen behavior unless the active task explicitly introduces a tested compatibility change.
 
 ## Current program
-- Current stage: P11.1D Integration and Freeze Gate.
-- P11.1A, P11.1B, and P11.1C are accepted at commits bba89ab, 214b899, and 01f51f4.
-- Immediate target: integrate and verify P11.1 without beginning P11.2 or later work.
+- Current stage: P11.2A Declaration Model Audit and Compatibility Contract.
+- P11.1 is frozen at commit 5ba048a under tag afp-p11.1-freeze.
+- Immediate target: audit existing declaration behavior and define the first P11.2 implementation boundary without beginning P11.2B, P11.3, or later work.
 
 ## Required engineering behavior
 - Inspect existing implementation and tests before editing.
