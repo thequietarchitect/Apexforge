@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "name": "P11MinimalBaseline",
+  "sources": [
+    "src/main.apex"
+  ],
+  "entry": "Minimal"
+}

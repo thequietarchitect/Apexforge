@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "name": "P11RepresentativeBaseline",
+  "sources": [
+    "src/10-core.apex",
+    "src/20-adjust.apex",
+    "src/30-counter.apex"
+  ],
+  "entry": "Representative"
+}
