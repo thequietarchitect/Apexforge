@@ -16,7 +16,6 @@ from language.modules import (
 )
 from language.project import (
     ProjectBuild,
-    ProjectCompilationError,
     ProjectEntryPointError,
     ProjectModuleError,
     build_project,
@@ -406,27 +405,23 @@ def test_module_diagnostics_and_one_declaration_boundary() -> None:
         "the unreachable APX-MODULE-003 branch became observable",
     )
 
-    module_multi = require_raises(
-        ProjectCompilationError,
-        lambda: build_project(
-            {
-                "multi.apex": (
-                    "module app.multi\n\n"
-                    "directive First {}\n"
-                    "directive Second {}\n"
-                )
-            }
-        ),
-        "P11.2B multi-directive parsing entered module mode",
+    # P11.2E intentionally routes masked module sources through the canonical
+    # heterogeneous compiler instead of retaining P11.2B's legacy-only gate.
+    module_multi = build_project(
+        {
+            "multi.apex": (
+                "module app.multi\n\n"
+                "directive First {}\n"
+                "directive Second {}\n"
+            )
+        },
+        entry="First",
     )
-    item = diagnostic_of(module_multi)
     require(
-        item.stage == "parse"
-        and item.code == "APX-PARSE-001"
-        and item.span is not None
-        and item.span.source_name == "multi.apex"
-        and item.span.start.line == 4,
-        "module sources stopped enforcing one top-level declaration",
+        tuple(item.id for item in module_multi.program.directives)
+        == ("directive:First", "directive:Second")
+        and module_multi.entry_directive == "directive:First",
+        "P11.2E module-source promotion lost declarations or entry selection",
     )
 
 

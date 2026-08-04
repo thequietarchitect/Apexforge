@@ -257,27 +257,53 @@ def test_lowering_ownership_flat_ids_and_unsupported_forms() -> None:
         "source-map declaration ownership evidence changed",
     )
 
-    unsupported = (
-        ("workflow.apex", "module app.workflow\n\nworkflow Flow {}\n", "APX-COMPILE-007"),
-        ("authority.apex", "module app.authority\n\nauthority Guard {}\n", "APX-COMPILE-007"),
-        ("principal.apex", "module app.principal\n\nprincipal Actor {}\n", "APX-COMPILE-007"),
-        ("role.apex", "module app.role\n\nrole Operator {}\n", "APX-COMPILE-999"),
+    promoted = (
+        (
+            "workflow.apex",
+            "module app.workflow\n\nworkflow Flow {}\n",
+            "workflows",
+            "id",
+            "workflow:Flow",
+        ),
+        (
+            "authority.apex",
+            "module app.authority\n\nauthority Guard {}\n",
+            "authorities",
+            "id",
+            "authority:Guard",
+        ),
+        (
+            "principal.apex",
+            "module app.principal\n\nprincipal Actor {}\n",
+            "principals",
+            "id",
+            "principal:Actor",
+        ),
+        (
+            "role.apex",
+            "module app.role\n\nrole Operator {}\n",
+            "roles",
+            "name",
+            "Operator",
+        ),
     )
-    for source_name, source, code in unsupported:
-        error = require_raises(
-            ProjectCompilationError,
-            lambda source_name=source_name, source=source: build_project(
-                {source_name: source}
-            ),
-            f"{source_name} unexpectedly became a project AIR declaration",
+    for source_name, source, collection_name, identity_field, expected in promoted:
+        promoted_build = build_project({source_name: source})
+        declarations = getattr(
+            promoted_build.program,
+            collection_name,
         )
-        item = diagnostic_of(error)
+
         require(
-            item.stage == "compile"
-            and item.code == code
-            and item.span is not None
-            and item.span.source_name == source_name,
-            f"{source_name} lowering boundary changed",
+            len(declarations) == 1
+            and getattr(declarations[0], identity_field) == expected,
+            f"{source_name} canonical project AIR lowering changed",
+        )
+        require(
+            not promoted_build.module_graph.is_legacy
+            and promoted_build.module_graph.source_order()
+            == (source_name,),
+            f"{source_name} module ownership changed",
         )
 
     flat_duplicate = require_raises(

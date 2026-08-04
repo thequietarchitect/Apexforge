@@ -545,14 +545,29 @@ def test_nesting_and_scope_inventory() -> None:
         == ("directive:First", "directive:Second"),
         "P11.2B sequential legacy directives changed",
     )
-    module_many = require_raises(
-        ProjectCompilationError,
-        lambda: build_project(
-            {"module.apex": "module App.Main\n\ndirective First {}\ndirective Second {}\n"}
-        ),
-        "module source accepted more than one ordinary declaration",
+    module_many = build_project(
+        {
+            "module.apex": (
+                "module App.Main\n\n"
+                "directive First {}\n"
+                "directive Second {}\n"
+            )
+        },
+        entry="First",
     )
-    require(diagnostic_of(module_many).code == "APX-PARSE-001", "module source cardinality changed")
+    require(
+        tuple(item.id for item in module_many.program.directives)
+        == ("directive:First", "directive:Second")
+        and tuple(item.order for item in module_many.program.directives)
+        == (0, 1)
+        and module_many.resolve_entry() == "directive:First",
+        "module source multi-declaration identities or ordering changed",
+    )
+    require(
+        not module_many.module_graph.is_legacy
+        and module_many.module_graph.source_order() == ("module.apex",),
+        "module source ownership changed",
+    )
 
 
 def test_external_compatibility_and_repository_boundaries() -> None:

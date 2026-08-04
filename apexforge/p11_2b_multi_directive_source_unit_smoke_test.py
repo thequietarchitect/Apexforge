@@ -302,13 +302,37 @@ def test_duplicates_collisions_entries_and_authority() -> None:
 
 
 def test_source_aware_rejections() -> None:
+    # P11.2B recorded complete-source rejection for heterogeneous and module-
+    # masked inputs. P11.2E intentionally promotes those inputs through the
+    # canonical heterogeneous compiler while preserving this test's narrow
+    # parser API coverage above.
+    mixed = build_project(
+        {"mixed.apex": "directive One {}\nfunction Two() { return 2 }\n"}
+    )
+    function_first = build_project(
+        {"function-first.apex": "function One() { return 1 }\ndirective Two {}\n"}
+    )
+    headered = build_project(
+        {
+            "headered.apex": (
+                "module sample.headered\n\n"
+                "directive One {}\ndirective Two {}\n"
+            )
+        }
+    )
+    require(
+        len(mixed.program.directives) == len(mixed.program.functions) == 1
+        and len(function_first.program.directives)
+        == len(function_first.program.functions)
+        == 1
+        and len(headered.program.directives) == 2,
+        "P11.2E heterogeneous or module-masked promotion dropped declarations",
+    )
+
     scenarios = (
         ("malformed-second.apex", "directive Good {}\ndirective Broken { state value = }\n", "APX-PARSE-004", 2),
         ("nested.apex", "directive Outer {\n directive Inner {}\n}\n", "APX-PARSE-003", 2),
-        ("mixed.apex", "directive One {}\nfunction Two() { return 2 }\n", "APX-PARSE-001", 2),
-        ("function-first.apex", "function One() { return 1 }\ndirective Two {}\n", "APX-PARSE-001", 2),
-        ("headered.apex", "module sample.headered\n\ndirective One {}\ndirective Two {}\n", "APX-PARSE-001", 4),
-        ("trailing.apex", "directive One {}\ndirective Two {}\ntrailing\n", "APX-PARSE-001", 3),
+        ("trailing.apex", "directive One {}\ndirective Two {}\ntrailing\n", "APX-PARSE-002", 3),
     )
     for source_name, source, code, line in scenarios:
         error = require_raises(

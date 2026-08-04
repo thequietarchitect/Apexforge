@@ -1,13 +1,23 @@
-"""Recursive directive execution engine for ApexForge."""
+"""Synchronous linked directive execution engine for ApexForge."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Tuple
 
-from workflow.air_runner import run_air_from_registry
-from authority.validator import validate_requirements, AuthorizationError, validate_authorities, validate_principal_authorities,PrincipalAuthorizationError, PrincipalCapabilityAuthorizationError
-from air.model import AIRPrincipal, AIRProgram
+from air.model import PrincipalAuthority
+from authority.validator import (
+    authorize_principal,
+    authorize_principal_capabilities,
+    validate_authorities,
+    validate_principal_authorities,
+)
+from role.registry import RoleRegistry
+from workflow.air_runner import (
+    build_registry_execution_plan,
+    run_air_program,
+)
+
 
 @dataclass(frozen=True)
 class DirectiveExecutionResult:
@@ -17,6 +27,11 @@ class DirectiveExecutionResult:
     @property
     def ok(self) -> bool:
         return all(result.ok for _, result in self.results)
+
+
+class DirectiveRequirementOwnershipError(RuntimeError):
+    """Raised when program-level requirements have ambiguous ownership."""
+
 
 class TestDirectiveRegistry:
     def __init__(self):
@@ -28,6 +43,7 @@ class TestDirectiveRegistry:
     def resolve(self, name):
         return self._programs[name.lower()]
 
+
 class DirectiveExecutionEngine:
     def execute(
         self,
@@ -38,66 +54,77 @@ class DirectiveExecutionEngine:
         root: str,
         max_depth: int = 10,
     ) -> DirectiveExecutionResult:
-        results = []
-        visited = set()
+        if (
+            isinstance(max_depth, bool)
+            or not isinstance(max_depth, int)
+            or max_depth < 0
+        ):
+            raise ValueError(
+                "max_depth must be a non-negative integer."
+            )
 
-        def run(name: str, depth: int) -> None:
-            if depth > max_depth:
-                raise RuntimeError(
-                    f"Maximum invocation depth exceeded at {name}"
+        executing_principal = principal_registry.get(
+            principal_name
+        )
+        plan = build_registry_execution_plan(
+            registry,
+            root,
+        )
+
+        def authorize_directive_entry(directive) -> None:
+            owner = plan.owner_of(directive.id)
+
+            if owner.requirements and len(owner.directives) != 1:
+                raise DirectiveRequirementOwnershipError(
+                    "cannot determine capability requirement ownership "
+                    f"for selected directive {directive.id!r}"
                 )
-
-            if name in visited:
-                raise RuntimeError(
-                    f"Recursive invocation cycle detected at {name}"
-                )
-
-            visited.add(name)
-
-            program = registry.resolve(name)
-            result = run_air_from_registry(registry, name)
-
-            results.append((name, result))
 
             validate_authorities(
-                program,
+                owner,
                 authority_registry,
             )
-            validate_requirements(
-                program,
-                authority_registry,
-            )
-
             validate_principal_authorities(
-                program,
+                owner,
                 authority_registry,
-        )
+            )
 
-            principal = principal_registry.get(
-                principal_name
-        )
+            role_registry = RoleRegistry()
+            role_registry.register_all(owner.roles)
 
-            PrincipalAuthorizationError.authorize_principal(
-                principal,
-                program,
-        )
-            PrincipalCapabilityAuthorizationError.authorize_principal_capabilities(
-                principal,
-                program,
-                authority_registry,
-        )
-            
-            for decision in program.causal_decisions:
-                for path in decision.paths:
-                    for invocation in path.invocations:
-                        target = invocation.target.lower()
-                        run(target, depth + 1)
+            for authority in directive.authorities:
+                authorize_principal(
+                    principal=executing_principal,
+                    authority=PrincipalAuthority(
+                        name=authority.name,
+                    ),
+                    role_registry=role_registry,
+                    authority_registry=authority_registry,
+                    program=owner,
+                )
 
-            visited.remove(name)
+            required_capabilities = {
+                requirement.capability
+                for requirement in owner.requirements
+            }
 
-        run(root, 0)
+            if required_capabilities:
+                authorize_principal_capabilities(
+                    principal=executing_principal,
+                    required_capabilities=required_capabilities,
+                    role_registry=role_registry,
+                    authority_registry=authority_registry,
+                    program=owner,
+                )
+
+        result = run_air_program(
+            plan.program,
+            entry_directives=(plan.entry_directive,),
+            directive_entry_guard=authorize_directive_entry,
+            max_invocation_depth=max_depth + 1,
+        )
 
         return DirectiveExecutionResult(
             root=root,
-            results=tuple(results),
+            results=((root, result),),
         )

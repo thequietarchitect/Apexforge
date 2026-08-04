@@ -6,10 +6,12 @@ from dataclasses import dataclass, replace
 from typing import Any, Mapping, Optional
 
 from role_compiler import compile_role
+from authority.compiler import compile_authority
+from principal_compiler import compile_principal
+from workflow.compiler import compile_workflow
 from air.model import (
     AIRDirective,
     AIRProgram,
-    AIRRole,
     EventDefinition,
     EventEmission,
     StateAssignment,
@@ -23,7 +25,6 @@ from air.types import AIR_VERSION
 from authority.model import AuthorityCheck, Principal
 from causality.model import CausalDecision, CausalPath, DirectiveInvocation
 from language.diagnostics import BuildDiagnostic
-from language.lexer import lex
 from language.parser import (
     AddActionNode,
     DirectiveNode,
@@ -42,14 +43,17 @@ from language.parser import (
     BinaryExpressionNode,
     CallExpressionNode,
     FunctionNode,
+    WorkflowNode,
+    AuthorityNode,
+    PrincipalNode,
     TypeParameterNode,
     FunctionWhenNode,
     LetNode,
     ReturnNode,
     RoleNode,
+    SourceUnitNode,
     SetActionNode,
-    parse,
-    parse_headerless_directive_source_unit,
+    parse_source_unit,
 )
 from air.expressions import (
     AIRExpression,
@@ -178,7 +182,7 @@ class SourceMap:
 
 @dataclass(frozen=True)
 class CompiledSource:
-    program: Any
+    program: AIRProgram
     source_map: SourceMap
 
 
@@ -1439,13 +1443,14 @@ def _compile_directive_with_map(
                     decision.id for decision in causal_decisions
                 ),
                 order=0,
+                authorities=tuple(
+                    DirectiveAuthority(name=authority.name)
+                    for authority in node.authorities
+                ),
             ),
         ),
         requirements=requirements,
-        authorities=tuple(
-            DirectiveAuthority(name=authority.name)
-            for authority in node.authorities
-        ),
+        authorities=(),
     )
 
     return CompiledSource(program=program, source_map=SourceMap(tuple(entries)))
@@ -1827,7 +1832,14 @@ def compile_function(
 
 
 def compile_node_with_map(
-    node: DirectiveNode | RoleNode | FunctionNode,
+    node: (
+        DirectiveNode
+        | FunctionNode
+        | WorkflowNode
+        | AuthorityNode
+        | PrincipalNode
+        | RoleNode
+    ),
     *,
     function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
 ) -> CompiledSource:
@@ -1843,6 +1855,54 @@ def compile_node_with_map(
             function_signatures=function_signatures,
         )
 
+    if isinstance(node, AuthorityNode):
+        authority = compile_authority(node)
+        entries: list[SourceMapEntry] = []
+        _append_source_entry(
+            entries,
+            air_id=f"authority:{node.name}",
+            node=node,
+            kind="authority",
+            reference=node.name,
+        )
+        return CompiledSource(
+            program=AIRProgram(
+                version=AIR_VERSION,
+                states=(),
+                events=(),
+                authority_checks=(),
+                causal_decisions=(),
+                directives=(),
+                requirements=(),
+                authorities=(authority,),
+            ),
+            source_map=SourceMap(tuple(entries)),
+        )
+
+    if isinstance(node, PrincipalNode):
+        principal = compile_principal(node)
+        entries: list[SourceMapEntry] = []
+        _append_source_entry(
+            entries,
+            air_id=f"principal:{node.name}",
+            node=node,
+            kind="principal",
+            reference=node.name,
+        )
+        return CompiledSource(
+            program=AIRProgram(
+                version=AIR_VERSION,
+                states=(),
+                events=(),
+                authority_checks=(),
+                causal_decisions=(),
+                directives=(),
+                requirements=(),
+                principals=(principal,),
+            ),
+            source_map=SourceMap(tuple(entries)),
+        )
+
     if isinstance(node, RoleNode):
         role = compile_role(node)
         entries: list[SourceMapEntry] = []
@@ -1853,7 +1913,43 @@ def compile_node_with_map(
             kind="role",
             reference=node.name,
         )
-        return CompiledSource(program=role, source_map=SourceMap(tuple(entries)))
+        return CompiledSource(
+            program=AIRProgram(
+                version=AIR_VERSION,
+                states=(),
+                events=(),
+                authority_checks=(),
+                causal_decisions=(),
+                directives=(),
+                requirements=(),
+                roles=(role,),
+            ),
+            source_map=SourceMap(tuple(entries)),
+        )
+
+    if isinstance(node, WorkflowNode):
+        workflow = compile_workflow(node)
+        entries: list[SourceMapEntry] = []
+        _append_source_entry(
+            entries,
+            air_id=f"workflow:{node.name}",
+            node=node,
+            kind="workflow",
+            reference=node.name,
+        )
+        return CompiledSource(
+            program=AIRProgram(
+                version=AIR_VERSION,
+                states=(),
+                events=(),
+                authority_checks=(),
+                causal_decisions=(),
+                directives=(),
+                requirements=(),
+                workflows=(workflow,),
+            ),
+            source_map=SourceMap(tuple(entries)),
+        )
 
     raise _compile_error(
         code="APX-COMPILE-007",
@@ -1863,36 +1959,45 @@ def compile_node_with_map(
 
 
 def compile_node(
-    node: DirectiveNode | RoleNode | FunctionNode,
+    node: (
+        DirectiveNode
+        | FunctionNode
+        | WorkflowNode
+        | AuthorityNode
+        | PrincipalNode
+        | RoleNode
+    ),
     *,
     function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
-) -> AIRProgram | AIRRole:
+) -> AIRProgram:
     return compile_node_with_map(
         node,
         function_signatures=function_signatures,
     ).program
 
 
-def _compile_directive_source_unit_with_map(
-    nodes: tuple[DirectiveNode, ...],
+def _compile_source_unit_with_map(
+    unit: SourceUnitNode,
     *,
     function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
 ) -> CompiledSource:
-    """Compose existing directive lowerings into one local AIR program."""
+    """Compose heterogeneous declaration lowerings into one AIR program."""
 
     artifacts = tuple(
-        _compile_directive_with_map(
+        compile_node_with_map(
             node,
             function_signatures=function_signatures,
         )
-        for node in nodes
+        for node in unit.declarations
     )
     programs = tuple(artifact.program for artifact in artifacts)
-    directives = tuple(
-        replace(directive, order=local_order)
-        for local_order, program in enumerate(programs)
-        for directive in tuple(program.directives)
-    )
+    directives: list[AIRDirective] = []
+    functions: list[AIRFunction] = []
+    for program in programs:
+        for directive in tuple(program.directives):
+            directives.append(replace(directive, order=len(directives)))
+        for function in tuple(program.functions):
+            functions.append(replace(function, order=len(functions)))
 
     return CompiledSource(
         program=AIRProgram(
@@ -1913,7 +2018,7 @@ def _compile_directive_source_unit_with_map(
                 for program in programs
                 for item in tuple(program.causal_decisions)
             ),
-            directives=directives,
+            directives=tuple(directives),
             requirements=tuple(
                 item
                 for program in programs
@@ -1932,10 +2037,11 @@ def _compile_directive_source_unit_with_map(
             roles=tuple(
                 item for program in programs for item in tuple(program.roles)
             ),
-            functions=tuple(
+            functions=tuple(functions),
+            workflows=tuple(
                 item
                 for program in programs
-                for item in tuple(program.functions)
+                for item in tuple(program.workflows)
             ),
         ),
         source_map=SourceMap.merge(
@@ -1951,21 +2057,13 @@ def compile_source_with_map(
     function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
     allow_headerless_multi_directive: bool = True,
 ) -> CompiledSource:
-    if allow_headerless_multi_directive:
-        tokens = lex(source, source_name=source_name)
-        if tokens[0].kind == "DIRECTIVE":
-            nodes = parse_headerless_directive_source_unit(
-                source,
-                source_name=source_name,
-            )
-            return _compile_directive_source_unit_with_map(
-                nodes,
-                function_signatures=function_signatures,
-            )
-
-    node = parse(source, source_name=source_name)
-    return compile_node_with_map(
-        node,
+    # Retained for source compatibility with P11.2B callers and the project
+    # builder. P11.2E always uses the canonical heterogeneous parser, so a
+    # false value no longer narrows complete-source compilation to one form.
+    _ = allow_headerless_multi_directive
+    unit = parse_source_unit(source, source_name=source_name)
+    return _compile_source_unit_with_map(
+        unit,
         function_signatures=function_signatures,
     )
 
@@ -1975,7 +2073,7 @@ def compile_source(
     *,
     function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
     allow_headerless_multi_directive: bool = True,
-) -> AIRProgram | AIRRole:
+) -> AIRProgram:
     """Backward-compatible one-source compiler returning AIR only."""
 
     return compile_source_with_map(

@@ -155,6 +155,27 @@ class AIRDirective:
     authority_checks: Tuple[str, ...]
     causal_decisions: Tuple[str, ...]
     order: AIRExpression = 0
+    authorities: tuple[DirectiveAuthority, ...] = ()
+
+
+@dataclass(frozen=True)
+class AIRAuthority:
+    id: str
+    name: str
+    capabilities: tuple[str, ...]
+    inherits: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class AIRWorkflowInvocation:
+    target: str
+
+
+@dataclass(frozen=True)
+class AIRWorkflow:
+    id: str
+    name: str
+    invocations: tuple[AIRWorkflowInvocation, ...]
 
 
 @dataclass(frozen=True)
@@ -172,11 +193,12 @@ class AIRProgram:
     causal_decisions: tuple[CausalDecision, ...]
     directives: tuple[AIRDirective, ...]
     requirements: tuple[DirectiveRequirement, ...]
-    authorities: tuple[DirectiveAuthority, ...] = ()
+    authorities: tuple[AIRAuthority, ...] = ()
     principals: tuple[Principal, ...] = ()
     roles: tuple[AIRRole, ...] = ()
     # Added at the end so all pre-P7 constructors remain source-compatible.
     functions: tuple[AIRFunction, ...] = ()
+    workflows: tuple[AIRWorkflow, ...] = ()
 
 
 @dataclass(frozen=True)

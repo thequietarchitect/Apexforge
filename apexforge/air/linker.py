@@ -107,13 +107,19 @@ class AIRProgramLinker:
             units,
             attribute="authorities",
             owner="authority",
-            key=self._required_name_or_id,
+            key=self._required_id,
         )
         roles = self._merge_unique(
             units,
             attribute="roles",
             owner="role",
             key=self._required_name_or_id,
+        )
+        workflows = self._merge_unique(
+            units,
+            attribute="workflows",
+            owner="workflow",
+            key=self._required_id,
         )
 
         requirements = tuple(
@@ -136,6 +142,7 @@ class AIRProgramLinker:
             principals=principals,
             roles=roles,
             functions=functions,
+            workflows=workflows,
         )
 
     def _resolve_version(

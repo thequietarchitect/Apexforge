@@ -13,6 +13,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from air.model import AIRProgram
 from air.serialization import air_to_dict
 from language.modules import ModuleError, parse_module_source
 from language.project import (
@@ -340,27 +341,73 @@ def test_module_source_boundary_and_p11_2b_compatibility() -> None:
         "P11.2B headerless multi-directive compatibility changed",
     )
 
-    module_multi = require_raises(
+    module_multi = build_project(
+        {
+            "module-multi.apex": (
+                "module app.multi\n\n"
+                "directive First {}\n"
+                "directive Second {}\n"
+            )
+        }
+    )
+    require(
+        isinstance(module_multi.program, AIRProgram),
+        "module-mode multi-directive source did not produce AIRProgram",
+    )
+    require(
+        tuple(
+            item.id
+            for item in module_multi.program.directives
+        )
+        == ("directive:First", "directive:Second"),
+        "module-mode multi-directive declaration order or IDs changed",
+    )
+    require(
+        tuple(
+            item.order
+            for item in module_multi.program.directives
+        )
+        == (0, 1),
+        "module-mode multi-directive AIR order changed",
+    )
+    require(
+        module_multi.program == headerless.program
+        and air_to_dict(module_multi.program)
+        == air_to_dict(headerless.program),
+        "module-mode and headerless P11.2B AIR semantics diverged",
+    )
+    require(
+        not module_multi.module_graph.is_legacy
+        and module_multi.module_graph.order == ("app.multi",)
+        and module_multi.module_graph.source_order()
+        == ("module-multi.apex",)
+        and module_multi.module_graph.direct_imports("app.multi") == (),
+        "module-mode multi-directive promotion changed module graph behavior",
+    )
+
+    nested = require_raises(
         ProjectCompilationError,
         lambda: build_project(
             {
-                "module-multi.apex": (
-                    "module app.multi\n\n"
-                    "directive First {}\n"
-                    "directive Second {}\n"
+                "module-nested.apex": (
+                    "module app.nested\n\n"
+                    "directive Outer {\n"
+                    "    directive Nested {}\n"
+                    "}\n"
                 )
             }
         ),
-        "P11.2B multi-directive parsing entered module mode",
+        "module-mode nested declaration was accepted",
     )
-    item = diagnostic_of(module_multi)
+    item = diagnostic_of(nested)
     require(
         item.stage == "parse"
-        and item.code == "APX-PARSE-001"
+        and item.code == "APX-PARSE-003"
         and item.span is not None
-        and item.span.source_name == "module-multi.apex"
-        and item.span.start.line == 4,
-        "module-mode one-declaration boundary changed",
+        and item.span.source_name == "module-nested.apex"
+        and item.span.start.line == 4
+        and item.span.start.column == 5,
+        "module-mode nested-declaration boundary changed",
     )
 
 

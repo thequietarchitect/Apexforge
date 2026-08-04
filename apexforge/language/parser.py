@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, Union
 
 from language.diagnostics import BuildDiagnostic
 from language.lexer import Token, lex
@@ -301,6 +301,22 @@ class PrincipalNode:
     span: Optional[SourceSpan] = field(default=None, compare=False)
 
 
+@dataclass(frozen=True)
+class SourceUnitNode:
+    declarations: tuple[
+        Union[
+            FunctionNode,
+            DirectiveNode,
+            WorkflowNode,
+            AuthorityNode,
+            PrincipalNode,
+            RoleNode,
+        ],
+        ...,
+    ]
+    span: Optional[SourceSpan] = field(default=None, compare=False)
+
+
 # ============================================================================
 # Parser
 # ============================================================================
@@ -421,7 +437,7 @@ class Parser:
         self.index += 1
         return token
 
-    def parse(self) -> object:
+    def parse_top_level_declaration(self) -> object:
         kind = self.current().kind
         if kind == "FUNCTION":
             return self.parse_function()
@@ -441,6 +457,37 @@ class Parser:
             message=f"Unexpected top-level token {kind!r}.",
         )
         raise AssertionError("unreachable")
+
+    def parse(self) -> object:
+        return self.parse_top_level_declaration()
+
+    def parse_source_unit(self) -> SourceUnitNode:
+        """Parse one or more heterogeneous top-level declarations."""
+
+        declarations = [self.parse_top_level_declaration()]
+
+        while self.current().kind != "EOF":
+            comments: list[Token] = []
+            while self.current().kind == "LINE_COMMENT":
+                comments.append(self.consume("LINE_COMMENT"))
+
+            if comments and self.current().kind == "EOF":
+                self._raise(
+                    code="APX-PARSE-001",
+                    message=(
+                        "Inter-declaration line comments must be followed by "
+                        "another top-level declaration."
+                    ),
+                    token=comments[0],
+                )
+
+            declarations.append(self.parse_top_level_declaration())
+
+        self.consume("EOF")
+        return SourceUnitNode(
+            declarations=tuple(declarations),
+            span=_cover(declarations[0], declarations[-1]),
+        )
 
     def parse_headerless_directive_source_unit(
         self,
@@ -1486,6 +1533,24 @@ def parse_headerless_directive_source_unit(
     return parser.parse_headerless_directive_source_unit()
 
 
+def parse_source_unit(
+    source: str,
+    *,
+    source_name: str = "<memory>",
+) -> SourceUnitNode:
+    """Parse a complete heterogeneous ApexForge source unit."""
+
+    parser = Parser(
+        lex(
+            source,
+            source_name=source_name,
+            inter_directive_line_comments=True,
+        ),
+        source_name=source_name,
+    )
+    return parser.parse_source_unit()
+
+
 __all__ = [
     "ParseError",
     "ExpressionNode",
@@ -1525,7 +1590,9 @@ __all__ = [
     "RoleNode",
     "PrincipalRoleNode",
     "PrincipalNode",
+    "SourceUnitNode",
     "Parser",
     "parse",
     "parse_headerless_directive_source_unit",
+    "parse_source_unit",
 ]

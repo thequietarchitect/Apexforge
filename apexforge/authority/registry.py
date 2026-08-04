@@ -1,23 +1,26 @@
 from __future__ import annotations
 from typing import Optional
 
-from authority.model import AuthorityGrant
+from air.model import AIRAuthority
+
 
 class AuthorityInheritanceError(Exception):
     pass
 
+
 class UnknownAuthorityError(Exception):
     """Raised when an authority is not registered."""
 
+
 class AuthorityRegistry:
     def __init__(self):
-        self._grants: dict[str, AuthorityGrant] = {}
+        self._authorities: dict[str, AIRAuthority] = {}
 
-    def register(self, grant: AuthorityGrant) -> None:
-        self._grants[grant.name.lower()] = grant
+    def register(self, authority: AIRAuthority) -> None:
+        self._authorities[authority.name.lower()] = authority
 
-    def get(self, name: str) -> Optional[AuthorityGrant]:
-        return self._grants.get(name.lower())
+    def get(self, name: str) -> Optional[AIRAuthority]:
+        return self._authorities.get(name.lower())
 
     def resolve_capabilities(
         self,
@@ -35,18 +38,18 @@ class AuthorityRegistry:
                 f"'{authority_name}'."
             )
 
-        grant = self.get(authority_name)
+        authority = self.get(authority_name)
 
-        if grant is None:
+        if authority is None:
             raise UnknownAuthorityError(
                 f"Unknown authority '{authority_name}'."
             )
 
         next_path = active_path | {key}
 
-        resolved = set(grant.capabilities)
+        resolved = set(authority.capabilities)
 
-        for inherited_authority in grant.inherits:
+        for inherited_authority in authority.inherits:
             resolved.update(
                 self.resolve_capabilities(
                     authority_name=inherited_authority,
@@ -60,4 +63,4 @@ class AuthorityRegistry:
         return capability in self.resolve_capabilities(authority_name)
 
     def list_authorities(self) -> tuple[str, ...]:
-        return tuple(self._grants.keys())
+        return tuple(self._authorities.keys())

@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from air.model import AIRRole
+from air.model import AIRProgram
 from air.serialization import air_to_dict
 from language.compiler import compile_source_with_map
 from language.project import (
@@ -218,8 +218,9 @@ def test_cross_source_declarations_and_ordering() -> None:
 
 
 def test_one_source_boundary_and_invalid_nesting() -> None:
-    # P11.2B is the one reviewed exception to the P11.2A snapshot: sequential
-    # directives are now accepted in a headerless legacy source.
+    # P11.2A recorded the former one-declaration-per-source boundary. P11.2B
+    # first promoted directive sequences, and P11.2E intentionally promotes
+    # all six forms into heterogeneous AIRProgram compilation.
     combined = build_project(
         {
             "two-directives.apex": (
@@ -234,27 +235,41 @@ def test_one_source_boundary_and_invalid_nesting() -> None:
         "the P11.2B headerless directive exception is unavailable",
     )
 
+    function_only = compile_source_with_map(
+        "function First() { return 1 }\n"
+        "function Second() { return 2 }\n",
+        source_name="two-functions.apex",
+    )
+    require(
+        isinstance(function_only.program, AIRProgram)
+        and len(function_only.program.functions) == 2
+        and len(function_only.program.directives) == 0,
+        "P11.2E function-only source promotion dropped a declaration",
+    )
+
     scenarios = (
-        ("two-functions.apex", CALLER_SOURCE + "\n" + CALLEE_SOURCE),
-        ("mixed-function-first.apex", CALLER_SOURCE + "\n" + ENTRY_SOURCE),
-        ("mixed-directive-first.apex", ENTRY_SOURCE + "\n" + CALLER_SOURCE),
+        (
+            "mixed-function-first.apex",
+            "function Helper() { return 1 }\n"
+            "directive Entry {}\n",
+        ),
+        (
+            "mixed-directive-first.apex",
+            "directive Entry {}\n"
+            "function Helper() { return 1 }\n",
+        ),
     )
 
     for source_name, source in scenarios:
-        error = require_raises(
-            ProjectCompilationError,
-            lambda source_name=source_name, source=source: build_project(
-                {source_name: source}
-            ),
-            "an unsupported multi-declaration source was accepted",
+        project = build_project(
+            {source_name: source},
+            entry="Entry",
         )
-        diagnostic = diagnostic_of(error)
         require(
-            diagnostic.stage == "parse"
-            and diagnostic.code == "APX-PARSE-001"
-            and diagnostic.span is not None
-            and diagnostic.span.source_name == source_name,
-            "one-declaration-per-source rejection lost its stable category",
+            isinstance(project.program, AIRProgram)
+            and len(project.program.functions) == 1
+            and len(project.program.directives) == 1,
+            "P11.2E heterogeneous project promotion dropped a declaration",
         )
 
     nested_name = "nested-function.apex"
@@ -409,23 +424,23 @@ def test_entry_and_generic_compatibility() -> None:
 
 
 def test_other_frozen_top_level_forms() -> None:
-    # The P10 grammar recognizes all four forms. P11.2A records their current
-    # non-project boundaries without promoting them into linked declarations.
+    # P11.2A recorded the former parsed-only boundary. P11.2E intentionally
+    # promotes all six forms into AIRProgram compilation.
     for source in (
         "workflow Flow { invoke Entry }",
         "authority Observer { capability Read }",
         "principal User { role Observer }",
+        "role Observer { authority ReadOnly }",
     ):
-        error = require_raises(
-            ProjectCompilationError,
-            lambda source=source: build_project({"form.apex": source}),
-            "parsed-only top-level form entered the project pipeline",
-        )
-        diagnostic = diagnostic_of(error)
         require(
-            diagnostic.stage == "compile"
-            and diagnostic.code == "APX-COMPILE-007",
-            "parsed-only form changed compiler rejection category",
+            isinstance(
+                compile_source_with_map(
+                    source,
+                    source_name="promoted-form.apex",
+                ).program,
+                AIRProgram,
+            ),
+            "P11.2E promoted form did not compile to AIRProgram",
         )
 
     role = compile_source_with_map(
@@ -433,15 +448,9 @@ def test_other_frozen_top_level_forms() -> None:
         source_name="role.apex",
     )
     require(
-        isinstance(role.program, AIRRole),
-        "standalone role lowering boundary changed",
-    )
-    require_raises(
-        ProjectCompilationError,
-        lambda: build_project(
-            {"role.apex": "role Observer { authority ReadOnly }"}
-        ),
-        "standalone AIRRole entered the AIRProgram project pipeline",
+        isinstance(role.program, AIRProgram)
+        and len(role.program.roles) == 1,
+        "P11.2E role lowering was not wrapped in AIRProgram.roles",
     )
 
 
@@ -516,11 +525,11 @@ def main() -> None:
 
     print("AFP-P11.2A declaration-model audit smoke test passed.")
     print("Cross-source directives, functions, and mixed declarations: PASS")
-    print("One-declaration-per-source and invalid-nesting boundaries: PASS")
+    print("Heterogeneous source-unit and invalid-nesting boundaries: PASS")
     print("Canonical identities, ordering, duplicates, and collisions: PASS")
     print("Forward resolution, entries, and linked generics: PASS")
     print("Source-aware diagnostics and manifest ordering: PASS")
-    print("Parsed-only top-level declaration boundaries: PASS")
+    print("Former parsed-only declarations promoted to AIRProgram: PASS")
 
 
 if __name__ == "__main__":

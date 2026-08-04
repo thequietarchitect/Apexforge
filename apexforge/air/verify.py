@@ -186,7 +186,7 @@ class AIRVerifier:
         seen: set[str] = set()
 
         for item in items:
-            if item.name in seen:
+            if item.id in seen:
                 append_diagnostic(
                     diagnostics,
                     "error",
@@ -195,4 +195,4 @@ class AIRVerifier:
                     item.id,
                 )
 
-            seen.add(item.name)
+            seen.add(item.id)

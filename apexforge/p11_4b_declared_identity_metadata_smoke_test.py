@@ -586,19 +586,34 @@ def test_air_generics_collisions_modules_and_runtime_are_unchanged() -> None:
         {"legacy.apex": "directive First {}\ndirective Second {}\n"},
         entry="First",
     )
-    module_many = require_raises(
-        ProjectCompilationError,
-        lambda: build_project(
-            {"module.apex": "module App.Main\n\ndirective First {}\ndirective Second {}\n"}
-        ),
-        "module source accepted more than one ordinary declaration",
+    module_many = build_project(
+        {
+            "module.apex": (
+                "module App.Main\n\n"
+                "directive First {}\n"
+                "directive Second {}\n"
+            )
+        },
+        entry="First",
     )
     require(
         tuple(item.id for item in legacy_many.program.directives)
         == ("directive:First", "directive:Second")
-        and diagnostic_of(module_many).stage == "parse"
-        and diagnostic_of(module_many).code == "APX-PARSE-001",
+        and tuple(item.id for item in module_many.program.directives)
+        == ("directive:First", "directive:Second")
+        and tuple(item.order for item in module_many.program.directives)
+        == (0, 1)
+        and module_many.resolve_entry() == "directive:First",
         "legacy or module-source declaration boundaries changed",
+    )
+    require(
+        not module_many.module_graph.is_legacy
+        and module_many.module_graph.source_order() == ("module.apex",)
+        and module_many.identity_index.find_all("directive", "First")[0].current_air_id
+        == "directive:First"
+        and module_many.identity_index.find_all("directive", "Second")[0].current_air_id
+        == "directive:Second",
+        "module-source ownership or declared identity metadata changed",
     )
 
     runtime_build = build_project(

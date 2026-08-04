@@ -24,14 +24,23 @@ class WorkflowExecutionEngine:
         self,
         registry,
         workflow: WorkflowNode,
+        *,
+        authority_registry,
+        principal_registry,
+        principal_name: str,
+        max_depth: int = 10,
     ) -> WorkflowExecutionResult:
         results = []
         directive_engine = DirectiveExecutionEngine()
 
         for invocation in workflow.invocations:
             directive_result = directive_engine.execute(
-                registry,
-                invocation.target.lower(),
+                registry=registry,
+                authority_registry=authority_registry,
+                principal_registry=principal_registry,
+                principal_name=principal_name,
+                root=invocation.target.lower(),
+                max_depth=max_depth,
             )
 
             results.extend(directive_result.results)

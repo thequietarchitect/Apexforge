@@ -1,4 +1,4 @@
-from authority.model import AuthorityGrant
+from air.model import AIRAuthority
 from authority.registry import (
     AuthorityRegistry,
     AuthorityInheritanceError,
@@ -9,17 +9,19 @@ def test_normal_inheritance():
     registry = AuthorityRegistry()
 
     registry.register(
-        AuthorityGrant(
+        AIRAuthority(
+            id="authority:Sentinel",
             name="Sentinel",
             capabilities=("Observe",),
         )
     )
 
     registry.register(
-        AuthorityGrant(
+        AIRAuthority(
+            id="authority:AEGIS",
             name="AEGIS",
             capabilities=("Protect",),
-            extends="Sentinel",
+            inherits=("Sentinel",),
         )
     )
 
@@ -34,18 +36,20 @@ def test_cycle_detection():
     registry = AuthorityRegistry()
 
     registry.register(
-        AuthorityGrant(
+        AIRAuthority(
+            id="authority:A",
             name="A",
             capabilities=(),
-            extends="B",
+            inherits=("B",),
         )
     )
 
     registry.register(
-        AuthorityGrant(
+        AIRAuthority(
+            id="authority:B",
             name="B",
             capabilities=(),
-            extends="A",
+            inherits=("A",),
         )
     )
 

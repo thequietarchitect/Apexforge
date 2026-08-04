@@ -1,4 +1,5 @@
 from authority.registry import AuthorityRegistry, UnknownAuthorityError
+from authority.model import Principal
 from air.model import AIRProgram, AIRPrincipal, PrincipalAuthority
 from authorization.role_resolver import resolve_effective_authorities
 from role.registry import RoleRegistry
@@ -22,18 +23,18 @@ class AuthorizationError(Exception):
 def validate_requirements(
     program,
     registry: AuthorityRegistry,
+    principal: Principal,
 ) -> None:
-
-    authority_name = program.principals[0].name
-
     for requirement in program.requirements:
-
-        if not registry.has_capability(
-            authority_name,
-            requirement.capability,
-        ):
+        for authority in principal.authorities:
+            if registry.has_capability(
+                authority.name,
+                requirement.capability,
+            ):
+                break
+        else:
             raise AuthorizationError(
-                f"{authority_name} lacks capability "
+                f"{principal.id} lacks capability "
                 f"'{requirement.capability}'"
             )
 
@@ -47,9 +48,9 @@ def validate_principal_authorities(
 ) -> None:
     for principal in program.principals:
         for authority in principal.authorities:
-            if not authority_registry.contains(authority.name):
+            if authority_registry.get(authority.name) is None:
                 raise UnknownPrincipalAuthorityError(
-                    f"Principal {principal.name} references "
+                    f"Principal {principal.id} references "
                     f"unknown authority {authority.name}"
                 )
 
@@ -88,7 +89,7 @@ def authorize_principal(
             return True
 
     raise PrincipalAuthorizationError(
-        f"Principal '{principal.name}' lacks "
+        f"Principal '{principal.id}' lacks "
         f"authority '{authority.name}'."
     )
 
@@ -124,7 +125,7 @@ def authorize_principal_capabilities(
         missing_list = ", ".join(sorted(missing))
 
         raise PrincipalCapabilityAuthorizationError(
-            f"Principal '{principal.name}' lacks required "
+            f"Principal '{principal.id}' lacks required "
             f"capabilities: {missing_list}."
         )
 

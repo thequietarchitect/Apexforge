@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Any, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple
 
 from air.ids import event_record_id
 from air.model import EventRecord, VerifiedAIRProgram, facts
@@ -55,6 +55,10 @@ class RuntimeExpressionError(RuntimeError):
         super().__init__(message)
 
 
+class DirectiveEntryConfigurationError(RuntimeError):
+    """Raised when a directive-entry guard has invalid configuration."""
+
+
 @dataclass(frozen=True)
 class ExecutionResult:
     delta: StateDelta
@@ -101,8 +105,20 @@ class RuntimeEngine:
         self,
         causality: Optional[CausalEngine] = None,
         standard_library: Optional[StandardLibraryRegistry] = None,
+        max_invocation_depth: int = MAX_INVOCATION_DEPTH,
     ) -> None:
+        if (
+            isinstance(max_invocation_depth, bool)
+            or not isinstance(max_invocation_depth, int)
+            or max_invocation_depth < 1
+        ):
+            raise ValueError(
+                "RuntimeEngine.max_invocation_depth must be "
+                "a positive integer."
+            )
+
         self._causality = causality or CausalEngine()
+        self._max_invocation_depth = max_invocation_depth
         self._standard_library = (
             standard_library
             if standard_library is not None
@@ -122,6 +138,10 @@ class RuntimeEngine:
         verified: VerifiedAIRProgram,
         context: ExecutionContext,
         entry_directives: Optional[Sequence[str]] = None,
+        *,
+        directive_entry_guard: Optional[
+            Callable[[Any], None]
+        ] = None,
     ) -> ExecutionResult:
         """Execute verified AIR.
 
@@ -182,6 +202,7 @@ class RuntimeEngine:
                 diagnostics=diagnostics,
                 invocation_stack=(),
                 event_index=next_event_index,
+                directive_entry_guard=directive_entry_guard,
             )
 
             trace_steps.extend(outcome.trace_steps)
@@ -275,6 +296,21 @@ class RuntimeEngine:
         if canonical in directives:
             return directives[canonical]
 
+        canonical_key = canonical.casefold()
+        matches = tuple(
+            directive
+            for directive_id, directive in directives.items()
+            if directive_id.casefold() == canonical_key
+        )
+
+        if len(matches) == 1:
+            return matches[0]
+
+        if len(matches) > 1:
+            raise RuntimeExpressionError(
+                f"ambiguous directive invocation target {reference!r}"
+            )
+
         raise RuntimeExpressionError(
             f"undefined directive invocation target {reference!r}"
         )
@@ -291,6 +327,9 @@ class RuntimeEngine:
         diagnostics: list[Diagnostic],
         invocation_stack: Tuple[str, ...],
         event_index: int,
+        directive_entry_guard: Optional[
+            Callable[[Any], None]
+        ],
     ) -> _DirectiveExecution:
         start_event_index = event_index
         trace_steps: list[TraceStep] = []
@@ -328,14 +367,14 @@ class RuntimeEngine:
                 next_event_index=start_event_index,
             )
 
-        if len(invocation_stack) >= MAX_INVOCATION_DEPTH:
+        if len(invocation_stack) >= self._max_invocation_depth:
             append_diagnostic(
                 diagnostics,
                 "error",
                 "RUN004",
                 (
                     "directive invocation depth exceeds runtime limit "
-                    f"of {MAX_INVOCATION_DEPTH}"
+                    f"of {self._max_invocation_depth}"
                 ),
                 directive.id,
             )
@@ -360,6 +399,14 @@ class RuntimeEngine:
                 trace_steps=tuple(trace_steps),
                 next_event_index=start_event_index,
             )
+
+        if directive_entry_guard is not None:
+            try:
+                directive_entry_guard(directive)
+            except RuntimeExpressionError as exc:
+                raise DirectiveEntryConfigurationError(
+                    str(exc)
+                ) from exc
 
         active_stack = invocation_stack + (directive.id,)
 
@@ -467,6 +514,7 @@ class RuntimeEngine:
                     invocation_stack=active_stack,
                     event_index=next_event_index,
                     depth=0,
+                    directive_entry_guard=directive_entry_guard,
                 )
             except RuntimeExpressionError as exc:
                 trace_steps.extend(
@@ -571,6 +619,9 @@ class RuntimeEngine:
         invocation_stack: Tuple[str, ...],
         event_index: int = 0,
         depth: int = 0,
+        directive_entry_guard: Optional[
+            Callable[[Any], None]
+        ] = None,
     ) -> _ActionExecution:
         """Execute one ordered action stream transactionally."""
 
@@ -694,6 +745,7 @@ class RuntimeEngine:
                     diagnostics=diagnostics,
                     invocation_stack=invocation_stack,
                     event_index=next_event_index,
+                    directive_entry_guard=directive_entry_guard,
                 )
 
                 action_trace_steps.extend(invoked.trace_steps)
@@ -794,6 +846,7 @@ class RuntimeEngine:
                     invocation_stack=invocation_stack,
                     event_index=next_event_index,
                     depth=depth + 1,
+                    directive_entry_guard=directive_entry_guard,
                 )
 
                 action_trace_steps.extend(nested.trace_steps)
