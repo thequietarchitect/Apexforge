@@ -671,6 +671,7 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
     visibility_path = "apexforge/language/resolution_visibility.py"
     context_path = "apexforge/language/resolution_context.py"
     query_path = "apexforge/language/resolution_queries.py"
+    outcome_path = "apexforge/language/resolution_outcomes.py"
     p11_4d_owned = {
         "apexforge/language/resolution_candidates.py",
         "apexforge/language/project.py",
@@ -679,25 +680,30 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
         query_path,
         context_path,
         visibility_path,
+        outcome_path,
     }
     require(
-        p11_4g_files == {visibility_path},
-        "P11.4G acquired another production file",
+        p11_4g_files == {visibility_path, outcome_path}
+        and p11_4g_files - {outcome_path} == {visibility_path},
+        "P11.4G ownership or its single P11.4H successor consumer changed",
     )
     require(
-        p11_4f_contract_files == {context_path, visibility_path}
-        and p11_4f_contract_files - {visibility_path} == {context_path},
-        "P11.4F ownership or its single P11.4G consumer changed",
+        p11_4f_contract_files == {context_path, visibility_path, outcome_path}
+        and p11_4f_contract_files - {visibility_path, outcome_path}
+        == {context_path},
+        "P11.4F ownership or its reviewed consumers changed",
     )
     require(
-        p11_4e_contract_files == {query_path, context_path, visibility_path}
-        and p11_4e_contract_files - {context_path, visibility_path}
+        p11_4e_contract_files
+        == {query_path, context_path, visibility_path, outcome_path}
+        and p11_4e_contract_files - {context_path, visibility_path, outcome_path}
         == {query_path},
         "P11.4E ownership or its reviewed consumers changed",
     )
     require(
         candidate_files == expected_candidate_files
-        and candidate_files - {query_path, context_path, visibility_path}
+        and candidate_files
+        - {query_path, context_path, visibility_path, outcome_path}
         == p11_4d_owned,
         "candidate-model ownership or reviewed consumer set changed",
     )
@@ -709,7 +715,8 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
         and "ProjectVisibilityEvidence" not in project_text
         and "ProjectVisibilityDecision" not in project_text
         and "evaluate_project_visibility" not in project_text
-        and "filter_project_visible_candidates" not in project_text,
+        and "filter_project_visible_candidates" not in project_text
+        and "resolve_project_contextual_query" not in project_text,
         "ProjectBuild or ProjectBuilder acquired automatic visibility integration",
     )
 

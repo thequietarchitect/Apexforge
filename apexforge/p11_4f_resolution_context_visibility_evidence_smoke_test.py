@@ -588,25 +588,29 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
         "apexforge/language/project.py",
     }
     visibility_path = "apexforge/language/resolution_visibility.py"
+    outcome_path = "apexforge/language/resolution_outcomes.py"
     expected_candidate_files = p11_4d_owned | {
         query_path,
         context_path,
         visibility_path,
+        outcome_path,
     }
     require(
-        p11_4f_files == {context_path, visibility_path}
-        and p11_4f_files - {visibility_path} == {context_path},
-        "P11.4F ownership or its single P11.4G successor consumer changed",
+        p11_4f_files == {context_path, visibility_path, outcome_path}
+        and p11_4f_files - {visibility_path, outcome_path} == {context_path},
+        "P11.4F ownership or its reviewed successor consumers changed",
     )
     require(
-        p11_4e_contract_files == {query_path, context_path, visibility_path}
-        and p11_4e_contract_files - {context_path, visibility_path}
+        p11_4e_contract_files
+        == {query_path, context_path, visibility_path, outcome_path}
+        and p11_4e_contract_files - {context_path, visibility_path, outcome_path}
         == {query_path},
         "P11.4E ownership or its reviewed successor consumers changed",
     )
     require(
         candidate_files == expected_candidate_files
-        and candidate_files - {query_path, context_path, visibility_path}
+        and candidate_files
+        - {query_path, context_path, visibility_path, outcome_path}
         == p11_4d_owned,
         "candidate-model ownership or reviewed consumer set changed",
     )
@@ -619,7 +623,8 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
         and "collect_project_visibility_evidence" not in project_text
         and "ProjectVisibilityDecision" not in project_text
         and "evaluate_project_visibility" not in project_text
-        and "filter_project_visible_candidates" not in project_text,
+        and "filter_project_visible_candidates" not in project_text
+        and "resolve_project_contextual_query" not in project_text,
         "ProjectBuild or ProjectBuilder acquired automatic visibility integration",
     )
 

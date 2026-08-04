@@ -459,6 +459,7 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
         == {
             "apexforge/language/resolution_context.py",
             "apexforge/language/resolution_visibility.py",
+            "apexforge/language/resolution_outcomes.py",
         },
         "P11.4E ownership or its reviewed successor consumers changed",
     )
@@ -470,12 +471,14 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
             "apexforge/language/resolution_queries.py",
             "apexforge/language/resolution_context.py",
             "apexforge/language/resolution_visibility.py",
+            "apexforge/language/resolution_outcomes.py",
         }
         and candidate_files
         - {
             "apexforge/language/resolution_queries.py",
             "apexforge/language/resolution_context.py",
             "apexforge/language/resolution_visibility.py",
+            "apexforge/language/resolution_outcomes.py",
         }
         == {
             "apexforge/language/resolution_candidates.py",
@@ -493,7 +496,8 @@ def test_exact_production_boundaries_and_no_diagnostics() -> None:
         and "collect_project_visibility_evidence" not in project_text
         and "ProjectVisibilityDecision" not in project_text
         and "evaluate_project_visibility" not in project_text
-        and "filter_project_visible_candidates" not in project_text,
+        and "filter_project_visible_candidates" not in project_text
+        and "resolve_project_contextual_query" not in project_text,
         "ProjectBuild or ProjectBuilder acquired automatic resolution integration",
     )
 
