@@ -30,10 +30,16 @@ AUDIT_DOCUMENT = (
 BASELINE_COMMIT = "c6570766703d00bba4e1aff7d712a0d271c9ecc1"
 BASELINE_TAG = "afp-p11.4h-freeze"
 BASELINE_TAG_OBJECT = "e8f8ed425f0ef265bdc9842b8abc5ecd96b2c78a"
-AUTHORIZED_PATHS = {
+P11_5A_OWNED_PATHS = {
     "apexforge/p11_5a_narrative_semantic_foundation_architecture_audit_smoke_test.py",
     "docs/p11/P11_5A_NARRATIVE_SEMANTIC_FOUNDATION_ARCHITECTURE_AUDIT.md",
 }
+P11_5B_OWNED_PATHS = {
+    "apexforge/language/narrative_model.py",
+    "apexforge/p11_5b_minimal_narrative_semantic_model_smoke_test.py",
+    "docs/p11/P11_5B_MINIMAL_NARRATIVE_SEMANTIC_MODEL_CONTRACT.md",
+}
+REVIEWED_BRANCH_PATHS = P11_5A_OWNED_PATHS | P11_5B_OWNED_PATHS
 
 
 def require(condition: bool, message: str) -> None:
@@ -104,12 +110,26 @@ def test_frozen_baseline_and_exact_ownership(document: str) -> None:
         "controlling freeze no longer peels to P11.4H",
     )
     require(
-        changed_paths_since_baseline() == AUTHORIZED_PATHS,
-        "P11.5A changed a path outside its one test and one document",
+        changed_paths_since_baseline() == REVIEWED_BRANCH_PATHS,
+        "the reviewed P11.5A/P11.5B branch path set changed",
     )
     require(
         all(path.exists() for path in (Path(__file__), AUDIT_DOCUMENT)),
         "a P11.5A audit-owned file is missing",
+    )
+    require(
+        P11_5A_OWNED_PATHS
+        == {
+            "apexforge/p11_5a_narrative_semantic_foundation_architecture_audit_smoke_test.py",
+            "docs/p11/P11_5A_NARRATIVE_SEMANTIC_FOUNDATION_ARCHITECTURE_AUDIT.md",
+        }
+        and P11_5B_OWNED_PATHS
+        == {
+            "apexforge/language/narrative_model.py",
+            "apexforge/p11_5b_minimal_narrative_semantic_model_smoke_test.py",
+            "docs/p11/P11_5B_MINIMAL_NARRATIVE_SEMANTIC_MODEL_CONTRACT.md",
+        },
+        "P11.5A ownership or its reviewed P11.5B successor set changed",
     )
 
 
@@ -230,20 +250,28 @@ def test_no_storytelling_syntax_records_graph_or_diagnostics() -> None:
         "NarrativeDiagnostic",
     }
     declared_names: set[str] = set()
+    narrative_record_files: set[str] = set()
     production_text = []
     for path in production_python_files():
         text = path.read_text(encoding="utf-8")
         production_text.append(text)
         tree = ast.parse(text, filename=str(path))
-        declared_names.update(
+        file_declarations = {
             node.name
             for node in ast.walk(tree)
             if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
-        )
+        }
+        declared_names.update(file_declarations)
+        if "NarrativeIdentity" in file_declarations:
+            narrative_record_files.add(path.relative_to(REPOSITORY_ROOT).as_posix())
     combined = "\n".join(production_text)
     require(
         forbidden_names.isdisjoint(declared_names),
         "a forbidden narrative production declaration exists",
+    )
+    require(
+        narrative_record_files == {"apexforge/language/narrative_model.py"},
+        "P11.5B narrative records escaped their one-file production boundary",
     )
     require(
         "APX-NARRATIVE-" not in combined,
@@ -257,6 +285,7 @@ def test_no_storytelling_syntax_records_graph_or_diagnostics() -> None:
         "a storytelling grammar parser path exists",
     )
     integration_markers = (
+        "NarrativeIdentity",
         "NarrativeSemanticGraph",
         "StoryDeclaration",
         "CharacterDeclaration",
@@ -320,10 +349,10 @@ def main() -> None:
         "running the test changed repository bytecode state",
     )
     print("AFP-P11.5A narrative semantic foundation audit smoke test passed.")
-    print("Frozen P11.4H predecessor and exact two-file ownership: PASS")
+    print("Frozen P11.4H predecessor and reviewed P11.5A/P11.5B ownership: PASS")
     print("Nine-term narrative vocabulary and validation responsibilities: PASS")
     print("Graph relation families, semantic separations, and determinism: PASS")
-    print("No syntax, records, graph, diagnostics, or project integration: PASS")
+    print("One successor record module; no syntax, graph, diagnostics, or integration: PASS")
     print("P11.4H operational compatibility reuse: PASS")
     print("Network, temporary fixture, Git, working directory, and bytecode: PASS")
 
