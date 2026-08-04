@@ -4,11 +4,19 @@ from typing import Optional
 from air.model import AIRAuthority
 
 
-class AuthorityInheritanceError(Exception):
+class AuthorityRegistryError(Exception):
+    """Base exception for authority-registry failures."""
+
+
+class DuplicateAuthorityError(AuthorityRegistryError):
+    """Raised when a canonical authority name is registered twice."""
+
+
+class AuthorityInheritanceError(AuthorityRegistryError):
     pass
 
 
-class UnknownAuthorityError(Exception):
+class UnknownAuthorityError(AuthorityRegistryError):
     """Raised when an authority is not registered."""
 
 
@@ -17,10 +25,17 @@ class AuthorityRegistry:
         self._authorities: dict[str, AIRAuthority] = {}
 
     def register(self, authority: AIRAuthority) -> None:
-        self._authorities[authority.name.lower()] = authority
+        key = authority.name.casefold()
+
+        if key in self._authorities:
+            raise DuplicateAuthorityError(
+                f"Authority '{key}' is already registered."
+            )
+
+        self._authorities[key] = authority
 
     def get(self, name: str) -> Optional[AIRAuthority]:
-        return self._authorities.get(name.lower())
+        return self._authorities.get(name.casefold())
 
     def resolve_capabilities(
         self,
@@ -30,7 +45,7 @@ class AuthorityRegistry:
         if active_path is None:
             active_path = set()
 
-        key = authority_name.lower()
+        key = authority_name.casefold()
 
         if key in active_path:
             raise AuthorityInheritanceError(

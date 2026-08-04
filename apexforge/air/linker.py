@@ -8,7 +8,7 @@ validator responsibilities after linking.
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Any, Callable, Iterable, TypeVar
+from typing import Any, Callable, Iterable, Optional, TypeVar
 
 from air.model import AIRProgram
 
@@ -54,7 +54,17 @@ class AIRProgramLinker:
     def link(
         self,
         programs: Iterable[AIRProgram],
+        *,
+        preserve_module_case_distinctions: bool = False,
     ) -> AIRProgram:
+        if not isinstance(
+            preserve_module_case_distinctions,
+            bool,
+        ):
+            raise TypeError(
+                "preserve_module_case_distinctions must be a bool."
+            )
+
         units = tuple(programs)
 
         if not units:
@@ -76,6 +86,11 @@ class AIRProgramLinker:
             attribute="principals",
             owner="principal",
             key=self._required_id,
+            collision_key=(
+                None
+                if preserve_module_case_distinctions
+                else self._casefolded_id_collision_key
+            ),
         )
         states = self._merge_unique(
             units,
@@ -101,13 +116,19 @@ class AIRProgramLinker:
             owner="causal decision",
             key=self._required_id,
         )
-        directives = self._merge_directives(units)
+        directives = self._merge_directives(
+            units,
+            casefold_collisions=(
+                not preserve_module_case_distinctions
+            ),
+        )
         functions = self._merge_functions(units)
         authorities = self._merge_unique(
             units,
             attribute="authorities",
             owner="authority",
             key=self._required_id,
+            collision_key=self._authority_name_collision_key,
         )
         roles = self._merge_unique(
             units,
@@ -186,9 +207,12 @@ class AIRProgramLinker:
         attribute: str,
         owner: str,
         key: Callable[[Any, str], str],
+        collision_key: Optional[
+            Callable[[Any, str, str], str]
+        ] = None,
     ) -> tuple[Any, ...]:
         merged: list[Any] = []
-        seen: set[str] = set()
+        seen: dict[str, str] = {}
 
         for program_index, program in enumerate(programs):
             values = tuple(
@@ -200,14 +224,29 @@ class AIRProgramLinker:
                     f"unit[{program_index}].{attribute}[{value_index}]"
                 )
                 identifier = key(value, location)
-
-                if identifier in seen:
-                    raise DuplicateLinkDefinitionError(
-                        owner,
+                canonical = (
+                    identifier
+                    if collision_key is None
+                    else collision_key(
+                        value,
+                        location,
                         identifier,
                     )
+                )
 
-                seen.add(identifier)
+                if canonical in seen:
+                    first_identifier = seen[canonical]
+                    reported_identifier = (
+                        identifier
+                        if identifier == first_identifier
+                        else canonical
+                    )
+                    raise DuplicateLinkDefinitionError(
+                        owner,
+                        reported_identifier,
+                    )
+
+                seen[canonical] = identifier
                 merged.append(value)
 
         return tuple(merged)
@@ -215,9 +254,11 @@ class AIRProgramLinker:
     def _merge_directives(
         self,
         programs: tuple[AIRProgram, ...],
+        *,
+        casefold_collisions: bool = True,
     ) -> tuple[Any, ...]:
         merged: list[Any] = []
-        seen: set[str] = set()
+        seen: dict[str, str] = {}
 
         for program_index, program in enumerate(programs):
             local = tuple(
@@ -257,13 +298,25 @@ class AIRProgramLinker:
             )
 
             for _, identifier, directive in prepared:
-                if identifier in seen:
+                canonical = (
+                    identifier.casefold()
+                    if casefold_collisions
+                    else identifier
+                )
+
+                if canonical in seen:
+                    first_identifier = seen[canonical]
+                    reported_identifier = (
+                        identifier
+                        if identifier == first_identifier
+                        else canonical
+                    )
                     raise DuplicateLinkDefinitionError(
                         "directive",
-                        identifier,
+                        reported_identifier,
                     )
 
-                seen.add(identifier)
+                seen[canonical] = identifier
                 merged.append(directive)
 
         # Separately compiled units normally begin directive ordering at zero.
@@ -342,6 +395,31 @@ class AIRProgramLinker:
             )
             for global_order, function in enumerate(merged)
         )
+
+    def _casefolded_id_collision_key(
+        self,
+        value: Any,
+        location: str,
+        identifier: str,
+    ) -> str:
+        del value, location
+        return identifier.casefold()
+
+    def _authority_name_collision_key(
+        self,
+        value: Any,
+        location: str,
+        identifier: str,
+    ) -> str:
+        del identifier
+        name = getattr(value, "name", None)
+
+        if not isinstance(name, str) or not name.strip():
+            raise InvalidLinkInputError(
+                f"{location} requires a non-empty authority name."
+            )
+
+        return f"authority:{name.strip().casefold()}"
 
     def _required_id(
         self,

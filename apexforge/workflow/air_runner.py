@@ -344,8 +344,18 @@ def run_air_program(
     entry_directives=None,
     directive_entry_guard=None,
     max_invocation_depth=None,
+    allow_unresolved_directive_invocations=False,
+    directive_requirement_owners=None,
 ):
-    verified = AIRVerifier().verify(program).require_verified()
+    verified = AIRVerifier().verify(
+        program,
+        allow_unresolved_directive_invocations=(
+            allow_unresolved_directive_invocations
+        ),
+        directive_requirement_owners=(
+            directive_requirement_owners
+        ),
+    ).require_verified()
     context = build_default_context(program)
 
     runtime = (
@@ -395,6 +405,8 @@ def run_air_from_registry(
         entry_directives=(plan.entry_directive,),
         directive_entry_guard=directive_entry_guard,
         max_invocation_depth=max_invocation_depth,
+        allow_unresolved_directive_invocations=True,
+        directive_requirement_owners=plan.directive_owners,
     )
 
 

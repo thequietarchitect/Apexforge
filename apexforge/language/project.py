@@ -1089,9 +1089,34 @@ class ProjectBuilder:
             for artifact in artifacts
         )
 
+        link_arguments: dict[str, object] = {}
+        if not graph.is_legacy:
+            try:
+                link_signature = inspect.signature(
+                    self._linker.link
+                )
+                supports_module_case_distinctions = (
+                    "preserve_module_case_distinctions"
+                    in link_signature.parameters
+                    or any(
+                        parameter.kind
+                        == inspect.Parameter.VAR_KEYWORD
+                        for parameter
+                        in link_signature.parameters.values()
+                    )
+                )
+            except (TypeError, ValueError):
+                supports_module_case_distinctions = False
+
+            if supports_module_case_distinctions:
+                link_arguments[
+                    "preserve_module_case_distinctions"
+                ] = True
+
         try:
             program = self._linker.link(
-                programs
+                programs,
+                **link_arguments,
             )
         except Exception as exc:
             raise ProjectLinkError(

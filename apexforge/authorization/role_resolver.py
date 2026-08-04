@@ -32,10 +32,12 @@ def resolve_effective_authorities(
     seen_names: set[str] = set()
 
     def add_authority(name: str) -> None:
-        if name in seen_names:
+        canonical = name.casefold()
+
+        if canonical in seen_names:
             return
 
-        seen_names.add(name)
+        seen_names.add(canonical)
         resolved.append(
             PrincipalAuthority(
                 name=name,

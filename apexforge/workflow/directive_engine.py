@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Tuple
 
 from air.model import PrincipalAuthority
+from air.verify import AIRVerifier
 from authority.validator import (
     authorize_principal,
     authorize_principal_capabilities,
@@ -70,6 +71,23 @@ class DirectiveExecutionEngine:
             registry,
             root,
         )
+        ownership_result = AIRVerifier().verify(
+            plan.program,
+            allow_unresolved_directive_invocations=True,
+            directive_requirement_owners=plan.directive_owners,
+        )
+        ownership_diagnostics = tuple(
+            diagnostic
+            for diagnostic in ownership_result.diagnostics
+            if diagnostic.code == "AIR065"
+        )
+
+        if ownership_diagnostics:
+            raise DirectiveRequirementOwnershipError(
+                "cannot determine capability requirement ownership "
+                "for selected directive "
+                f"{ownership_diagnostics[0].node_id!r}"
+            )
 
         def authorize_directive_entry(directive) -> None:
             owner = plan.owner_of(directive.id)
@@ -122,6 +140,8 @@ class DirectiveExecutionEngine:
             entry_directives=(plan.entry_directive,),
             directive_entry_guard=authorize_directive_entry,
             max_invocation_depth=max_depth + 1,
+            allow_unresolved_directive_invocations=True,
+            directive_requirement_owners=plan.directive_owners,
         )
 
         return DirectiveExecutionResult(
