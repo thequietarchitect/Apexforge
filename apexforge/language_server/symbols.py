@@ -35,7 +35,7 @@ from language.parser import (
     TypeParameterNode,
     WorkflowInvokeNode,
     WorkflowNode,
-    parse,
+    parse_source_unit,
 )
 from language.source import SourceSpan
 from language_server.diagnostics import offset_to_lsp_position, span_to_lsp_range
@@ -472,31 +472,88 @@ def _module_symbol(
     )
 
 
-def document_symbols(uri: str, text: str) -> tuple[dict[str, object], ...]:
-    """Return hierarchical symbols for one syntactically valid open document.
+def _heterogeneous_module_symbol(
+    module_source: ModuleSource,
+    nodes: Iterable[object],
+    text: str,
+    declarations: Iterable[Mapping[str, object]],
+) -> Optional[dict[str, object]]:
+    """Return one module root containing every source-unit declaration."""
 
-    A syntax failure returns an empty result because T4.2 already publishes the
-    canonical error diagnostics for that document.
-    """
+    if module_source.module_name is None or module_source.module_span is None:
+        return None
+
+    selected_nodes = tuple(nodes)
+    selected_declarations = tuple(declarations)
+    children: list[dict[str, object]] = []
+
+    for dependency in module_source.imports:
+        symbol = _document_symbol(
+            name=dependency.name,
+            detail="import",
+            kind=SYMBOL_KIND_MODULE,
+            text=text,
+            span=dependency.span,
+        )
+        if symbol is not None:
+            children.append(symbol)
+
+    children.extend(dict(item) for item in selected_declarations)
+    last_span = (
+        getattr(selected_nodes[-1], "span", None)
+        if selected_nodes
+        else module_source.module_span
+    )
+
+    return _document_symbol(
+        name=module_source.module_name,
+        detail="module",
+        kind=SYMBOL_KIND_MODULE,
+        text=text,
+        span=module_source.module_span,
+        selection_span=module_source.module_span,
+        children=children,
+        range_override=_full_range(
+            text,
+            module_source.module_span,
+            last_span,
+        ),
+    )
+
+def document_symbols(uri: str, text: str) -> tuple[dict[str, object], ...]:
+    """Return hierarchical symbols for one syntactically valid open document."""
 
     selected_uri = _require_uri(uri, "uri")
     source = _require_text(text, "text")
 
     try:
         module_source = parse_module_source(selected_uri, source)
-        node = parse(module_source.masked_source, source_name=selected_uri)
+        unit = parse_source_unit(
+            module_source.masked_source,
+            source_name=selected_uri,
+        )
     except Exception as error:
         if diagnostics_from_exception(error):
             return ()
         raise
 
-    declaration = _top_level_symbol(node, source)
-    if declaration is None:
+    nodes = tuple(unit.declarations)
+    declarations = tuple(
+        symbol
+        for node in nodes
+        for symbol in (_top_level_symbol(node, source),)
+        if symbol is not None
+    )
+    if not declarations:
         return ()
 
-    module = _module_symbol(module_source, node, source, declaration)
-    return (module,) if module is not None else (declaration,)
-
+    module = _heterogeneous_module_symbol(
+        module_source,
+        nodes,
+        source,
+        declarations,
+    )
+    return (module,) if module is not None else declarations
 
 def document_symbols_contract() -> dict[str, object]:
     return {

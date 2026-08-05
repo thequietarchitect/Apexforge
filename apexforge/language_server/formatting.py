@@ -23,7 +23,7 @@ from language.parser import (
     PrincipalNode, PrincipalRoleNode, RequirementNode, ReturnNode,
     RoleAuthorityNode, RoleNode, SetActionNode, StateNode, StringLiteralNode,
     TypeAnnotationNode, TypeParameterNode, UnaryExpressionNode, WhenActionNode,
-    WorkflowInvokeNode, WorkflowNode, parse,
+    WorkflowInvokeNode, WorkflowNode, parse_source_unit,
 )
 from language_server.diagnostics import offset_to_lsp_position
 
@@ -237,21 +237,35 @@ class _Printer:
         raise TypeError(f"Unsupported top-level node {type(node).__name__}.")
 
 
-def _formatted_text(uri: str, text: str, options: Mapping[str, object]) -> Optional[str]:
+def _formatted_text(
+    uri: str,
+    text: str,
+    options: Mapping[str, object],
+) -> Optional[str]:
     try:
         module_source = parse_module_source(uri, text)
-        node = parse(module_source.masked_source, source_name=uri)
+        unit = parse_source_unit(
+            module_source.masked_source,
+            source_name=uri,
+        )
     except Exception as error:
-        if diagnostics_from_exception(error): return None
+        if diagnostics_from_exception(error):
+            return None
         raise
+
     printer = _Printer(_indent_unit(options))
     if module_source.module_name is not None:
         printer.line(0, f"module {module_source.module_name}")
-        for dependency in module_source.imports: printer.line(0, f"import {dependency.name}")
+        for dependency in module_source.imports:
+            printer.line(0, f"import {dependency.name}")
         printer.line(0)
-    printer.top_level(node)
-    return "\n".join(printer.lines).rstrip() + "\n"
 
+    for index, node in enumerate(unit.declarations):
+        if index:
+            printer.line(0)
+        printer.top_level(node)
+
+    return "\n".join(printer.lines).rstrip() + "\n"
 
 def format_document(uri: str, text: str, options: Mapping[str, object]) -> tuple[dict[str, object], ...]:
     selected_uri=_require_uri(uri,"uri"); source=_require_text(text,"text")

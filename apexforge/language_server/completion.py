@@ -15,7 +15,7 @@ from typing import Final, Iterable, Mapping, Optional
 
 from language.diagnostics import diagnostics_from_exception
 from language.modules import parse_module_source
-from language.parser import DirectiveNode, FunctionNode, LetNode, parse
+from language.parser import DirectiveNode, FunctionNode, LetNode, parse_source_unit
 from language_server.diagnostics import offset_to_lsp_position
 from language_server.hover import lsp_position_to_offset
 from type_system.model import BUILTIN_TYPES
@@ -288,32 +288,51 @@ def _inventory(uri: str, text: str, cursor: int) -> _Inventory:
     fallback = _fallback_inventory(text, cursor)
     try:
         module_source = parse_module_source(uri, text)
-        node = parse(module_source.masked_source, source_name=uri)
+        unit = parse_source_unit(
+            module_source.masked_source,
+            source_name=uri,
+        )
     except Exception as error:
         if diagnostics_from_exception(error):
             return fallback
         raise
 
-    if isinstance(node, FunctionNode):
+    selected_node: Optional[object] = None
+    for declaration in unit.declarations:
+        span = getattr(declaration, "span", None)
+        start = getattr(getattr(span, "start", None), "offset", None)
+        end = getattr(getattr(span, "end", None), "offset", None)
+        if start is not None and end is not None and start <= cursor <= end:
+            selected_node = declaration
+            break
+
+    if isinstance(selected_node, FunctionNode):
         local_bindings = tuple(
             binding.name
-            for binding in node.local_bindings
+            for binding in selected_node.local_bindings
             if isinstance(binding, LetNode)
             and getattr(getattr(binding, "span", None), "start", None) is not None
             and binding.span.start.offset < cursor
         )
         return _Inventory(
-            type_parameters=_names(parameter.name for parameter in node.type_parameters),
-            parameters=_names(parameter.name for parameter in node.parameters),
-            local_bindings=_names((*fallback.local_bindings, *local_bindings)),
+            type_parameters=_names(
+                parameter.name
+                for parameter in selected_node.type_parameters
+            ),
+            parameters=_names(
+                parameter.name
+                for parameter in selected_node.parameters
+            ),
+            local_bindings=_names(
+                (*fallback.local_bindings, *local_bindings)
+            ),
         )
-    if isinstance(node, DirectiveNode):
+    if isinstance(selected_node, DirectiveNode):
         return _Inventory(
-            states=_names(state.name for state in node.states),
-            events=_names(event.name for event in node.events),
+            states=_names(state.name for state in selected_node.states),
+            events=_names(event.name for event in selected_node.events),
         )
     return fallback
-
 
 def _keyword(label: str, rank: int = 0) -> _Candidate:
     return _Candidate(

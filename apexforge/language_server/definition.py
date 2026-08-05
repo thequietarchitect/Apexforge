@@ -47,7 +47,7 @@ from language.parser import (
     UnaryExpressionNode,
     WhenActionNode,
     WorkflowNode,
-    parse,
+    parse_source_unit,
 )
 from language.source import SourceSpan
 from language_server.diagnostics import offset_to_lsp_position
@@ -482,13 +482,17 @@ def _definition_index(uri: str, text: str) -> _Index:
     index = _Index()
     try:
         module_source = parse_module_source(uri, text)
-        node = parse(module_source.masked_source, source_name=uri)
+        unit = parse_source_unit(
+            module_source.masked_source,
+            source_name=uri,
+        )
     except Exception as error:
         if diagnostics_from_exception(error):
             return index
         raise
     _module_index(index, module_source, text)
-    _top_level_index(index, node, text)
+    for node in unit.declarations:
+        _top_level_index(index, node, text)
     index.occurrences.sort(
         key=lambda item: (
             item.start,

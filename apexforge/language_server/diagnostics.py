@@ -13,7 +13,7 @@ from typing import Final, Mapping, Optional
 
 from language.diagnostics import BuildDiagnostic, diagnostics_from_exception
 from language.modules import parse_module_source
-from language.parser import parse
+from language.parser import parse_source_unit
 from language.source import SourceSpan
 
 
@@ -139,7 +139,10 @@ def analyze_document(
 
     try:
         module_source = parse_module_source(selected_uri, source)
-        parse(module_source.masked_source, source_name=selected_uri)
+        parse_source_unit(
+            module_source.masked_source,
+            source_name=selected_uri,
+        )
     except Exception as error:
         diagnostics = diagnostics_from_exception(error)
         if not diagnostics:

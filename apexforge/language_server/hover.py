@@ -36,7 +36,7 @@ from language.parser import (
     TypeParameterNode,
     WorkflowInvokeNode,
     WorkflowNode,
-    parse,
+    parse_source_unit,
 )
 from language.source import SourceSpan
 from language_server.diagnostics import offset_to_lsp_position
@@ -403,15 +403,28 @@ def _module_entries(
 def _hover_entries(uri: str, text: str) -> tuple[_HoverEntry, ...]:
     try:
         module_source = parse_module_source(uri, text)
-        node = parse(module_source.masked_source, source_name=uri)
+        unit = parse_source_unit(
+            module_source.masked_source,
+            source_name=uri,
+        )
     except Exception as error:
         if diagnostics_from_exception(error):
             return ()
         raise
 
-    values = [*_module_entries(module_source, text), *_top_level_entries(node, text)]
-    return tuple(sorted(values, key=lambda item: (item.start, item.end, item.label)))
-
+    values = list(_module_entries(module_source, text))
+    for node in unit.declarations:
+        values.extend(_top_level_entries(node, text))
+    return tuple(
+        sorted(
+            values,
+            key=lambda item: (
+                item.start,
+                item.end,
+                item.label,
+            ),
+        )
+    )
 
 def _hover_result(text: str, entry: _HoverEntry) -> dict[str, object]:
     markdown = (
