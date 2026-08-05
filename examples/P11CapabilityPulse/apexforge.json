@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "name": "P11CapabilityPulse",
+  "sources": [
+    "src/foundation.apex",
+    "src/continuity_core.apex",
+    "src/continuity_architect.apex",
+    "src/operator.apex",
+    "src/math.apex",
+    "src/observer.apex",
+    "src/main.apex",
+    "src/continuity_flow.apex"
+  ],
+  "entry": "Main"
+}
