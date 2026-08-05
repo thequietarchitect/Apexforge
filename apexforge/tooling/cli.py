@@ -100,6 +100,11 @@ def _parser() -> _ArgumentParser:
         "--entry",
         help="entry directive, overriding the manifest entry",
     )
+    run.add_argument(
+        "--report",
+        action="store_true",
+        help="append one deterministic human-readable runtime result report",
+    )
 
     build = commands.add_parser(
         "build",
@@ -278,8 +283,10 @@ def _run_execute(
     stdout: TextIO,
     stderr: TextIO,
     builder: Optional[ProjectBuilder],
+    report: bool = False,
 ) -> int:
     from language.project import ProjectBuildError
+    from tools.runtime_report import render_runtime_report
 
     loaded = load_project(Path(path))
     selected_builder = builder or _default_project_builder
@@ -326,6 +333,9 @@ def _run_execute(
     )
     print(f"Entry: {resolved_entry}", file=stdout)
     print("Runtime diagnostics: 0", file=stdout)
+    if report:
+        print("", file=stdout)
+        print(render_runtime_report(result), file=stdout)
     return EXIT_SUCCESS
 
 
@@ -416,6 +426,7 @@ def main(
                 stdout=output,
                 stderr=errors,
                 builder=project_builder,
+                report=namespace.report,
             )
         if namespace.command == "build":
             return _run_build(
