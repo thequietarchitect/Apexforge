@@ -34,6 +34,13 @@ from tooling.project_scaffold import (
     ScaffoldedProject,
     create_project_scaffold,
 )
+from tooling.narrative_artifact import (
+    NARRATIVE_BUILD_ARTIFACT_SCHEMA,
+    NarrativeArtifactError,
+    NarrativeBuildArtifact,
+    narrative_build_artifact_payload,
+    route_narrative_build_material,
+)
 
 
 __all__ = (
@@ -63,4 +70,9 @@ __all__ = (
     "is_canonical_source_name",
     "load_project",
     "load_project_manifest",
+    "NARRATIVE_BUILD_ARTIFACT_SCHEMA",
+    "NarrativeArtifactError",
+    "NarrativeBuildArtifact",
+    "narrative_build_artifact_payload",
+    "route_narrative_build_material",
 )

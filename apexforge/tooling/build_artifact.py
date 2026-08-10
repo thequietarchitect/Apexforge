@@ -11,6 +11,10 @@ import tempfile
 from typing import Any, Mapping, Optional, TYPE_CHECKING, Union
 
 from air.serialization import air_to_dict
+from tooling.narrative_artifact import (
+    NarrativeBuildArtifact,
+    narrative_build_artifact_payload,
+)
 from tooling.project_loader import LoadedProject
 
 
@@ -34,6 +38,7 @@ class CanonicalBuildArtifact:
     entry: Optional[str]
     fingerprint: str
     source_count: int
+    narrative_artifact: Optional[NarrativeBuildArtifact] = None
 
 
 def canonical_json_bytes(value: Mapping[str, Any]) -> bytes:
@@ -64,6 +69,8 @@ def _artifact_entry(build: ProjectBuild) -> Optional[str]:
 def construct_build_artifact(
     loaded: LoadedProject,
     build: ProjectBuild,
+    *,
+    narrative_artifact: Optional[NarrativeBuildArtifact] = None,
 ) -> CanonicalBuildArtifact:
     """Construct and fingerprint one canonical linked build in memory."""
 
@@ -86,6 +93,10 @@ def construct_build_artifact(
         "project": project,
         "schema": BUILD_ARTIFACT_SCHEMA,
     }
+    if narrative_artifact is not None:
+        payload["narrative"] = narrative_build_artifact_payload(
+            narrative_artifact
+        )
     fingerprint = hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
     artifact = dict(payload)
     artifact["fingerprint"] = {
@@ -98,6 +109,7 @@ def construct_build_artifact(
         entry=entry,
         fingerprint=fingerprint,
         source_count=len(sources),
+        narrative_artifact=narrative_artifact,
     )
 
 
