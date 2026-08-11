@@ -184,6 +184,19 @@ def _parser() -> _ArgumentParser:
             help="explicit output path for the resulting session",
         )
 
+    interact = session_actions.add_parser(
+        "interact",
+        help="interactively operate one existing narrative session",
+    )
+    interact.add_argument(
+        "artifact",
+        help="canonical build artifact containing P11.6F material",
+    )
+    interact.add_argument(
+        "session",
+        help="existing canonical P11.6H narrative session file",
+    )
+
     new = commands.add_parser(
         "new",
         help="create a deterministic ApexForge project scaffold",
@@ -526,9 +539,37 @@ def _run_narrative_session(
         raise CLINarrativeSessionError(str(exc)) from exc
 
 
+def _run_narrative_session_interact(
+    artifact_path: str,
+    session_path: str,
+    *,
+    stdin: TextIO,
+    stdout: TextIO,
+) -> int:
+    """Run the P11.6I human-driven shell over one existing H session."""
+
+    from tooling.narrative_interactive import interact_narrative_session
+    from tooling.narrative_session import (
+        NarrativeSessionError,
+        NarrativeSessionOutputError,
+    )
+
+    try:
+        interact_narrative_session(
+            artifact_path,
+            session_path,
+            input_stream=stdin,
+            output_stream=stdout,
+        )
+        return EXIT_SUCCESS
+    except (NarrativeSessionError, NarrativeSessionOutputError) as exc:
+        raise CLINarrativeSessionError(str(exc)) from exc
+
+
 def main(
     argv: Optional[Sequence[str]] = None,
     *,
+    stdin: Optional[TextIO] = None,
     stdout: Optional[TextIO] = None,
     stderr: Optional[TextIO] = None,
     project_builder: Optional[ProjectBuilder] = None,
@@ -537,6 +578,7 @@ def main(
 
     output = stdout or sys.stdout
     errors = stderr or sys.stderr
+    input_stream = stdin or sys.stdin
     parser = _parser()
     arguments = tuple(sys.argv[1:] if argv is None else argv)
 
@@ -587,6 +629,13 @@ def main(
                 stdout=output,
             )
         if namespace.command == "narrative-session":
+            if namespace.session_action == "interact":
+                return _run_narrative_session_interact(
+                    namespace.artifact,
+                    namespace.session,
+                    stdin=input_stream,
+                    stdout=output,
+                )
             return _run_narrative_session(
                 namespace.session_action,
                 namespace.artifact,

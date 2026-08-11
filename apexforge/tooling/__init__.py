@@ -82,6 +82,13 @@ from tooling.narrative_session import (
     terminate_narrative_session,
     write_narrative_session_atomic,
 )
+from tooling.narrative_interactive import (
+    INTERACTIVE_TERMINATION_REASON,
+    NarrativeInteractiveMenuItem,
+    interact_narrative_session,
+    narrative_interactive_menu,
+    run_narrative_interactive_session,
+)
 
 
 __all__ = (
@@ -153,4 +160,9 @@ __all__ = (
     "step_narrative_session",
     "terminate_narrative_session",
     "write_narrative_session_atomic",
+    "INTERACTIVE_TERMINATION_REASON",
+    "NarrativeInteractiveMenuItem",
+    "interact_narrative_session",
+    "narrative_interactive_menu",
+    "run_narrative_interactive_session",
 )
