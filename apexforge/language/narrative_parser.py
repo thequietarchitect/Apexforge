@@ -29,6 +29,7 @@ from language.source import SourceSpan, SourceText
 
 __all__ = (
     "NarrativeSourceParseError",
+    "is_narrative_source_document",
     "parse_narrative_source",
 )
 
@@ -62,6 +63,37 @@ _ESCAPES = {
     "r": "\r",
     "t": "\t",
 }
+
+
+def _identifier_end(text: str, start: int) -> int:
+    index = start + 1
+    while index < len(text):
+        selected = text[index]
+        if selected == "_" or selected.isalnum():
+            index += 1
+            continue
+        break
+    return index
+
+
+def is_narrative_source_document(source: str) -> bool:
+    # Lexically classify the exact leading narrative ``story`` keyword.
+    if type(source) is not str:
+        raise TypeError("Narrative source must be an exact str.")
+
+    index = 0
+    while index < len(source) and source[index].isspace():
+        index += 1
+
+    if index >= len(source):
+        return False
+
+    character = source[index]
+    if character != "_" and not character.isalpha():
+        return False
+
+    end = _identifier_end(source, index)
+    return source[index:end] == "story"
 
 
 def _error(
@@ -159,13 +191,7 @@ def _scan(
 
         if character == "_" or character.isalpha():
             start = index
-            index += 1
-            while index < len(text):
-                selected = text[index]
-                if selected == "_" or selected.isalnum():
-                    index += 1
-                    continue
-                break
+            index = _identifier_end(text, index)
             value = text[start:index]
             kind = "BOOLEAN" if value in {"true", "false"} else "IDENT"
             tokens.append(

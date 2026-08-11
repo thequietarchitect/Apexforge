@@ -7,12 +7,18 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Mapping, Tuple, Union
 
+from language.narrative_parser import is_narrative_source_document
 from tooling.project_manifest import (
     PROJECT_MANIFEST_NAME,
     ProjectManifest,
     ProjectManifestError,
     load_project_manifest,
 )
+
+
+PROJECT_KIND_AIR = "air"
+PROJECT_KIND_NARRATIVE = "narrative"
+_PROJECT_KINDS = frozenset((PROJECT_KIND_AIR, PROJECT_KIND_NARRATIVE))
 
 
 @dataclass(frozen=True)
@@ -50,6 +56,7 @@ class LoadedProject:
     manifest_path: Path
     manifest: ProjectManifest
     sources: Tuple[LoadedProjectSource, ...]
+    project_kind: str = PROJECT_KIND_AIR
 
     def __post_init__(self) -> None:
         if not isinstance(self.root, Path):
@@ -58,6 +65,10 @@ class LoadedProject:
             raise TypeError("LoadedProject.manifest_path must be pathlib.Path.")
         if not isinstance(self.manifest, ProjectManifest):
             raise TypeError("LoadedProject.manifest must be ProjectManifest.")
+        if type(self.project_kind) is not str or self.project_kind not in _PROJECT_KINDS:
+            raise ValueError(
+                "LoadedProject.project_kind must be 'air' or 'narrative'."
+            )
 
         normalized_sources = tuple(self.sources)
         if any(
@@ -191,15 +202,26 @@ def load_project(
             )
         )
 
+    loaded_sources = tuple(loaded)
+    project_kind = (
+        PROJECT_KIND_NARRATIVE
+        if len(loaded_sources) == 1
+        and is_narrative_source_document(loaded_sources[0].source)
+        else PROJECT_KIND_AIR
+    )
+
     return LoadedProject(
         root=root,
         manifest_path=manifest_path,
         manifest=manifest,
-        sources=tuple(loaded),
+        sources=loaded_sources,
+        project_kind=project_kind,
     )
 
 
 __all__ = (
+    "PROJECT_KIND_AIR",
+    "PROJECT_KIND_NARRATIVE",
     "LoadedProject",
     "LoadedProjectSource",
     "find_project_manifest",

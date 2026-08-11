@@ -18,7 +18,7 @@ from tooling.build_artifact import (
     construct_build_artifact,
     write_build_artifact_atomic,
 )
-from tooling.project_loader import LoadedProject, load_project
+from tooling.project_loader import PROJECT_KIND_NARRATIVE, LoadedProject, load_project
 from tooling.project_manifest import ProjectManifestError
 from tooling.project_scaffold import create_project_scaffold
 
@@ -299,8 +299,7 @@ def _run_check(
     selected_builder = builder or _default_project_builder
     narrative_source = (
         loaded.sources[0]
-        if len(loaded.sources) == 1
-        and loaded.sources[0].source.lstrip().startswith("story ")
+        if loaded.project_kind == PROJECT_KIND_NARRATIVE
         else None
     )
 
@@ -401,8 +400,7 @@ def _run_execute(
     loaded = load_project(Path(path))
     narrative_source = (
         loaded.sources[0]
-        if len(loaded.sources) == 1
-        and loaded.sources[0].source.lstrip().startswith("story ")
+        if loaded.project_kind == PROJECT_KIND_NARRATIVE
         else None
     )
 
@@ -574,8 +572,7 @@ def _run_simulate(
     loaded = load_project(Path(path))
     narrative_source = (
         loaded.sources[0]
-        if len(loaded.sources) == 1
-        and loaded.sources[0].source.lstrip().startswith("story ")
+        if loaded.project_kind == PROJECT_KIND_NARRATIVE
         else None
     )
     if narrative_source is None:
@@ -731,8 +728,7 @@ def _run_build(
     selected_entry = entry if entry is not None else loaded.manifest.entry
     narrative_source = (
         loaded.sources[0]
-        if len(loaded.sources) == 1
-        and loaded.sources[0].source.lstrip().startswith("story ")
+        if loaded.project_kind == PROJECT_KIND_NARRATIVE
         else None
     )
 
