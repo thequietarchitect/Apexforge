@@ -116,6 +116,28 @@ def _parser() -> _ArgumentParser:
         help="append one deterministic human-readable runtime result report",
     )
 
+    simulate = commands.add_parser(
+        "simulate",
+        help="perform one bounded deterministic narrative simulation",
+    )
+    simulate.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="narrative project directory, source path, or apexforge.json path",
+    )
+    simulate.add_argument(
+        "--observer",
+        action="store_true",
+        help="observe deterministic narrative state and transition progression",
+    )
+    simulate.add_argument(
+        "--max-steps",
+        type=int,
+        default=32,
+        help="maximum narrative transitions before the bounded simulation stops",
+    )
+
     build = commands.add_parser(
         "build",
         help="write one canonical linked multi-source build artifact",
@@ -518,6 +540,184 @@ def _run_execute(
     return EXIT_SUCCESS
 
 
+def _run_simulate(
+    path: str,
+    *,
+    observer: bool,
+    max_steps: int,
+    stdout: TextIO,
+) -> int:
+    # Run one bounded deterministic observer simulation for a narrative project.
+
+    from tempfile import TemporaryDirectory
+
+    from language.narrative_analysis import analyze_narrative_source
+    from runtime.narrative_binding import bind_narrative_story
+    from tooling.narrative_artifact import route_narrative_build_material
+    from tooling.narrative_interactive import narrative_interactive_menu
+    from tooling.narrative_session import (
+        NarrativeSessionCreateRequest,
+        NarrativeSessionError,
+        NarrativeSessionOutputError,
+        create_narrative_session,
+        load_narrative_session_material,
+        step_narrative_session,
+    )
+
+    if not observer:
+        raise CLIUsageError(
+            "experimental narrative simulation requires --observer."
+        )
+    if type(max_steps) is not int or max_steps < 1:
+        raise CLIUsageError("--max-steps must be a positive integer.")
+
+    loaded = load_project(Path(path))
+    narrative_source = (
+        loaded.sources[0]
+        if len(loaded.sources) == 1
+        and loaded.sources[0].source.lstrip().startswith("story ")
+        else None
+    )
+    if narrative_source is None:
+        raise CLIUsageError(
+            "simulate currently supports single-source narrative projects only."
+        )
+
+    def identity_text(identity: Any) -> str:
+        return f"{identity.kind}:{'.'.join(identity.path)}"
+
+    try:
+        analysis = analyze_narrative_source(
+            narrative_source.source,
+            source_name=narrative_source.name,
+        )
+        story = analysis.semantic_story
+        bindings = bind_narrative_story(story)
+        narrative = route_narrative_build_material(
+            analysis,
+            bindings,
+            source_name=narrative_source.name,
+        )
+
+        if not story.timelines or not story.timelines[0].scenes:
+            raise CLIProjectCheckError(
+                "Narrative project requires an authored timeline "
+                "with at least one scene."
+            )
+
+        start_scene = story.timelines[0].scenes[0]
+        initial_facts = story.states[0].facts if story.states else ()
+        story_name = story.identity.path[-1]
+        carrier = _default_project_builder(
+            {
+                "__narrative_carrier__.apex":
+                    f"directive {story_name} {{}}"
+            },
+            story_name,
+        )
+        artifact = construct_build_artifact(
+            loaded,
+            carrier,
+            narrative_artifact=narrative,
+        )
+
+        with TemporaryDirectory(prefix="apexforge-narrative-simulate-") as temporary:
+            artifact_path = Path(temporary) / "build.json"
+            write_build_artifact_atomic(artifact, artifact_path)
+            material = load_narrative_session_material(artifact_path)
+            session = create_narrative_session(
+                material,
+                NarrativeSessionCreateRequest(
+                    story=story.identity,
+                    start_scene=start_scene,
+                    facts=tuple(initial_facts),
+                ),
+            )
+
+            visited = {session.state.current_scene.path}
+            transitions = 0
+
+            print("ApexForge narrative simulation", file=stdout)
+            print(f"Project: {loaded.manifest.name}", file=stdout)
+            print(f"Story: {identity_text(story.identity)}", file=stdout)
+            print("Observer: enabled", file=stdout)
+            print(f"Maximum transitions: {max_steps}", file=stdout)
+
+            while True:
+                current_scene = session.state.current_scene
+                print(
+                    f"Step {transitions}: {identity_text(current_scene)}",
+                    file=stdout,
+                )
+
+                if session.state.termination.is_terminated:
+                    print(
+                        "Observer stop: narrative terminated "
+                        f"({session.state.termination.reason}).",
+                        file=stdout,
+                    )
+                    return EXIT_SUCCESS
+
+                menu = narrative_interactive_menu(material, session)
+                print(f"Available paths: {len(menu)}", file=stdout)
+                for item in menu:
+                    print(
+                        f"  {item.number}. {identity_text(item.choice)} "
+                        f"path[{item.path_index}] "
+                        f"{item.path_label!r} -> "
+                        f"{identity_text(item.destination)}",
+                        file=stdout,
+                    )
+
+                if not menu:
+                    print("Observer stop: no available paths.", file=stdout)
+                    return EXIT_SUCCESS
+
+                if transitions >= max_steps:
+                    print(
+                        f"Observer stop: maximum transition count "
+                        f"{max_steps} reached.",
+                        file=stdout,
+                    )
+                    return EXIT_SUCCESS
+
+                selected = next(
+                    (
+                        item
+                        for item in menu
+                        if item.destination.path not in visited
+                    ),
+                    menu[0],
+                )
+                print(
+                    f"Observer selected: {selected.number} -> "
+                    f"{identity_text(selected.destination)}",
+                    file=stdout,
+                )
+
+                result = step_narrative_session(
+                    material,
+                    session,
+                    selected.request,
+                )
+                if not result.execution_result.ok or result.session is None:
+                    raise CLINarrativeSessionError(
+                        "deterministic simulation transition failed."
+                    )
+
+                session = result.session
+                visited.add(session.state.current_scene.path)
+                transitions += 1
+    except CLIProjectCheckError:
+        raise
+    except CLINarrativeSessionError:
+        raise
+    except (NarrativeSessionError, NarrativeSessionOutputError) as exc:
+        raise CLINarrativeSessionError(str(exc)) from exc
+    except Exception as exc:
+        raise CLIProjectCheckError(str(exc)) from exc
+
+
 def _run_build(
     path: str,
     output_path: str,
@@ -768,6 +968,13 @@ def main(
                 report=namespace.report,
                 stdin=input_stream,
             )
+        if namespace.command == "simulate":
+            return _run_simulate(
+                namespace.path,
+                observer=namespace.observer,
+                max_steps=namespace.max_steps,
+                stdout=output,
+            )
         if namespace.command == "build":
             return _run_build(
                 namespace.path,
@@ -803,6 +1010,10 @@ def main(
                 namespace.directory,
                 stdout=output,
             )
+    except CLIUsageError as exc:
+        print(parser.format_usage().rstrip(), file=errors)
+        print(f"{CLI_PROGRAM_NAME}: error: {exc}", file=errors)
+        return EXIT_USAGE
     except ProjectManifestError as exc:
         print(str(exc), file=errors)
         return EXIT_PROJECT
