@@ -1,20 +1,23 @@
 """Deterministic human-driven P11.6I narrative session interaction.
 
-This module presents structural P11.6C path material for the current scene and
-maps one explicit human menu selection to one exact P11.6H step request.  It
-does not evaluate conditions, apply consequences, choose paths, infer
-termination, or own persistence semantics.
+This module writes P11.6J presentation for the current scene and maps one
+explicit human menu selection to one exact P11.6H step request.  It does not
+evaluate conditions, apply consequences, choose paths, infer termination, or
+own persistence semantics.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
 from pathlib import Path
 from typing import TextIO, Union
 
 from language.narrative_model import NarrativeIdentity
-from runtime.narrative_binding import NarrativeExecutableChoicePath
+from tooling.narrative_rendering import (
+    NarrativeSessionPresentation,
+    narrative_session_presentation,
+    render_narrative_presentation,
+)
 from tooling.narrative_session import (
     NarrativeSession,
     NarrativeSessionError,
@@ -63,16 +66,6 @@ class NarrativeInteractiveMenuItem:
         return NarrativeSessionStepRequest(self.choice, self.path_index)
 
 
-def _path_key(
-    path: NarrativeExecutableChoicePath,
-) -> tuple[str, tuple[str, ...], int]:
-    return path.choice.kind, path.choice.path, path.path_index
-
-
-def _identity_text(identity: NarrativeIdentity) -> str:
-    return f"{identity.kind}:{'/'.join(identity.path)}"
-
-
 def _require_association(
     material: NarrativeSessionMaterial,
     session: NarrativeSession,
@@ -98,23 +91,24 @@ def narrative_interactive_menu(
     """Return current-scene paths in explicit canonical identity/index order."""
 
     _require_association(material, session)
-    current_paths = sorted(
-        (
-            path
-            for path in material.bindings.paths
-            if path.source_scene == session.state.current_scene
-        ),
-        key=_path_key,
-    )
+    presentation = narrative_session_presentation(material, session)
+    return _interactive_menu(presentation)
+
+
+def _interactive_menu(
+    presentation: NarrativeSessionPresentation,
+) -> tuple[NarrativeInteractiveMenuItem, ...]:
+    """Map J presentation entries to I's exact step-request records."""
+
     return tuple(
         NarrativeInteractiveMenuItem(
-            number=number,
-            choice=path.choice,
-            path_index=path.path_index,
-            path_label=path.path_label,
-            destination=path.destination,
+            number=choice.number,
+            choice=choice.choice,
+            path_index=choice.path_index,
+            path_label=choice.path_label,
+            destination=choice.destination,
         )
-        for number, path in enumerate(current_paths, start=1)
+        for choice in presentation.choices
     )
 
 
@@ -123,39 +117,9 @@ def _write_state(
     session: NarrativeSession,
     output_stream: TextIO,
 ) -> tuple[NarrativeInteractiveMenuItem, ...]:
-    state = session.state
-    output_stream.write("ApexForge narrative session\n")
-    output_stream.write(f"Story: {_identity_text(state.story)}\n")
-    output_stream.write(f"Scene: {_identity_text(state.current_scene)}\n")
-    output_stream.write(f"Status: {state.termination.status}\n")
-    if state.termination.reason is not None:
-        output_stream.write(f"Termination reason: {state.termination.reason}\n")
-    output_stream.write(f"Transitions: {len(state.choice_history)}\n")
-    output_stream.write("Facts:\n")
-    if state.facts:
-        for fact in state.facts:
-            output_stream.write(
-                f"  {_identity_text(fact.subject)}:{fact.name}={fact.value}\n"
-            )
-    else:
-        output_stream.write("  (none)\n")
-
-    if state.termination.is_terminated:
-        output_stream.write("Choices:\n  (session terminated)\n")
-        return ()
-
-    menu = narrative_interactive_menu(material, session)
-    output_stream.write("Choices:\n")
-    if not menu:
-        output_stream.write("  (none)\n")
-    for item in menu:
-        label = json.dumps(item.path_label, ensure_ascii=False)
-        output_stream.write(
-            f"  {item.number}. {_identity_text(item.choice)} "
-            f"path[{item.path_index}] {label} -> "
-            f"{_identity_text(item.destination)}\n"
-        )
-    return menu
+    presentation = narrative_session_presentation(material, session)
+    output_stream.write(render_narrative_presentation(presentation))
+    return _interactive_menu(presentation)
 
 
 def run_narrative_interactive_session(
