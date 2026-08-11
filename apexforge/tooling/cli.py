@@ -32,6 +32,7 @@ EXIT_PROJECT = 10
 EXIT_CHECK = 20
 EXIT_RUNTIME = 30
 EXIT_ARTIFACT_OUTPUT = 40
+EXIT_NARRATIVE_REQUEST = 50
 EXIT_INTERNAL = 70
 
 
@@ -41,6 +42,10 @@ class CLIUsageError(ValueError):
 
 class CLIProjectCheckError(RuntimeError):
     """Canonical project construction failed during ``apexforge check``."""
+
+
+class CLINarrativeRequestError(ValueError):
+    """A narrative request or its canonical build material was invalid."""
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -124,6 +129,20 @@ def _parser() -> _ArgumentParser:
     build.add_argument(
         "--entry",
         help="entry directive, overriding the manifest entry",
+    )
+
+    narrative = commands.add_parser(
+        "narrative",
+        help="execute one explicit narrative choice path from a build artifact",
+    )
+    narrative.add_argument(
+        "artifact",
+        help="canonical build artifact containing P11.6F narrative material",
+    )
+    narrative.add_argument(
+        "--request",
+        required=True,
+        help="explicit one-transition narrative request JSON file",
     )
 
     new = commands.add_parser(
@@ -381,6 +400,33 @@ def _run_build(
     return EXIT_SUCCESS
 
 
+def _run_narrative(
+    artifact_path: str,
+    request_path: str,
+    *,
+    stdout: TextIO,
+) -> int:
+    """Route one explicit request through P11.6F material and P11.6E."""
+
+    from tooling.narrative_execution import (
+        NarrativeExecutionRoutingError,
+        execute_narrative_request,
+        load_narrative_execution_material,
+        load_narrative_execution_request,
+        narrative_execution_result_bytes,
+    )
+
+    try:
+        bindings = load_narrative_execution_material(artifact_path)
+        request = load_narrative_execution_request(request_path)
+    except NarrativeExecutionRoutingError as exc:
+        raise CLINarrativeRequestError(str(exc)) from exc
+
+    result = execute_narrative_request(bindings, request)
+    stdout.write(narrative_execution_result_bytes(result).decode("utf-8"))
+    return EXIT_SUCCESS if result.ok else EXIT_RUNTIME
+
+
 def main(
     argv: Optional[Sequence[str]] = None,
     *,
@@ -435,6 +481,12 @@ def main(
                 namespace.entry,
                 stdout=output,
             )
+        if namespace.command == "narrative":
+            return _run_narrative(
+                namespace.artifact,
+                namespace.request,
+                stdout=output,
+            )
         if namespace.command == "new":
             return _run_new(
                 namespace.name,
@@ -450,6 +502,9 @@ def main(
     except BuildArtifactOutputError as exc:
         print(str(exc), file=errors)
         return EXIT_ARTIFACT_OUTPUT
+    except CLINarrativeRequestError as exc:
+        print(str(exc), file=errors)
+        return EXIT_NARRATIVE_REQUEST
     except KeyboardInterrupt:
         print("ApexForge command interrupted.", file=errors)
         return 130
@@ -470,10 +525,12 @@ def main(
 __all__ = (
     "CLI_PROGRAM_NAME",
     "CLIProjectCheckError",
+    "CLINarrativeRequestError",
     "CLIUsageError",
     "EXIT_ARTIFACT_OUTPUT",
     "EXIT_CHECK",
     "EXIT_INTERNAL",
+    "EXIT_NARRATIVE_REQUEST",
     "EXIT_PROJECT",
     "EXIT_RUNTIME",
     "EXIT_SUCCESS",

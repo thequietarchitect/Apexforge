@@ -41,6 +41,19 @@ from tooling.narrative_artifact import (
     narrative_build_artifact_payload,
     route_narrative_build_material,
 )
+from tooling.narrative_execution import (
+    NARRATIVE_EXECUTION_REQUEST_SCHEMA,
+    NARRATIVE_EXECUTION_RESULT_SCHEMA,
+    NarrativeExecutionRequest,
+    NarrativeExecutionRoutingError,
+    execute_narrative_request,
+    load_narrative_execution_material,
+    load_narrative_execution_request,
+    narrative_execution_request_payload,
+    narrative_execution_result_bytes,
+    narrative_execution_result_payload,
+    narrative_execution_state_payload,
+)
 
 
 __all__ = (
@@ -75,4 +88,15 @@ __all__ = (
     "NarrativeBuildArtifact",
     "narrative_build_artifact_payload",
     "route_narrative_build_material",
+    "NARRATIVE_EXECUTION_REQUEST_SCHEMA",
+    "NARRATIVE_EXECUTION_RESULT_SCHEMA",
+    "NarrativeExecutionRequest",
+    "NarrativeExecutionRoutingError",
+    "execute_narrative_request",
+    "load_narrative_execution_material",
+    "load_narrative_execution_request",
+    "narrative_execution_request_payload",
+    "narrative_execution_result_bytes",
+    "narrative_execution_result_payload",
+    "narrative_execution_state_payload",
 )
