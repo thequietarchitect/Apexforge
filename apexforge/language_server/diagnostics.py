@@ -13,6 +13,7 @@ from typing import Final, Mapping, Optional
 
 from language.diagnostics import BuildDiagnostic, diagnostics_from_exception
 from language.modules import parse_module_source
+from language.narrative_analysis import analyze_narrative_source
 from language.parser import parse_source_unit
 from language.source import SourceSpan
 
@@ -138,11 +139,14 @@ def analyze_document(
     source = _require_text(text, "text")
 
     try:
-        module_source = parse_module_source(selected_uri, source)
-        parse_source_unit(
-            module_source.masked_source,
-            source_name=selected_uri,
-        )
+        if source.lstrip().startswith("story "):
+            analyze_narrative_source(source, source_name=selected_uri)
+        else:
+            module_source = parse_module_source(selected_uri, source)
+            parse_source_unit(
+                module_source.masked_source,
+                source_name=selected_uri,
+            )
     except Exception as error:
         diagnostics = diagnostics_from_exception(error)
         if not diagnostics:

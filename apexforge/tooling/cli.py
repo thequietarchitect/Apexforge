@@ -275,16 +275,32 @@ def _run_check(
 ) -> int:
     loaded = load_project(Path(path))
     selected_builder = builder or _default_project_builder
+    narrative_source = (
+        loaded.sources[0]
+        if len(loaded.sources) == 1
+        and loaded.sources[0].source.lstrip().startswith("story ")
+        else None
+    )
 
     try:
-        selected_builder(
-            loaded.source_mapping(),
-            loaded.manifest.entry,
-        )
+        if narrative_source is not None:
+            from language.narrative_analysis import analyze_narrative_source
+            from runtime.narrative_binding import bind_narrative_story
+
+            analysis = analyze_narrative_source(
+                narrative_source.source,
+                source_name=narrative_source.name,
+            )
+            bind_narrative_story(analysis.semantic_story)
+        else:
+            selected_builder(
+                loaded.source_mapping(),
+                loaded.manifest.entry,
+            )
     except CLIProjectCheckError:
         raise
     except Exception as exc:
-        # Injected/test builders use the same deterministic check boundary.
+        # Narrative and injected/test builders share the deterministic check boundary.
         raise CLIProjectCheckError(str(exc)) from exc
 
     print(
@@ -355,11 +371,103 @@ def _run_execute(
     stderr: TextIO,
     builder: Optional[ProjectBuilder],
     report: bool = False,
+    stdin: Optional[TextIO] = None,
 ) -> int:
     from language.project import ProjectBuildError
     from tools.runtime_report import render_runtime_report
 
     loaded = load_project(Path(path))
+    narrative_source = (
+        loaded.sources[0]
+        if len(loaded.sources) == 1
+        and loaded.sources[0].source.lstrip().startswith("story ")
+        else None
+    )
+
+    if narrative_source is not None:
+        from tempfile import TemporaryDirectory
+
+        from language.narrative_analysis import analyze_narrative_source
+        from runtime.narrative_binding import bind_narrative_story
+        from tooling.narrative_artifact import route_narrative_build_material
+        from tooling.narrative_interactive import interact_narrative_session
+        from tooling.narrative_session import (
+            NarrativeSessionCreateRequest,
+            NarrativeSessionError,
+            NarrativeSessionOutputError,
+            create_narrative_session,
+            load_narrative_session_material,
+            write_narrative_session_atomic,
+        )
+
+        if entry is not None:
+            raise CLIUsageError("--entry is not supported for narrative projects.")
+        if report:
+            raise CLIUsageError("--report is not supported for narrative projects.")
+
+        try:
+            analysis = analyze_narrative_source(
+                narrative_source.source,
+                source_name=narrative_source.name,
+            )
+            story = analysis.semantic_story
+            bindings = bind_narrative_story(story)
+            narrative = route_narrative_build_material(
+                analysis,
+                bindings,
+                source_name=narrative_source.name,
+            )
+
+            if not story.timelines or not story.timelines[0].scenes:
+                raise CLIProjectCheckError(
+                    "Narrative project requires an authored timeline "
+                    "with at least one scene."
+                )
+
+            start_scene = story.timelines[0].scenes[0]
+            initial_facts = story.states[0].facts if story.states else ()
+            story_name = story.identity.path[-1]
+            carrier = _default_project_builder(
+                {
+                    "__narrative_carrier__.apex":
+                        f"directive {story_name} {{}}"
+                },
+                story_name,
+            )
+            artifact = construct_build_artifact(
+                loaded,
+                carrier,
+                narrative_artifact=narrative,
+            )
+
+            with TemporaryDirectory(prefix="apexforge-narrative-run-") as temporary:
+                temporary_root = Path(temporary)
+                artifact_path = temporary_root / "build.json"
+                session_path = temporary_root / "session.json"
+                write_build_artifact_atomic(artifact, artifact_path)
+
+                material = load_narrative_session_material(artifact_path)
+                request = NarrativeSessionCreateRequest(
+                    story=story.identity,
+                    start_scene=start_scene,
+                    facts=tuple(initial_facts),
+                )
+                session = create_narrative_session(material, request)
+                write_narrative_session_atomic(session, session_path)
+                interact_narrative_session(
+                    artifact_path,
+                    session_path,
+                    input_stream=(stdin or sys.stdin),
+                    output_stream=stdout,
+                )
+            return EXIT_SUCCESS
+        except CLIProjectCheckError:
+            raise
+        except (NarrativeSessionError, NarrativeSessionOutputError) as exc:
+            raise CLINarrativeSessionError(str(exc)) from exc
+        except Exception as exc:
+            raise CLIProjectCheckError(str(exc)) from exc
+
     selected_builder = builder or _default_project_builder
     selected_entry = (
         entry
@@ -421,15 +529,59 @@ def _run_build(
 
     loaded = load_project(Path(path))
     selected_entry = entry if entry is not None else loaded.manifest.entry
-    build = _default_project_builder(
-        loaded.source_mapping(),
-        selected_entry,
+    narrative_source = (
+        loaded.sources[0]
+        if len(loaded.sources) == 1
+        and loaded.sources[0].source.lstrip().startswith("story ")
+        else None
     )
 
-    try:
-        artifact = construct_build_artifact(loaded, build)
-    except ProjectBuildError as exc:
-        raise CLIProjectCheckError(str(exc)) from exc
+    if narrative_source is not None:
+        try:
+            from language.narrative_analysis import analyze_narrative_source
+            from runtime.narrative_binding import bind_narrative_story
+            from tooling.narrative_artifact import route_narrative_build_material
+
+            analysis = analyze_narrative_source(
+                narrative_source.source,
+                source_name=narrative_source.name,
+            )
+            bindings = bind_narrative_story(analysis.semantic_story)
+            narrative = route_narrative_build_material(
+                analysis,
+                bindings,
+                source_name=narrative_source.name,
+            )
+            story_name = analysis.semantic_story.identity.path[-1]
+            build = _default_project_builder(
+                {
+                    "__narrative_carrier__.apex":
+                        f"directive {story_name} {{}}"
+                },
+                story_name,
+            )
+        except CLIProjectCheckError:
+            raise
+        except Exception as exc:
+            raise CLIProjectCheckError(str(exc)) from exc
+
+        try:
+            artifact = construct_build_artifact(
+                loaded,
+                build,
+                narrative_artifact=narrative,
+            )
+        except ProjectBuildError as exc:
+            raise CLIProjectCheckError(str(exc)) from exc
+    else:
+        build = _default_project_builder(
+            loaded.source_mapping(),
+            selected_entry,
+        )
+        try:
+            artifact = construct_build_artifact(loaded, build)
+        except ProjectBuildError as exc:
+            raise CLIProjectCheckError(str(exc)) from exc
 
     write_build_artifact_atomic(artifact, Path(output_path))
 
@@ -614,6 +766,7 @@ def main(
                 stderr=errors,
                 builder=project_builder,
                 report=namespace.report,
+                stdin=input_stream,
             )
         if namespace.command == "build":
             return _run_build(
