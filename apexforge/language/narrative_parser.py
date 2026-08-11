@@ -388,13 +388,30 @@ class _Parser:
     def parse_scene(self) -> NarrativeSourceScene:
         start = self.expect_word("scene")
         name = self.identifier()
+        title = None
+        body = None
+        end = name.span
+        if self.current().kind == "LBRACE":
+            self.advance()
+            if self.current().kind == "IDENT" and self.current().value == "title":
+                self.advance()
+                token = self.expect_kind("STRING", "a quoted scene title")
+                title = NarrativeSourceScalar("string", token.value, token.span)
+            if self.current().kind == "IDENT" and self.current().value == "body":
+                self.advance()
+                token = self.expect_kind("STRING", "a quoted scene body")
+                body = NarrativeSourceScalar("string", token.value, token.span)
+            closing = self.expect_kind("RBRACE", "'}' to close the scene")
+            end = closing.span
         return NarrativeSourceScene(
             start.span,
             name,
             self.source_text.span(
                 start.span.start.offset,
-                name.span.end.offset,
+                end.end.offset,
             ),
+            title,
+            body,
         )
 
     def parse_dialogue(self) -> NarrativeSourceDialogue:
@@ -409,6 +426,16 @@ class _Parser:
         participants_keyword = self.expect_word("participants")
         participants = self.reference_list("character", "participants")
 
+        text = None
+        if self.current().kind == "IDENT" and self.current().value == "text":
+            self.advance()
+            text_token = self.expect_kind("STRING", "quoted dialogue text")
+            text = NarrativeSourceScalar(
+                "string",
+                text_token.value,
+                text_token.span,
+            )
+
         closing = self.expect_kind("RBRACE", "'}' to close the dialogue")
         return NarrativeSourceDialogue(
             start.span,
@@ -420,6 +447,7 @@ class _Parser:
             participants_keyword.span,
             participants,
             self.span_from(start, closing),
+            text,
         )
 
     def parse_choice(self) -> NarrativeSourceChoice:

@@ -36,7 +36,10 @@ from tooling.build_artifact import (
     BUILD_ARTIFACT_SCHEMA,
     canonical_json_bytes,
 )
-from tooling.narrative_artifact import NARRATIVE_BUILD_ARTIFACT_SCHEMA
+from tooling.narrative_artifact import (
+    NARRATIVE_BUILD_ARTIFACT_SCHEMA,
+    NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1,
+)
 
 
 NARRATIVE_EXECUTION_REQUEST_SCHEMA = (
@@ -456,7 +459,10 @@ def _narrative_bindings(value: object) -> NarrativeExecutableBindingSet:
         value,
         frozenset(("schema", "source", "story", "bindings")),
     )
-    if narrative["schema"] != NARRATIVE_BUILD_ARTIFACT_SCHEMA:
+    if narrative["schema"] not in (
+        NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1,
+        NARRATIVE_BUILD_ARTIFACT_SCHEMA,
+    ):
         raise ValueError("narrative artifact schema mismatch")
     source_name = narrative["source"]
     if type(source_name) is not str:

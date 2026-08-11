@@ -176,6 +176,8 @@ class NarrativeSourceScene:
     keyword_span: SourceSpan
     name: NarrativeSourceIdentifier
     span: SourceSpan
+    title: Optional[NarrativeSourceScalar] = None
+    body: Optional[NarrativeSourceScalar] = None
 
     def __post_init__(self) -> None:
         _require_span(self.keyword_span, "NarrativeSourceScene.keyword_span")
@@ -185,6 +187,17 @@ class NarrativeSourceScene:
             "NarrativeSourceScene.name",
         )
         _require_span(self.span, "NarrativeSourceScene.span")
+        for field_name, value in (("title", self.title), ("body", self.body)):
+            if value is not None:
+                _require_exact_record(
+                    value,
+                    NarrativeSourceScalar,
+                    f"NarrativeSourceScene.{field_name}",
+                )
+                if value.kind != "string":
+                    raise ValueError(
+                        f"NarrativeSourceScene.{field_name} must be a string scalar."
+                    )
 
 
 @dataclass(frozen=True)
@@ -198,6 +211,7 @@ class NarrativeSourceDialogue:
     participants_keyword_span: SourceSpan
     participants: tuple[NarrativeSourceReference, ...]
     span: SourceSpan
+    text: Optional[NarrativeSourceScalar] = None
 
     def __post_init__(self) -> None:
         _require_span(self.keyword_span, "NarrativeSourceDialogue.keyword_span")
@@ -251,6 +265,16 @@ class NarrativeSourceDialogue:
                 "NarrativeSourceDialogue participants must expect character."
             )
         _require_span(self.span, "NarrativeSourceDialogue.span")
+        if self.text is not None:
+            _require_exact_record(
+                self.text,
+                NarrativeSourceScalar,
+                "NarrativeSourceDialogue.text",
+            )
+            if self.text.kind != "string":
+                raise ValueError(
+                    "NarrativeSourceDialogue.text must be a string scalar."
+                )
 
 
 @dataclass(frozen=True)

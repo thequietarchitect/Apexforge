@@ -53,6 +53,21 @@ def _require_optional_trimmed_string(value: object, field_name: str) -> None:
     _require_trimmed_string(value, field_name)
 
 
+def _require_optional_prose(value: object, field_name: str) -> None:
+    if value is None:
+        return
+    if type(value) is not str:
+        raise TypeError(f"{field_name} must be an exact str or None.")
+    if not value:
+        raise ValueError(f"{field_name} must be nonempty when present.")
+    if "\r" in value:
+        raise ValueError(f"{field_name} must use LF newlines.")
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise ValueError(f"{field_name} must be valid UTF-8 text.") from exc
+
+
 def _require_identity(
     value: object,
     expected_kind: str,
@@ -133,9 +148,13 @@ class NarrativeCharacter:
 @_dataclass(frozen=True)
 class NarrativeScene:
     identity: NarrativeIdentity
+    title: _Optional[str] = None
+    body: _Optional[str] = None
 
     def __post_init__(self) -> None:
         _require_identity(self.identity, "scene", "NarrativeScene.identity")
+        _require_optional_prose(self.title, "NarrativeScene.title")
+        _require_optional_prose(self.body, "NarrativeScene.body")
 
 
 @_dataclass(frozen=True)
@@ -144,6 +163,7 @@ class NarrativeDialogue:
     scene: NarrativeIdentity
     speaker: NarrativeIdentity
     participants: tuple[NarrativeIdentity, ...]
+    text: _Optional[str] = None
 
     def __post_init__(self) -> None:
         _require_identity(self.identity, "dialogue", "NarrativeDialogue.identity")
@@ -155,6 +175,7 @@ class NarrativeDialogue:
             expected_kind="character",
             allow_empty=False,
         )
+        _require_optional_prose(self.text, "NarrativeDialogue.text")
 
 
 @_dataclass(frozen=True)

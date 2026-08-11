@@ -16,7 +16,12 @@ from pathlib import Path
 import tempfile
 from typing import Any, Mapping, Optional, Union
 
-from language.narrative_model import NarrativeIdentity, NarrativeStateFact
+from language.narrative_model import (
+    NarrativeDialogue,
+    NarrativeIdentity,
+    NarrativeScene,
+    NarrativeStateFact,
+)
 from runtime import narrative_observability
 from runtime.narrative_binding import NarrativeExecutableBindingSet
 from runtime.narrative_execution import (
@@ -29,6 +34,10 @@ from tooling.build_artifact import (
     BUILD_ARTIFACT_FINGERPRINT_ALGORITHM,
     BUILD_ARTIFACT_SCHEMA,
     canonical_json_bytes,
+)
+from tooling.narrative_artifact import (
+    NARRATIVE_BUILD_ARTIFACT_SCHEMA,
+    NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1,
 )
 from tooling.narrative_execution import (
     NarrativeExecutionRequest,
@@ -181,6 +190,8 @@ class NarrativeSessionMaterial:
     scenes: frozenset[NarrativeIdentity]
     declared_identities: frozenset[NarrativeIdentity]
     bindings: NarrativeExecutableBindingSet
+    scene_records: tuple[NarrativeScene, ...] = ()
+    dialogues: tuple[NarrativeDialogue, ...] = ()
 
     def __post_init__(self) -> None:
         if type(self.artifact_fingerprint) is not str or (
@@ -228,6 +239,39 @@ class NarrativeSessionMaterial:
         if self.bindings.story != self.story:
             raise ValueError(
                 "NarrativeSessionMaterial bindings and story disagree."
+            )
+        if type(self.scene_records) is not tuple or any(
+            type(scene) is not NarrativeScene for scene in self.scene_records
+        ):
+            raise TypeError(
+                "NarrativeSessionMaterial.scene_records must contain exact "
+                "NarrativeScene values."
+            )
+        if self.scene_records and (
+            frozenset(scene.identity for scene in self.scene_records) != self.scenes
+        ):
+            raise ValueError(
+                "NarrativeSessionMaterial scene records and identities disagree."
+            )
+        if type(self.dialogues) is not tuple or any(
+            type(dialogue) is not NarrativeDialogue for dialogue in self.dialogues
+        ):
+            raise TypeError(
+                "NarrativeSessionMaterial.dialogues must contain exact "
+                "NarrativeDialogue values."
+            )
+        dialogue_identities = frozenset(
+            identity
+            for identity in self.declared_identities
+            if identity.kind == "dialogue"
+        )
+        if self.dialogues and (
+            frozenset(dialogue.identity for dialogue in self.dialogues)
+            != dialogue_identities
+            or any(dialogue.scene not in self.scenes for dialogue in self.dialogues)
+        ):
+            raise ValueError(
+                "NarrativeSessionMaterial dialogue records are inconsistent."
             )
 
 
@@ -473,10 +517,13 @@ def _request_value(
 
 def _artifact_identity_inventory(
     story_value: object,
+    schema: str,
 ) -> tuple[
     NarrativeIdentity,
     frozenset[NarrativeIdentity],
     frozenset[NarrativeIdentity],
+    tuple[NarrativeScene, ...],
+    tuple[NarrativeDialogue, ...],
 ]:
     story = _mapping(
         story_value,
@@ -497,6 +544,8 @@ def _artifact_identity_inventory(
     story_identity = _identity(story["identity"], expected_kind="story")
     identities = {story_identity}
     scenes = set()
+    scene_records = []
+    dialogue_records = []
     family_kinds = {
         "characters": "character",
         "scenes": "scene",
@@ -512,6 +561,20 @@ def _artifact_identity_inventory(
             record = item if type(item) is dict else None
             if record is None or "identity" not in record:
                 raise ValueError("narrative declaration identity is unavailable")
+            if family == "scenes":
+                keys = (
+                    frozenset(("identity",))
+                    if schema == NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1
+                    else frozenset(("identity", "title", "body"))
+                )
+                record = _mapping(record, keys)
+            elif family == "dialogues":
+                keys = frozenset(
+                    ("identity", "scene", "speaker", "participants")
+                )
+                if schema == NARRATIVE_BUILD_ARTIFACT_SCHEMA:
+                    keys = keys | frozenset(("text",))
+                record = _mapping(record, keys)
             identity = _identity(
                 record["identity"], expected_kind=expected_kind
             )
@@ -520,7 +583,33 @@ def _artifact_identity_inventory(
             identities.add(identity)
             if family == "scenes":
                 scenes.add(identity)
-    return story_identity, frozenset(scenes), frozenset(identities)
+                scene_records.append(
+                    NarrativeScene(
+                        identity=identity,
+                        title=(None if schema == NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1 else record["title"]),
+                        body=(None if schema == NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1 else record["body"]),
+                    )
+                )
+            elif family == "dialogues":
+                dialogue_records.append(
+                    NarrativeDialogue(
+                        identity=identity,
+                        scene=_identity(record["scene"], expected_kind="scene"),
+                        speaker=_identity(record["speaker"], expected_kind="character"),
+                        participants=tuple(
+                            _identity(item, expected_kind="character")
+                            for item in _list(record["participants"])
+                        ),
+                        text=(None if schema == NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1 else record["text"]),
+                    )
+                )
+    return (
+        story_identity,
+        frozenset(scenes),
+        frozenset(identities),
+        tuple(scene_records),
+        tuple(dialogue_records),
+    )
 
 
 def load_narrative_session_material(
@@ -561,8 +650,17 @@ def load_narrative_session_material(
             value["narrative"],
             frozenset(("schema", "source", "story", "bindings")),
         )
-        story, scenes, identities = _artifact_identity_inventory(
-            narrative["story"]
+        narrative_schema = narrative["schema"]
+        if narrative_schema not in (
+            NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1,
+            NARRATIVE_BUILD_ARTIFACT_SCHEMA,
+        ):
+            raise ValueError("narrative artifact schema mismatch")
+        story, scenes, identities, scene_records, dialogues = (
+            _artifact_identity_inventory(
+                narrative["story"],
+                narrative_schema,
+            )
         )
     except NarrativeSessionError:
         raise
@@ -589,6 +687,8 @@ def load_narrative_session_material(
         scenes=scenes,
         declared_identities=identities,
         bindings=bindings,
+        scene_records=scene_records,
+        dialogues=dialogues,
     )
 
 

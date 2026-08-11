@@ -24,7 +24,8 @@ from runtime.narrative_binding import (
 )
 
 
-NARRATIVE_BUILD_ARTIFACT_SCHEMA = "apexforge.narrative-build-artifact/v1"
+NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1 = "apexforge.narrative-build-artifact/v1"
+NARRATIVE_BUILD_ARTIFACT_SCHEMA = "apexforge.narrative-build-artifact/v2"
 
 
 class NarrativeArtifactError(ValueError):
@@ -94,7 +95,14 @@ def _story_payload(story: NarrativeStory) -> dict[str, Any]:
     return {
         "identity": _identity_payload(story.identity),
         "characters": identity_records(story.characters),
-        "scenes": identity_records(story.scenes),
+        "scenes": [
+            {
+                "identity": _identity_payload(scene.identity),
+                "title": scene.title,
+                "body": scene.body,
+            }
+            for scene in story.scenes
+        ],
         "dialogues": [
             {
                 "identity": _identity_payload(dialogue.identity),
@@ -104,6 +112,7 @@ def _story_payload(story: NarrativeStory) -> dict[str, Any]:
                     _identity_payload(participant)
                     for participant in dialogue.participants
                 ],
+                "text": dialogue.text,
             }
             for dialogue in story.dialogues
         ],
@@ -266,6 +275,7 @@ def narrative_build_artifact_payload(
 
 __all__ = (
     "NARRATIVE_BUILD_ARTIFACT_SCHEMA",
+    "NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1",
     "NarrativeArtifactError",
     "NarrativeBuildArtifact",
     "narrative_build_artifact_payload",

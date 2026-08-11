@@ -91,6 +91,7 @@ from tooling.narrative_interactive import (
 )
 from tooling.narrative_rendering import (
     NarrativeChoicePresentation,
+    NarrativeDialoguePresentation,
     NarrativeFactPresentation,
     NarrativeSessionPresentation,
     narrative_session_presentation,
@@ -174,6 +175,7 @@ __all__ = (
     "narrative_interactive_menu",
     "run_narrative_interactive_session",
     "NarrativeChoicePresentation",
+    "NarrativeDialoguePresentation",
     "NarrativeFactPresentation",
     "NarrativeSessionPresentation",
     "narrative_session_presentation",

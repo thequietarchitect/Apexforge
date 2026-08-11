@@ -75,6 +75,40 @@ def _optional_semantic_text(
     return _semantic_text(scalar, field_name)
 
 
+def _optional_prose_text(
+    scalar: Optional[NarrativeSourceScalar],
+    field_name: str,
+) -> Optional[str]:
+    if scalar is None:
+        return None
+    text = scalar.text
+    if not text or "\r" in text:
+        raise NarrativeSemanticLoweringError(
+            BuildDiagnostic(
+                severity="error",
+                code="APX-NARRATIVE-LOWERING",
+                message=(
+                    f"{field_name} must be nonempty UTF-8 text with LF newlines."
+                ),
+                stage="compile",
+                span=scalar.span,
+            )
+        )
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise NarrativeSemanticLoweringError(
+            BuildDiagnostic(
+                severity="error",
+                code="APX-NARRATIVE-LOWERING",
+                message=f"{field_name} must be valid UTF-8 text.",
+                stage="compile",
+                span=scalar.span,
+            )
+        ) from exc
+    return text
+
+
 def _declared_identity(
     kind: str,
     name: NarrativeSourceIdentifier,
@@ -134,6 +168,8 @@ def lower_narrative_source(
     scenes = tuple(
         NarrativeScene(
             identity=_declared_identity("scene", scene.name),
+            title=_optional_prose_text(scene.title, "Narrative scene title"),
+            body=_optional_prose_text(scene.body, "Narrative scene body"),
         )
         for scene in source_story.scenes
     )
@@ -147,6 +183,7 @@ def lower_narrative_source(
                 _reference_identity(participant)
                 for participant in dialogue.participants
             ),
+            text=_optional_prose_text(dialogue.text, "Narrative dialogue text"),
         )
         for dialogue in source_story.dialogues
     )

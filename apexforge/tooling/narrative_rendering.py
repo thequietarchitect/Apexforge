@@ -42,6 +42,19 @@ def _path_key(
     return path.choice.kind, path.choice.path, path.path_index
 
 
+def _dialogue_key(
+    dialogue,
+) -> tuple[str, tuple[str, ...]]:
+    return dialogue.identity.kind, dialogue.identity.path
+
+
+def _require_optional_prose(value: object, field_name: str) -> None:
+    if value is None:
+        return
+    if type(value) is not str or not value or "\r" in value:
+        raise ValueError(f"{field_name} must be nonempty LF prose or None.")
+
+
 def _require_association(
     material: NarrativeSessionMaterial,
     session: NarrativeSession,
@@ -104,6 +117,24 @@ class NarrativeChoicePresentation:
 
 
 @dataclass(frozen=True)
+class NarrativeDialoguePresentation:
+    """One current-scene authored dialogue item prepared for display."""
+
+    identity: NarrativeIdentity
+    speaker: NarrativeIdentity
+    text: str
+
+    def __post_init__(self) -> None:
+        if type(self.identity) is not NarrativeIdentity or self.identity.kind != "dialogue":
+            raise TypeError("presented dialogue must have a dialogue identity.")
+        if type(self.speaker) is not NarrativeIdentity or self.speaker.kind != "character":
+            raise TypeError("presented dialogue speaker must have a character identity.")
+        if self.text is None:
+            raise TypeError("presented dialogue text must be an exact str.")
+        _require_optional_prose(self.text, "presented dialogue text")
+
+
+@dataclass(frozen=True)
 class NarrativeSessionPresentation:
     """Immutable human-facing projection of one exact narrative session."""
 
@@ -114,6 +145,9 @@ class NarrativeSessionPresentation:
     transition_count: int
     facts: tuple[NarrativeFactPresentation, ...]
     choices: tuple[NarrativeChoicePresentation, ...]
+    title: Optional[str] = None
+    body: Optional[str] = None
+    dialogues: tuple[NarrativeDialoguePresentation, ...] = ()
 
     def __post_init__(self) -> None:
         if type(self.story) is not NarrativeIdentity or self.story.kind != "story":
@@ -131,6 +165,15 @@ class NarrativeSessionPresentation:
             raise ValueError("active presentation cannot have a termination reason.")
         if type(self.transition_count) is not int or self.transition_count < 0:
             raise ValueError("presentation transition count must be non-negative.")
+        _require_optional_prose(self.title, "presentation title")
+        _require_optional_prose(self.body, "presentation body")
+        if type(self.dialogues) is not tuple or any(
+            type(dialogue) is not NarrativeDialoguePresentation
+            for dialogue in self.dialogues
+        ):
+            raise TypeError(
+                "presentation dialogues must be exact immutable dialogues."
+            )
         if type(self.facts) is not tuple or any(
             type(fact) is not NarrativeFactPresentation for fact in self.facts
         ):
@@ -160,6 +203,30 @@ def narrative_session_presentation(
         NarrativeFactPresentation(fact.subject, fact.name, fact.value)
         for fact in sorted(state.facts, key=_fact_key)
     )
+    scene = next(
+        (
+            scene
+            for scene in material.scene_records
+            if scene.identity == state.current_scene
+        ),
+        None,
+    )
+    dialogues = tuple(
+        NarrativeDialoguePresentation(
+            identity=dialogue.identity,
+            speaker=dialogue.speaker,
+            text=dialogue.text,
+        )
+        for dialogue in sorted(
+            (
+                dialogue
+                for dialogue in material.dialogues
+                if dialogue.scene == state.current_scene
+                and dialogue.text is not None
+            ),
+            key=_dialogue_key,
+        )
+    )
 
     choices: tuple[NarrativeChoicePresentation, ...] = ()
     if not state.termination.is_terminated:
@@ -188,6 +255,9 @@ def narrative_session_presentation(
         status=state.termination.status,
         termination_reason=state.termination.reason,
         transition_count=len(state.choice_history),
+        title=None if scene is None else scene.title,
+        body=None if scene is None else scene.body,
+        dialogues=dialogues,
         facts=facts,
         choices=choices,
     )
@@ -209,7 +279,23 @@ def render_narrative_presentation(
     ]
     if presentation.termination_reason is not None:
         lines.append(f"Termination reason: {presentation.termination_reason}")
-    lines.extend((f"Transitions: {presentation.transition_count}", "Facts:"))
+    lines.append(f"Transitions: {presentation.transition_count}")
+    if presentation.title is not None:
+        lines.extend(("Title:", presentation.title))
+    if presentation.body is not None:
+        lines.extend(("Body:", presentation.body))
+    if presentation.dialogues:
+        lines.append("Dialogue:")
+        for dialogue in presentation.dialogues:
+            lines.extend(
+                (
+                    f"  {_identity_text(dialogue.identity)}",
+                    f"    Speaker: {_identity_text(dialogue.speaker)}",
+                    "    Text:",
+                    dialogue.text,
+                )
+            )
+    lines.append("Facts:")
     if presentation.facts:
         lines.extend(
             "  "
@@ -249,6 +335,7 @@ def render_narrative_session(
 
 __all__ = (
     "NarrativeChoicePresentation",
+    "NarrativeDialoguePresentation",
     "NarrativeFactPresentation",
     "NarrativeSessionPresentation",
     "narrative_session_presentation",
