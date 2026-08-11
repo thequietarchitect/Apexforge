@@ -73,6 +73,12 @@ def _parser() -> _ArgumentParser:
         action="store_true",
         help="print the ApexForge CLI version and exit",
     )
+    parser.add_argument(
+        "--color",
+        choices=("auto", "always", "never"),
+        default="auto",
+        help="control ANSI color output: auto, always, or never",
+    )
 
     commands = parser.add_subparsers(dest="command")
 
@@ -344,6 +350,7 @@ def _run_check(
     *,
     stdout: TextIO,
     builder: Optional[ProjectBuilder],
+    styler: Optional[Any] = None,
 ) -> int:
     loaded = load_project(Path(path))
     selected_builder = builder or _default_project_builder
@@ -371,10 +378,13 @@ def _run_check(
         # Narrative and injected/test builders share the deterministic check boundary.
         raise CLIProjectCheckError(str(exc)) from exc
 
-    print(
+    success_text = (
         "ApexForge check passed: "
         f"{loaded.manifest.name} "
-        f"({len(loaded.sources)} source(s)).",
+        f"({len(loaded.sources)} source(s))."
+    )
+    print(
+        styler.success(success_text) if styler is not None else success_text,
         file=stdout,
     )
     return EXIT_SUCCESS
@@ -440,6 +450,7 @@ def _run_execute(
     builder: Optional[ProjectBuilder],
     report: bool = False,
     stdin: Optional[TextIO] = None,
+    styler: Optional[Any] = None,
 ) -> int:
     from language.project import ProjectBuildError
     from tools.runtime_report import render_runtime_report
@@ -554,8 +565,9 @@ def _run_execute(
         )
         return EXIT_RUNTIME
 
+    run_success = f"ApexForge run succeeded: {loaded.manifest.name}"
     print(
-        f"ApexForge run succeeded: {loaded.manifest.name}",
+        styler.success(run_success) if styler is not None else run_success,
         file=stdout,
     )
     print(f"Entry: {resolved_entry}", file=stdout)
@@ -572,6 +584,7 @@ def _run_simulate(
     observer: bool,
     max_steps: int,
     stdout: TextIO,
+    styler: Optional[Any] = None,
 ) -> int:
     # Run one bounded deterministic observer simulation for a narrative project.
 
@@ -641,7 +654,13 @@ def _run_simulate(
             visited = {session.state.current_scene.path}
             transitions = 0
 
-            print("ApexForge narrative simulation", file=stdout)
+            simulation_heading = "ApexForge narrative simulation"
+            print(
+                styler.success(simulation_heading)
+                if styler is not None
+                else simulation_heading,
+                file=stdout,
+            )
             print(f"Project: {loaded.manifest.name}", file=stdout)
             print(f"Story: {identity_text(story.identity)}", file=stdout)
             print("Observer: enabled", file=stdout)
@@ -655,9 +674,12 @@ def _run_simulate(
                 )
 
                 if session.state.termination.is_terminated:
-                    print(
+                    stop_text = (
                         "Observer stop: narrative terminated "
-                        f"({session.state.termination.reason}).",
+                        f"({session.state.termination.reason})."
+                    )
+                    print(
+                        styler.warning(stop_text) if styler is not None else stop_text,
                         file=stdout,
                     )
                     return EXIT_SUCCESS
@@ -674,13 +696,20 @@ def _run_simulate(
                     )
 
                 if not menu:
-                    print("Observer stop: no available paths.", file=stdout)
+                    stop_text = "Observer stop: no available paths."
+                    print(
+                        styler.warning(stop_text) if styler is not None else stop_text,
+                        file=stdout,
+                    )
                     return EXIT_SUCCESS
 
                 if transitions >= max_steps:
-                    print(
+                    stop_text = (
                         f"Observer stop: maximum transition count "
-                        f"{max_steps} reached.",
+                        f"{max_steps} reached."
+                    )
+                    print(
+                        styler.warning(stop_text) if styler is not None else stop_text,
                         file=stdout,
                     )
                     return EXIT_SUCCESS
@@ -728,6 +757,7 @@ def _run_build(
     entry: Optional[str],
     *,
     stdout: TextIO,
+    styler: Optional[Any] = None,
 ) -> int:
     from language.project import ProjectBuildError
 
@@ -771,8 +801,9 @@ def _run_build(
 
     write_build_artifact_atomic(artifact, Path(output_path))
 
+    build_success = f"ApexForge build succeeded: {loaded.manifest.name}"
     print(
-        f"ApexForge build succeeded: {loaded.manifest.name}",
+        styler.success(build_success) if styler is not None else build_success,
         file=stdout,
     )
     print(f"Schema: {BUILD_ARTIFACT_SCHEMA_V2 if loaded.project_kind == PROJECT_KIND_NARRATIVE else BUILD_ARTIFACT_SCHEMA}", file=stdout)
@@ -786,7 +817,11 @@ def _run_build(
         f"sha256:{artifact.fingerprint}",
         file=stdout,
     )
-    print("Artifact written.", file=stdout)
+    artifact_written = "Artifact written."
+    print(
+        styler.success(artifact_written) if styler is not None else artifact_written,
+        file=stdout,
+    )
     return EXIT_SUCCESS
 
 
@@ -904,6 +939,23 @@ def _run_narrative_session_interact(
         raise CLINarrativeSessionError(str(exc)) from exc
 
 
+def _requested_color_mode(arguments: Sequence[str]) -> str:
+    # Resolve a valid explicit color request before full argument parsing.
+
+    from tooling.cli_presentation import COLOR_AUTO, COLOR_CHOICES
+
+    selected = COLOR_AUTO
+    for index, argument in enumerate(arguments):
+        candidate: Optional[str] = None
+        if argument == "--color" and index + 1 < len(arguments):
+            candidate = arguments[index + 1]
+        elif argument.startswith("--color="):
+            candidate = argument.split("=", 1)[1]
+        if candidate in COLOR_CHOICES:
+            selected = candidate
+    return selected
+
+
 def main(
     argv: Optional[Sequence[str]] = None,
     *,
@@ -920,12 +972,31 @@ def main(
     parser = _parser()
     arguments = tuple(sys.argv[1:] if argv is None else argv)
 
+    import os
+
+    from tooling.cli_presentation import CLIStyler, resolve_color_enabled
+
+    requested_color = _requested_color_mode(arguments)
+    error_styler = CLIStyler(
+        enabled=resolve_color_enabled(requested_color, errors, os.environ)
+    )
+
     try:
         namespace = parser.parse_args(arguments)
     except CLIUsageError as exc:
         print(parser.format_usage().rstrip(), file=errors)
-        print(f"{CLI_PROGRAM_NAME}: error: {exc}", file=errors)
+        print(
+            error_styler.error(f"{CLI_PROGRAM_NAME}: error: {exc}"),
+            file=errors,
+        )
         return EXIT_USAGE
+
+    output_styler = CLIStyler(
+        enabled=resolve_color_enabled(namespace.color, output, os.environ)
+    )
+    error_styler = CLIStyler(
+        enabled=resolve_color_enabled(namespace.color, errors, os.environ)
+    )
 
     if namespace.version:
         print(f"ApexForge CLI {P10_T1_CLI_VERSION}", file=output)
@@ -943,6 +1014,7 @@ def main(
                 namespace.path,
                 stdout=output,
                 builder=project_builder,
+                styler=output_styler,
             )
         if namespace.command == "run":
             return _run_execute(
@@ -953,6 +1025,7 @@ def main(
                 builder=project_builder,
                 report=namespace.report,
                 stdin=input_stream,
+                styler=output_styler,
             )
         if namespace.command == "simulate":
             return _run_simulate(
@@ -960,6 +1033,7 @@ def main(
                 observer=namespace.observer,
                 max_steps=namespace.max_steps,
                 stdout=output,
+                styler=output_styler,
             )
         if namespace.command == "build":
             return _run_build(
@@ -967,6 +1041,7 @@ def main(
                 namespace.output,
                 namespace.entry,
                 stdout=output,
+                styler=output_styler,
             )
         if namespace.command == "narrative":
             return _run_narrative(
@@ -998,35 +1073,40 @@ def main(
             )
     except CLIUsageError as exc:
         print(parser.format_usage().rstrip(), file=errors)
-        print(f"{CLI_PROGRAM_NAME}: error: {exc}", file=errors)
+        print(
+            error_styler.error(f"{CLI_PROGRAM_NAME}: error: {exc}"),
+            file=errors,
+        )
         return EXIT_USAGE
     except ProjectManifestError as exc:
-        print(str(exc), file=errors)
+        print(error_styler.error(str(exc)), file=errors)
         return EXIT_PROJECT
     except CLIProjectCheckError as exc:
-        print(str(exc), file=errors)
+        print(error_styler.error(str(exc)), file=errors)
         return EXIT_CHECK
     except BuildArtifactOutputError as exc:
-        print(str(exc), file=errors)
+        print(error_styler.error(str(exc)), file=errors)
         return EXIT_ARTIFACT_OUTPUT
     except CLINarrativeRequestError as exc:
-        print(str(exc), file=errors)
+        print(error_styler.error(str(exc)), file=errors)
         return EXIT_NARRATIVE_REQUEST
     except CLINarrativeSessionError as exc:
-        print(str(exc), file=errors)
+        print(error_styler.error(str(exc)), file=errors)
         return EXIT_NARRATIVE_SESSION
     except KeyboardInterrupt:
-        print("ApexForge command interrupted.", file=errors)
+        print(error_styler.warning("ApexForge command interrupted."), file=errors)
         return 130
     except Exception as exc:
         print(
-            f"[APX-CLI-999] {type(exc).__name__}: {exc}",
+            error_styler.error(f"[APX-CLI-999] {type(exc).__name__}: {exc}"),
             file=errors,
         )
         return EXIT_INTERNAL
 
     print(
-        f"[APX-CLI-999] Unsupported command {namespace.command!r}.",
+        error_styler.error(
+            f"[APX-CLI-999] Unsupported command {namespace.command!r}."
+        ),
         file=errors,
     )
     return EXIT_INTERNAL
