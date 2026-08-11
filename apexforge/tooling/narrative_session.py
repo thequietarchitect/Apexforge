@@ -39,6 +39,7 @@ from tooling.build_artifact import (
 from tooling.narrative_artifact import (
     NARRATIVE_BUILD_ARTIFACT_SCHEMA,
     NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1,
+    NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3,
 )
 from tooling.narrative_execution import (
     NarrativeExecutionRequest,
@@ -573,7 +574,7 @@ def _artifact_identity_inventory(
                 keys = frozenset(
                     ("identity", "scene", "speaker", "participants")
                 )
-                if schema == NARRATIVE_BUILD_ARTIFACT_SCHEMA:
+                if schema != NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1:
                     keys = keys | frozenset(("text",))
                 record = _mapping(record, keys)
             identity = _identity(
@@ -652,14 +653,23 @@ def load_narrative_session_material(
             raise ValueError("build artifact fingerprint mismatch")
         if "narrative" not in value:
             raise NarrativeSessionError("unavailable_narrative_material")
-        narrative = _mapping(
-            value["narrative"],
-            frozenset(("schema", "source", "story", "bindings")),
+        narrative_value = value["narrative"]
+        if type(narrative_value) is not dict:
+            raise TypeError("narrative artifact must be a mapping")
+        narrative_schema = narrative_value.get("schema")
+        narrative_keys = (
+            frozenset(("schema", "sources", "story", "bindings"))
+            if narrative_schema == NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3
+            else frozenset(("schema", "source", "story", "bindings"))
         )
-        narrative_schema = narrative["schema"]
+        narrative = _mapping(
+            narrative_value,
+            narrative_keys,
+        )
         if narrative_schema not in (
             NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1,
             NARRATIVE_BUILD_ARTIFACT_SCHEMA,
+            NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3,
         ):
             raise ValueError("narrative artifact schema mismatch")
         story, scenes, identities, scene_records, dialogues = (

@@ -13,6 +13,7 @@ from typing import Any, Mapping, Optional, TYPE_CHECKING, Union
 from air.serialization import air_to_dict
 from tooling.narrative_artifact import (
     NarrativeBuildArtifact,
+    NarrativeProjectBuildArtifact,
     narrative_build_artifact_payload,
 )
 from tooling.project_loader import LoadedProject
@@ -39,7 +40,7 @@ class CanonicalBuildArtifact:
     entry: Optional[str]
     fingerprint: str
     source_count: int
-    narrative_artifact: Optional[NarrativeBuildArtifact] = None
+    narrative_artifact: Optional[Union[NarrativeBuildArtifact, NarrativeProjectBuildArtifact]] = None
 
 
 def canonical_json_bytes(value: Mapping[str, Any]) -> bytes:
@@ -71,7 +72,7 @@ def construct_build_artifact(
     loaded: LoadedProject,
     build: ProjectBuild,
     *,
-    narrative_artifact: Optional[NarrativeBuildArtifact] = None,
+    narrative_artifact: Optional[Union[NarrativeBuildArtifact, NarrativeProjectBuildArtifact]] = None,
 ) -> CanonicalBuildArtifact:
     """Construct and fingerprint one canonical linked build in memory."""
 
@@ -116,14 +117,17 @@ def construct_build_artifact(
 
 def construct_narrative_build_artifact(
     loaded: LoadedProject,
-    narrative_artifact: NarrativeBuildArtifact,
+    narrative_artifact: Union[NarrativeBuildArtifact, NarrativeProjectBuildArtifact],
 ) -> CanonicalBuildArtifact:
     """Construct one native narrative build artifact without synthetic AIR."""
 
-    if type(narrative_artifact) is not NarrativeBuildArtifact:
+    if type(narrative_artifact) not in (
+        NarrativeBuildArtifact,
+        NarrativeProjectBuildArtifact,
+    ):
         raise TypeError(
             "construct_narrative_build_artifact requires an exact "
-            "NarrativeBuildArtifact."
+            "NarrativeBuildArtifact or NarrativeProjectBuildArtifact."
         )
 
     story_identity = narrative_artifact.story.identity

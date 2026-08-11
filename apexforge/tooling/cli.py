@@ -291,6 +291,54 @@ def _run_new(
     return EXIT_SUCCESS
 
 
+def _analyze_loaded_narrative_project(loaded: LoadedProject) -> Any:
+    # Analyze every declared narrative source in canonical manifest order.
+    if loaded.project_kind != PROJECT_KIND_NARRATIVE:
+        raise ValueError("loaded project is not narrative")
+    if len(loaded.sources) == 1:
+        from language.narrative_analysis import analyze_narrative_source
+
+        source = loaded.sources[0]
+        return analyze_narrative_source(
+            source.source,
+            source_name=source.name,
+        )
+
+    from language.narrative_project_analysis import (
+        analyze_narrative_project_sources,
+    )
+
+    return analyze_narrative_project_sources(
+        tuple((source.name, source.source) for source in loaded.sources)
+    )
+
+
+def _route_loaded_narrative_build_material(
+    loaded: LoadedProject,
+    analysis: Any,
+    bindings: Any,
+) -> Any:
+    # Route narrative semantics to v2 single-source or v3 project material.
+    if len(loaded.sources) == 1:
+        from tooling.narrative_artifact import route_narrative_build_material
+
+        return route_narrative_build_material(
+            analysis,
+            bindings,
+            source_name=loaded.sources[0].name,
+        )
+
+    from tooling.narrative_artifact import (
+        route_narrative_project_build_material,
+    )
+
+    return route_narrative_project_build_material(
+        analysis,
+        bindings,
+        source_names=tuple(source.name for source in loaded.sources),
+    )
+
+
 def _run_check(
     path: str,
     *,
@@ -299,25 +347,15 @@ def _run_check(
 ) -> int:
     loaded = load_project(Path(path))
     selected_builder = builder or _default_project_builder
-    narrative_source = (
-        loaded.sources[0]
-        if loaded.project_kind == PROJECT_KIND_NARRATIVE
-        else None
-    )
-
     try:
-        if narrative_source is not None:
-            from language.narrative_analysis import analyze_narrative_source
+        if loaded.project_kind == PROJECT_KIND_NARRATIVE:
             from runtime.narrative_binding import bind_narrative_story
             from tooling.narrative_project import (
                 resolve_narrative_project_entry,
                 resolve_narrative_start_scene,
             )
 
-            analysis = analyze_narrative_source(
-                narrative_source.source,
-                source_name=narrative_source.name,
-            )
+            analysis = _analyze_loaded_narrative_project(loaded)
             story = analysis.semantic_story
             bind_narrative_story(story)
             resolve_narrative_project_entry(story, loaded.manifest.entry)
@@ -407,18 +445,10 @@ def _run_execute(
     from tools.runtime_report import render_runtime_report
 
     loaded = load_project(Path(path))
-    narrative_source = (
-        loaded.sources[0]
-        if loaded.project_kind == PROJECT_KIND_NARRATIVE
-        else None
-    )
-
-    if narrative_source is not None:
+    if loaded.project_kind == PROJECT_KIND_NARRATIVE:
         from tempfile import TemporaryDirectory
 
-        from language.narrative_analysis import analyze_narrative_source
         from runtime.narrative_binding import bind_narrative_story
-        from tooling.narrative_artifact import route_narrative_build_material
         from tooling.narrative_interactive import interact_narrative_session
         from tooling.narrative_project import (
             resolve_narrative_project_entry,
@@ -437,10 +467,7 @@ def _run_execute(
             raise CLIUsageError("--report is not supported for narrative projects.")
 
         try:
-            analysis = analyze_narrative_source(
-                narrative_source.source,
-                source_name=narrative_source.name,
-            )
+            analysis = _analyze_loaded_narrative_project(loaded)
             story = analysis.semantic_story
             selected_entry = (
                 entry
@@ -449,10 +476,10 @@ def _run_execute(
             )
             resolve_narrative_project_entry(story, selected_entry)
             bindings = bind_narrative_story(story)
-            narrative = route_narrative_build_material(
+            narrative = _route_loaded_narrative_build_material(
+                loaded,
                 analysis,
                 bindings,
-                source_name=narrative_source.name,
             )
             start_scene = resolve_narrative_start_scene(story)
             initial_facts = story.states[0].facts if story.states else ()
@@ -550,9 +577,7 @@ def _run_simulate(
 
     from tempfile import TemporaryDirectory
 
-    from language.narrative_analysis import analyze_narrative_source
     from runtime.narrative_binding import bind_narrative_story
-    from tooling.narrative_artifact import route_narrative_build_material
     from tooling.narrative_interactive import narrative_interactive_menu
     from tooling.narrative_project import (
         resolve_narrative_project_entry,
@@ -575,31 +600,23 @@ def _run_simulate(
         raise CLIUsageError("--max-steps must be a positive integer.")
 
     loaded = load_project(Path(path))
-    narrative_source = (
-        loaded.sources[0]
-        if loaded.project_kind == PROJECT_KIND_NARRATIVE
-        else None
-    )
-    if narrative_source is None:
+    if loaded.project_kind != PROJECT_KIND_NARRATIVE:
         raise CLIUsageError(
-            "simulate currently supports single-source narrative projects only."
+            "simulate currently supports narrative projects only."
         )
 
     def identity_text(identity: Any) -> str:
         return f"{identity.kind}:{'.'.join(identity.path)}"
 
     try:
-        analysis = analyze_narrative_source(
-            narrative_source.source,
-            source_name=narrative_source.name,
-        )
+        analysis = _analyze_loaded_narrative_project(loaded)
         story = analysis.semantic_story
         resolve_narrative_project_entry(story, loaded.manifest.entry)
         bindings = bind_narrative_story(story)
-        narrative = route_narrative_build_material(
+        narrative = _route_loaded_narrative_build_material(
+            loaded,
             analysis,
             bindings,
-            source_name=narrative_source.name,
         )
         start_scene = resolve_narrative_start_scene(story)
         initial_facts = story.states[0].facts if story.states else ()
@@ -716,30 +733,19 @@ def _run_build(
 
     loaded = load_project(Path(path))
     selected_entry = entry if entry is not None else loaded.manifest.entry
-    narrative_source = (
-        loaded.sources[0]
-        if loaded.project_kind == PROJECT_KIND_NARRATIVE
-        else None
-    )
-
-    if narrative_source is not None:
+    if loaded.project_kind == PROJECT_KIND_NARRATIVE:
         try:
-            from language.narrative_analysis import analyze_narrative_source
             from runtime.narrative_binding import bind_narrative_story
-            from tooling.narrative_artifact import route_narrative_build_material
             from tooling.narrative_project import resolve_narrative_project_entry
 
-            analysis = analyze_narrative_source(
-                narrative_source.source,
-                source_name=narrative_source.name,
-            )
+            analysis = _analyze_loaded_narrative_project(loaded)
             story = analysis.semantic_story
             resolve_narrative_project_entry(story, selected_entry)
             bindings = bind_narrative_story(story)
-            narrative = route_narrative_build_material(
+            narrative = _route_loaded_narrative_build_material(
+                loaded,
                 analysis,
                 bindings,
-                source_name=narrative_source.name,
             )
         except CLIProjectCheckError:
             raise
@@ -769,7 +775,7 @@ def _run_build(
         f"ApexForge build succeeded: {loaded.manifest.name}",
         file=stdout,
     )
-    print(f"Schema: {BUILD_ARTIFACT_SCHEMA_V2 if narrative_source is not None else BUILD_ARTIFACT_SCHEMA}", file=stdout)
+    print(f"Schema: {BUILD_ARTIFACT_SCHEMA_V2 if loaded.project_kind == PROJECT_KIND_NARRATIVE else BUILD_ARTIFACT_SCHEMA}", file=stdout)
     print(
         f"Entry: {artifact.entry if artifact.entry is not None else '<none>'}",
         file=stdout,

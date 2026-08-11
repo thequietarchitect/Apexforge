@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
 from language.narrative_analysis import NarrativeSourceAnalysis
+from language.narrative_project_analysis import NarrativeProjectAnalysis
 from language.narrative_model import (
     NarrativeIdentity,
     NarrativeStory,
@@ -26,6 +27,7 @@ from runtime.narrative_binding import (
 
 NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1 = "apexforge.narrative-build-artifact/v1"
 NARRATIVE_BUILD_ARTIFACT_SCHEMA = "apexforge.narrative-build-artifact/v2"
+NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3 = "apexforge.narrative-build-artifact/v3"
 
 
 class NarrativeArtifactError(ValueError):
@@ -230,6 +232,61 @@ class NarrativeBuildArtifact:
         }
 
 
+@dataclass(frozen=True)
+class NarrativeProjectBuildArtifact:
+    """Immutable multi-source narrative material associated with one build."""
+
+    source_names: tuple[str, ...]
+    story: NarrativeStory
+    bindings: NarrativeExecutableBindingSet
+
+    def __post_init__(self) -> None:
+        if type(self.source_names) is not tuple or len(self.source_names) < 2:
+            raise ValueError(
+                "NarrativeProjectBuildArtifact.source_names must be an exact "
+                "tuple containing at least two source names."
+            )
+        for source_name in self.source_names:
+            _require_trimmed_string(
+                source_name,
+                "NarrativeProjectBuildArtifact source name",
+            )
+        if len(set(self.source_names)) != len(self.source_names):
+            raise ValueError(
+                "NarrativeProjectBuildArtifact.source_names must be unique."
+            )
+        if type(self.story) is not NarrativeStory:
+            raise TypeError(
+                "NarrativeProjectBuildArtifact.story must be an exact "
+                "NarrativeStory."
+            )
+        if type(self.bindings) is not NarrativeExecutableBindingSet:
+            raise TypeError(
+                "NarrativeProjectBuildArtifact.bindings must be an exact "
+                "NarrativeExecutableBindingSet."
+            )
+        if self.bindings.story != self.story.identity:
+            raise NarrativeArtifactError(
+                "narrative project artifact story and executable bindings disagree."
+            )
+
+    def payload(self) -> dict[str, Any]:
+        """Return a fresh canonical multi-source narrative payload projection."""
+
+        return {
+            "schema": NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3,
+            "sources": list(self.source_names),
+            "story": _story_payload(self.story),
+            "bindings": {
+                "story": _identity_payload(self.bindings.story),
+                "paths": [
+                    _choice_path_payload(path)
+                    for path in self.bindings.paths
+                ],
+            },
+        }
+
+
 def route_narrative_build_material(
     analysis: NarrativeSourceAnalysis,
     bindings: NarrativeExecutableBindingSet,
@@ -260,15 +317,51 @@ def route_narrative_build_material(
     )
 
 
+def route_narrative_project_build_material(
+    analysis: NarrativeProjectAnalysis,
+    bindings: NarrativeExecutableBindingSet,
+    *,
+    source_names: Optional[tuple[str, ...]] = None,
+) -> NarrativeProjectBuildArtifact:
+    """Route merged multi-source narrative semantics into immutable build material."""
+
+    if type(analysis) is not NarrativeProjectAnalysis:
+        raise TypeError(
+            "route_narrative_project_build_material requires an exact "
+            "NarrativeProjectAnalysis."
+        )
+    if type(bindings) is not NarrativeExecutableBindingSet:
+        raise TypeError(
+            "route_narrative_project_build_material requires an exact "
+            "NarrativeExecutableBindingSet."
+        )
+    selected_source_names = (
+        tuple(
+            source_analysis.source_document.span.source_name
+            for source_analysis in analysis.source_analyses
+        )
+        if source_names is None
+        else source_names
+    )
+    return NarrativeProjectBuildArtifact(
+        source_names=selected_source_names,
+        story=analysis.semantic_story,
+        bindings=bindings,
+    )
+
+
 def narrative_build_artifact_payload(
-    artifact: NarrativeBuildArtifact,
+    artifact: object,
 ) -> Mapping[str, Any]:
     """Project one exact narrative artifact for canonical build JSON."""
 
-    if type(artifact) is not NarrativeBuildArtifact:
+    if type(artifact) not in (
+        NarrativeBuildArtifact,
+        NarrativeProjectBuildArtifact,
+    ):
         raise TypeError(
             "narrative_build_artifact_payload requires an exact "
-            "NarrativeBuildArtifact."
+            "NarrativeBuildArtifact or NarrativeProjectBuildArtifact."
         )
     return artifact.payload()
 
@@ -276,8 +369,11 @@ def narrative_build_artifact_payload(
 __all__ = (
     "NARRATIVE_BUILD_ARTIFACT_SCHEMA",
     "NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1",
+    "NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3",
     "NarrativeArtifactError",
     "NarrativeBuildArtifact",
+    "NarrativeProjectBuildArtifact",
     "narrative_build_artifact_payload",
     "route_narrative_build_material",
+    "route_narrative_project_build_material",
 )

@@ -40,6 +40,7 @@ from tooling.build_artifact import (
 from tooling.narrative_artifact import (
     NARRATIVE_BUILD_ARTIFACT_SCHEMA,
     NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1,
+    NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3,
 )
 
 
@@ -456,18 +457,38 @@ def _story_path_records(
 
 
 def _narrative_bindings(value: object) -> NarrativeExecutableBindingSet:
-    narrative = _mapping(
-        value,
-        frozenset(("schema", "source", "story", "bindings")),
+    if type(value) is not dict:
+        raise TypeError("narrative artifact must be a mapping")
+    schema = value.get("schema")
+    keys = (
+        frozenset(("schema", "sources", "story", "bindings"))
+        if schema == NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3
+        else frozenset(("schema", "source", "story", "bindings"))
     )
+    narrative = _mapping(value, keys)
     if narrative["schema"] not in (
         NARRATIVE_BUILD_ARTIFACT_SCHEMA_V1,
         NARRATIVE_BUILD_ARTIFACT_SCHEMA,
+        NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3,
     ):
         raise ValueError("narrative artifact schema mismatch")
-    source_name = narrative["source"]
-    if type(source_name) is not str:
-        raise TypeError("narrative artifact source must be a string")
+    if schema == NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3:
+        source_names = _list(narrative["sources"])
+        if len(source_names) < 2:
+            raise ValueError("narrative project artifact requires multiple sources")
+        if any(
+            type(source_name) is not str
+            or not source_name
+            or source_name != source_name.strip()
+            for source_name in source_names
+        ):
+            raise ValueError("narrative project artifact sources must be trimmed strings")
+        if len(set(source_names)) != len(source_names):
+            raise ValueError("narrative project artifact sources must be unique")
+    else:
+        source_name = narrative["source"]
+        if type(source_name) is not str:
+            raise TypeError("narrative artifact source must be a string")
 
     story_identity, semantic_paths = _story_path_records(narrative["story"])
     binding_value = _mapping(
@@ -498,8 +519,9 @@ def _narrative_bindings(value: object) -> NarrativeExecutableBindingSet:
         ):
             raise ValueError("semantic and executable choice paths disagree")
 
-    if not source_name or source_name != source_name.strip():
-        raise ValueError("narrative artifact source must be trimmed")
+    if schema != NARRATIVE_BUILD_ARTIFACT_SCHEMA_V3:
+        if not source_name or source_name != source_name.strip():
+            raise ValueError("narrative artifact source must be trimmed")
     return NarrativeExecutableBindingSet(
         story=binding_story,
         paths=paths,

@@ -205,8 +205,11 @@ def load_project(
     loaded_sources = tuple(loaded)
     project_kind = (
         PROJECT_KIND_NARRATIVE
-        if len(loaded_sources) == 1
-        and is_narrative_source_document(loaded_sources[0].source)
+        if loaded_sources
+        and all(
+            is_narrative_source_document(source.source)
+            for source in loaded_sources
+        )
         else PROJECT_KIND_AIR
     )
 
