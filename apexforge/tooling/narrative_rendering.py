@@ -42,12 +42,6 @@ def _path_key(
     return path.choice.kind, path.choice.path, path.path_index
 
 
-def _dialogue_key(
-    dialogue,
-) -> tuple[str, tuple[str, ...]]:
-    return dialogue.identity.kind, dialogue.identity.path
-
-
 def _require_optional_prose(value: object, field_name: str) -> None:
     if value is None:
         return
@@ -211,21 +205,16 @@ def narrative_session_presentation(
         ),
         None,
     )
+    # Artifact/material tuple position is canonical authored presentation order.
     dialogues = tuple(
         NarrativeDialoguePresentation(
             identity=dialogue.identity,
             speaker=dialogue.speaker,
             text=dialogue.text,
         )
-        for dialogue in sorted(
-            (
-                dialogue
-                for dialogue in material.dialogues
-                if dialogue.scene == state.current_scene
-                and dialogue.text is not None
-            ),
-            key=_dialogue_key,
-        )
+        for dialogue in material.dialogues
+        if dialogue.scene == state.current_scene
+        and dialogue.text is not None
     )
 
     choices: tuple[NarrativeChoicePresentation, ...] = ()
