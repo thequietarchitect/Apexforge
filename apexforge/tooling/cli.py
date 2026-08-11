@@ -33,6 +33,7 @@ EXIT_CHECK = 20
 EXIT_RUNTIME = 30
 EXIT_ARTIFACT_OUTPUT = 40
 EXIT_NARRATIVE_REQUEST = 50
+EXIT_NARRATIVE_SESSION = 51
 EXIT_INTERNAL = 70
 
 
@@ -46,6 +47,10 @@ class CLIProjectCheckError(RuntimeError):
 
 class CLINarrativeRequestError(ValueError):
     """A narrative request or its canonical build material was invalid."""
+
+
+class CLINarrativeSessionError(ValueError):
+    """A narrative session lifecycle request or material was invalid."""
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -144,6 +149,40 @@ def _parser() -> _ArgumentParser:
         required=True,
         help="explicit one-transition narrative request JSON file",
     )
+
+    session = commands.add_parser(
+        "narrative-session",
+        help="perform one explicit persistent narrative lifecycle action",
+    )
+    session_actions = session.add_subparsers(
+        dest="session_action",
+        required=True,
+    )
+    for action, help_text in (
+        ("create", "create one explicitly initialized narrative session"),
+        ("step", "advance one session by one explicit choice path"),
+        ("terminate", "explicitly terminate one active narrative session"),
+    ):
+        action_parser = session_actions.add_parser(action, help=help_text)
+        action_parser.add_argument(
+            "artifact",
+            help="canonical build artifact containing P11.6F material",
+        )
+        if action != "create":
+            action_parser.add_argument(
+                "session",
+                help="canonical P11.6H narrative session file",
+            )
+        action_parser.add_argument(
+            "--request",
+            required=True,
+            help=f"explicit narrative session {action} request JSON file",
+        )
+        action_parser.add_argument(
+            "--output",
+            required=True,
+            help="explicit output path for the resulting session",
+        )
 
     new = commands.add_parser(
         "new",
@@ -427,6 +466,66 @@ def _run_narrative(
     return EXIT_SUCCESS if result.ok else EXIT_RUNTIME
 
 
+def _run_narrative_session(
+    action: Optional[str],
+    artifact_path: str,
+    request_path: str,
+    output_path: str,
+    *,
+    session_path: Optional[str],
+    stdout: TextIO,
+) -> int:
+    """Perform exactly one explicit P11.6H lifecycle action."""
+
+    from tooling.narrative_session import (
+        NarrativeSessionError,
+        NarrativeSessionOutputError,
+        create_narrative_session,
+        load_narrative_session,
+        load_narrative_session_create_request,
+        load_narrative_session_material,
+        load_narrative_session_step_request,
+        load_narrative_session_terminate_request,
+        narrative_session_bytes,
+        narrative_session_step_result_bytes,
+        step_narrative_session,
+        terminate_narrative_session,
+        write_narrative_session_atomic,
+    )
+
+    if action not in ("create", "step", "terminate"):
+        raise CLIUsageError("narrative-session requires an explicit action")
+    try:
+        material = load_narrative_session_material(artifact_path)
+        if action == "create":
+            request = load_narrative_session_create_request(request_path)
+            next_session = create_narrative_session(material, request)
+            write_narrative_session_atomic(next_session, output_path)
+            stdout.write(narrative_session_bytes(next_session).decode("utf-8"))
+            return EXIT_SUCCESS
+
+        if session_path is None:
+            raise NarrativeSessionError("invalid_request")
+        session = load_narrative_session(session_path)
+        if action == "step":
+            request = load_narrative_session_step_request(request_path)
+            result = step_narrative_session(material, session, request)
+            if result.session is not None:
+                write_narrative_session_atomic(result.session, output_path)
+            stdout.write(
+                narrative_session_step_result_bytes(result).decode("utf-8")
+            )
+            return EXIT_SUCCESS if result.execution_result.ok else EXIT_RUNTIME
+
+        request = load_narrative_session_terminate_request(request_path)
+        next_session = terminate_narrative_session(material, session, request)
+        write_narrative_session_atomic(next_session, output_path)
+        stdout.write(narrative_session_bytes(next_session).decode("utf-8"))
+        return EXIT_SUCCESS
+    except (NarrativeSessionError, NarrativeSessionOutputError) as exc:
+        raise CLINarrativeSessionError(str(exc)) from exc
+
+
 def main(
     argv: Optional[Sequence[str]] = None,
     *,
@@ -487,6 +586,15 @@ def main(
                 namespace.request,
                 stdout=output,
             )
+        if namespace.command == "narrative-session":
+            return _run_narrative_session(
+                namespace.session_action,
+                namespace.artifact,
+                namespace.request,
+                namespace.output,
+                session_path=getattr(namespace, "session", None),
+                stdout=output,
+            )
         if namespace.command == "new":
             return _run_new(
                 namespace.name,
@@ -505,6 +613,9 @@ def main(
     except CLINarrativeRequestError as exc:
         print(str(exc), file=errors)
         return EXIT_NARRATIVE_REQUEST
+    except CLINarrativeSessionError as exc:
+        print(str(exc), file=errors)
+        return EXIT_NARRATIVE_SESSION
     except KeyboardInterrupt:
         print("ApexForge command interrupted.", file=errors)
         return 130
@@ -526,11 +637,13 @@ __all__ = (
     "CLI_PROGRAM_NAME",
     "CLIProjectCheckError",
     "CLINarrativeRequestError",
+    "CLINarrativeSessionError",
     "CLIUsageError",
     "EXIT_ARTIFACT_OUTPUT",
     "EXIT_CHECK",
     "EXIT_INTERNAL",
     "EXIT_NARRATIVE_REQUEST",
+    "EXIT_NARRATIVE_SESSION",
     "EXIT_PROJECT",
     "EXIT_RUNTIME",
     "EXIT_SUCCESS",
