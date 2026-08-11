@@ -125,10 +125,10 @@ def test_narrative_cli_surface(temporary_root: Path) -> None:
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
     require(artifact["project"]["name"] == "NarrativeCliDemo", "narrative project identity changed")
     require(artifact["project"]["sources"][0]["path"] == "story.apex", "narrative source identity changed")
-    require(artifact["project"]["entry"] == "directive:CliStory", "narrative compatibility carrier entry changed")
+    require(artifact["schema"] == "apexforge.build-artifact/v2", "native narrative top-level schema changed")
+    require(artifact["project"]["entry"] == "story:CliStory", "native narrative project entry changed")
     require(artifact["narrative"]["schema"] == "apexforge.narrative-build-artifact/v2", "narrative artifact schema changed")
-    require(len(artifact["air"]["directives"]) == 1, "narrative compatibility carrier count changed")
-    require(artifact["air"]["directives"][0]["name"] == "CliStory", "narrative compatibility carrier identity changed")
+    require("air" not in artifact, "native narrative build unexpectedly contains AIR")
     require(stderr == "", "narrative build wrote to stderr")
 
     code, stdout, stderr = invoke(("run", str(project)), stdin_text="1\nquit\n")

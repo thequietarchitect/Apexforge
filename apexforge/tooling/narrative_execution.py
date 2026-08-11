@@ -34,6 +34,7 @@ from runtime.narrative_execution import (
 from tooling.build_artifact import (
     BUILD_ARTIFACT_FINGERPRINT_ALGORITHM,
     BUILD_ARTIFACT_SCHEMA,
+    BUILD_ARTIFACT_SCHEMA_V2,
     canonical_json_bytes,
 )
 from tooling.narrative_artifact import (
@@ -520,10 +521,16 @@ def load_narrative_execution_material(
             raise ValueError("build artifact is not canonical JSON")
         historical_keys = frozenset(("air", "fingerprint", "project", "schema"))
         integrated_keys = historical_keys | frozenset(("narrative",))
+        native_narrative_keys = frozenset(("fingerprint", "narrative", "project", "schema"))
         keys = frozenset(value)
-        if keys not in (historical_keys, integrated_keys):
-            raise ValueError("build artifact shape mismatch")
-        if value["schema"] != BUILD_ARTIFACT_SCHEMA:
+        schema = value["schema"]
+        if schema == BUILD_ARTIFACT_SCHEMA:
+            if keys not in (historical_keys, integrated_keys):
+                raise ValueError("build artifact shape mismatch")
+        elif schema == BUILD_ARTIFACT_SCHEMA_V2:
+            if keys != native_narrative_keys:
+                raise ValueError("native narrative build artifact shape mismatch")
+        else:
             raise ValueError("build artifact shape or schema mismatch")
 
         fingerprint = _mapping(

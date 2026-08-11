@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 
 BUILD_ARTIFACT_SCHEMA = "apexforge.build-artifact/v1"
+BUILD_ARTIFACT_SCHEMA_V2 = "apexforge.build-artifact/v2"
 BUILD_ARTIFACT_FINGERPRINT_ALGORITHM = "sha256"
 
 
@@ -113,6 +114,54 @@ def construct_build_artifact(
     )
 
 
+def construct_narrative_build_artifact(
+    loaded: LoadedProject,
+    narrative_artifact: NarrativeBuildArtifact,
+) -> CanonicalBuildArtifact:
+    """Construct one native narrative build artifact without synthetic AIR."""
+
+    if type(narrative_artifact) is not NarrativeBuildArtifact:
+        raise TypeError(
+            "construct_narrative_build_artifact requires an exact "
+            "NarrativeBuildArtifact."
+        )
+
+    story_identity = narrative_artifact.story.identity
+    entry = f"{story_identity.kind}:{'.'.join(story_identity.path)}"
+    sources = [
+        {
+            "path": source.name,
+            "sha256": hashlib.sha256(source.source_bytes).hexdigest(),
+        }
+        for source in loaded.sources
+    ]
+    project = {
+        "entry": entry,
+        "name": loaded.manifest.name,
+        "source_count": len(sources),
+        "sources": sources,
+    }
+    payload = {
+        "narrative": narrative_build_artifact_payload(narrative_artifact),
+        "project": project,
+        "schema": BUILD_ARTIFACT_SCHEMA_V2,
+    }
+    fingerprint = hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
+    artifact = dict(payload)
+    artifact["fingerprint"] = {
+        "algorithm": BUILD_ARTIFACT_FINGERPRINT_ALGORITHM,
+        "value": fingerprint,
+    }
+
+    return CanonicalBuildArtifact(
+        content=canonical_json_bytes(artifact),
+        entry=entry,
+        fingerprint=fingerprint,
+        source_count=len(sources),
+        narrative_artifact=narrative_artifact,
+    )
+
+
 def write_build_artifact_atomic(
     artifact: CanonicalBuildArtifact,
     output_path: Union[str, Path],
@@ -158,9 +207,11 @@ def write_build_artifact_atomic(
 __all__ = (
     "BUILD_ARTIFACT_FINGERPRINT_ALGORITHM",
     "BUILD_ARTIFACT_SCHEMA",
+    "BUILD_ARTIFACT_SCHEMA_V2",
     "BuildArtifactOutputError",
     "CanonicalBuildArtifact",
     "canonical_json_bytes",
     "construct_build_artifact",
+    "construct_narrative_build_artifact",
     "write_build_artifact_atomic",
 )

@@ -14,8 +14,10 @@ from typing import Any, Callable, Mapping, Optional, Sequence, TextIO
 
 from tooling.build_artifact import (
     BUILD_ARTIFACT_SCHEMA,
+    BUILD_ARTIFACT_SCHEMA_V2,
     BuildArtifactOutputError,
     construct_build_artifact,
+    construct_narrative_build_artifact,
     write_build_artifact_atomic,
 )
 from tooling.project_loader import PROJECT_KIND_NARRATIVE, LoadedProject, load_project
@@ -446,18 +448,9 @@ def _run_execute(
 
             start_scene = story.timelines[0].scenes[0]
             initial_facts = story.states[0].facts if story.states else ()
-            story_name = story.identity.path[-1]
-            carrier = _default_project_builder(
-                {
-                    "__narrative_carrier__.apex":
-                        f"directive {story_name} {{}}"
-                },
-                story_name,
-            )
-            artifact = construct_build_artifact(
+            artifact = construct_narrative_build_artifact(
                 loaded,
-                carrier,
-                narrative_artifact=narrative,
+                narrative,
             )
 
             with TemporaryDirectory(prefix="apexforge-narrative-run-") as temporary:
@@ -604,18 +597,9 @@ def _run_simulate(
 
         start_scene = story.timelines[0].scenes[0]
         initial_facts = story.states[0].facts if story.states else ()
-        story_name = story.identity.path[-1]
-        carrier = _default_project_builder(
-            {
-                "__narrative_carrier__.apex":
-                    f"directive {story_name} {{}}"
-            },
-            story_name,
-        )
-        artifact = construct_build_artifact(
+        artifact = construct_narrative_build_artifact(
             loaded,
-            carrier,
-            narrative_artifact=narrative,
+            narrative,
         )
 
         with TemporaryDirectory(prefix="apexforge-narrative-simulate-") as temporary:
@@ -748,24 +732,15 @@ def _run_build(
                 bindings,
                 source_name=narrative_source.name,
             )
-            story_name = analysis.semantic_story.identity.path[-1]
-            build = _default_project_builder(
-                {
-                    "__narrative_carrier__.apex":
-                        f"directive {story_name} {{}}"
-                },
-                story_name,
-            )
         except CLIProjectCheckError:
             raise
         except Exception as exc:
             raise CLIProjectCheckError(str(exc)) from exc
 
         try:
-            artifact = construct_build_artifact(
+            artifact = construct_narrative_build_artifact(
                 loaded,
-                build,
-                narrative_artifact=narrative,
+                narrative,
             )
         except ProjectBuildError as exc:
             raise CLIProjectCheckError(str(exc)) from exc
@@ -785,7 +760,7 @@ def _run_build(
         f"ApexForge build succeeded: {loaded.manifest.name}",
         file=stdout,
     )
-    print(f"Schema: {BUILD_ARTIFACT_SCHEMA}", file=stdout)
+    print(f"Schema: {BUILD_ARTIFACT_SCHEMA_V2 if narrative_source is not None else BUILD_ARTIFACT_SCHEMA}", file=stdout)
     print(
         f"Entry: {artifact.entry if artifact.entry is not None else '<none>'}",
         file=stdout,
