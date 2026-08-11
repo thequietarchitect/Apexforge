@@ -110,7 +110,7 @@ def _parser() -> _ArgumentParser:
     )
     run.add_argument(
         "--entry",
-        help="entry directive, overriding the manifest entry",
+        help="entry directive or narrative story, overriding the manifest entry",
     )
     run.add_argument(
         "--report",
@@ -157,7 +157,7 @@ def _parser() -> _ArgumentParser:
     )
     build.add_argument(
         "--entry",
-        help="entry directive, overriding the manifest entry",
+        help="entry directive or narrative story, overriding the manifest entry",
     )
 
     narrative = commands.add_parser(
@@ -309,12 +309,19 @@ def _run_check(
         if narrative_source is not None:
             from language.narrative_analysis import analyze_narrative_source
             from runtime.narrative_binding import bind_narrative_story
+            from tooling.narrative_project import (
+                resolve_narrative_project_entry,
+                resolve_narrative_start_scene,
+            )
 
             analysis = analyze_narrative_source(
                 narrative_source.source,
                 source_name=narrative_source.name,
             )
-            bind_narrative_story(analysis.semantic_story)
+            story = analysis.semantic_story
+            bind_narrative_story(story)
+            resolve_narrative_project_entry(story, loaded.manifest.entry)
+            resolve_narrative_start_scene(story)
         else:
             selected_builder(
                 loaded.source_mapping(),
@@ -413,6 +420,10 @@ def _run_execute(
         from runtime.narrative_binding import bind_narrative_story
         from tooling.narrative_artifact import route_narrative_build_material
         from tooling.narrative_interactive import interact_narrative_session
+        from tooling.narrative_project import (
+            resolve_narrative_project_entry,
+            resolve_narrative_start_scene,
+        )
         from tooling.narrative_session import (
             NarrativeSessionCreateRequest,
             NarrativeSessionError,
@@ -422,8 +433,6 @@ def _run_execute(
             write_narrative_session_atomic,
         )
 
-        if entry is not None:
-            raise CLIUsageError("--entry is not supported for narrative projects.")
         if report:
             raise CLIUsageError("--report is not supported for narrative projects.")
 
@@ -433,20 +442,19 @@ def _run_execute(
                 source_name=narrative_source.name,
             )
             story = analysis.semantic_story
+            selected_entry = (
+                entry
+                if entry is not None
+                else loaded.manifest.entry
+            )
+            resolve_narrative_project_entry(story, selected_entry)
             bindings = bind_narrative_story(story)
             narrative = route_narrative_build_material(
                 analysis,
                 bindings,
                 source_name=narrative_source.name,
             )
-
-            if not story.timelines or not story.timelines[0].scenes:
-                raise CLIProjectCheckError(
-                    "Narrative project requires an authored timeline "
-                    "with at least one scene."
-                )
-
-            start_scene = story.timelines[0].scenes[0]
+            start_scene = resolve_narrative_start_scene(story)
             initial_facts = story.states[0].facts if story.states else ()
             artifact = construct_narrative_build_artifact(
                 loaded,
@@ -546,6 +554,10 @@ def _run_simulate(
     from runtime.narrative_binding import bind_narrative_story
     from tooling.narrative_artifact import route_narrative_build_material
     from tooling.narrative_interactive import narrative_interactive_menu
+    from tooling.narrative_project import (
+        resolve_narrative_project_entry,
+        resolve_narrative_start_scene,
+    )
     from tooling.narrative_session import (
         NarrativeSessionCreateRequest,
         NarrativeSessionError,
@@ -582,20 +594,14 @@ def _run_simulate(
             source_name=narrative_source.name,
         )
         story = analysis.semantic_story
+        resolve_narrative_project_entry(story, loaded.manifest.entry)
         bindings = bind_narrative_story(story)
         narrative = route_narrative_build_material(
             analysis,
             bindings,
             source_name=narrative_source.name,
         )
-
-        if not story.timelines or not story.timelines[0].scenes:
-            raise CLIProjectCheckError(
-                "Narrative project requires an authored timeline "
-                "with at least one scene."
-            )
-
-        start_scene = story.timelines[0].scenes[0]
+        start_scene = resolve_narrative_start_scene(story)
         initial_facts = story.states[0].facts if story.states else ()
         artifact = construct_narrative_build_artifact(
             loaded,
@@ -721,12 +727,15 @@ def _run_build(
             from language.narrative_analysis import analyze_narrative_source
             from runtime.narrative_binding import bind_narrative_story
             from tooling.narrative_artifact import route_narrative_build_material
+            from tooling.narrative_project import resolve_narrative_project_entry
 
             analysis = analyze_narrative_source(
                 narrative_source.source,
                 source_name=narrative_source.name,
             )
-            bindings = bind_narrative_story(analysis.semantic_story)
+            story = analysis.semantic_story
+            resolve_narrative_project_entry(story, selected_entry)
+            bindings = bind_narrative_story(story)
             narrative = route_narrative_build_material(
                 analysis,
                 bindings,

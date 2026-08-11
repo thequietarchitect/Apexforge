@@ -138,6 +138,59 @@ def test_narrative_cli_surface(temporary_root: Path) -> None:
     require("Scene: scene:End" in stdout, "narrative run did not execute selected choice")
     require(stderr == "", "narrative run wrote to stderr")
 
+    explicit_artifact = temporary_root / "narrative-explicit.json"
+    code, stdout, stderr = invoke(
+        ("build", str(project), "--output", str(explicit_artifact), "--entry", "story:CliStory")
+    )
+    require(code == EXIT_SUCCESS and explicit_artifact.is_file(), f"canonical narrative build entry failed: {stderr!r}")
+    require(stderr == "", "canonical narrative build entry wrote to stderr")
+
+    code, stdout, stderr = invoke(
+        ("run", str(project), "--entry", "CliStory"),
+        stdin_text="quit\n",
+    )
+    require(code == EXIT_SUCCESS, f"bare narrative run entry failed: {stderr!r}")
+    require("Scene: scene:Start" in stdout, "bare narrative run entry changed start scene")
+    require(stderr == "", "bare narrative run entry wrote to stderr")
+
+    code, stdout, stderr = invoke(
+        ("build", str(project), "--output", str(temporary_root / "wrong-entry.json"), "--entry", "OtherStory")
+    )
+    require(code != EXIT_SUCCESS, "wrong narrative build entry was accepted")
+    require("does not identify" in stderr, "wrong narrative build entry diagnostic changed")
+
+    code, stdout, stderr = invoke(
+        ("run", str(project), "--entry", "scene:Start"),
+        stdin_text="quit\n",
+    )
+    require(code != EXIT_SUCCESS, "scene identity was accepted as narrative run entry")
+    require("does not identify" in stderr, "wrongnarrative run entry diagnostic changed")
+
+    manifest_path = project / "apexforge.json"
+    original_manifest = manifest_path.read_text(encoding="utf-8")
+    mismatched = json.loads(original_manifest)
+    mismatched["entry"] = "OtherStory"
+    manifest_path.write_text(
+        json.dumps(mismatched, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    try:
+        code, stdout, stderr = invoke(("check", str(project)))
+        require(code != EXIT_SUCCESS, "mismatched narrative manifest entry passed check")
+        require("does not identify" in stderr, "mismatched narrative check diagnostic changed")
+
+        code, stdout, stderr = invoke(
+            ("simulate", str(project), "--observer", "--max-steps", "1")
+        )
+        require(code != EXIT_SUCCESS, "mismatched narrative manifest entry passed simulate")
+        require("does not identify" in stderr, "mismatched narrative simulate diagnostic changed")
+    finally:
+        manifest_path.write_text(original_manifest, encoding="utf-8")
+
+    print("Narrative explicit entry routing: PASS")
+    print("Narrative manifest entry validation: PASS")
+
+
 
 def main() -> int:
     with TemporaryDirectory() as temporary_name:
