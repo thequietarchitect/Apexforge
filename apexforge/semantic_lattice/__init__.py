@@ -83,3 +83,13 @@ __all__ = __all__ + (
     "validate_semantic_lattice_authoring_proposal",
     "validate_semantic_lattice_snapshot",
 )
+
+from .reporting import (
+    render_semantic_lattice_authoring_validation_report,
+    render_semantic_lattice_validation_report,
+)
+
+__all__ = __all__ + (
+    "render_semantic_lattice_authoring_validation_report",
+    "render_semantic_lattice_validation_report",
+)
