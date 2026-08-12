@@ -6,10 +6,18 @@ from .model import (
     SemanticLatticeAxis,
     SemanticLatticeParameter,
 )
+from .records import (
+    SemanticLatticeEvidence,
+    SemanticLatticeRelationship,
+    SemanticLatticeSubjectReference,
+)
 
 __all__ = (
     "CORE_SEMANTIC_LATTICE_AXES",
     "ParametricSemanticLattice",
     "SemanticLatticeAxis",
     "SemanticLatticeParameter",
+    "SemanticLatticeEvidence",
+    "SemanticLatticeRelationship",
+    "SemanticLatticeSubjectReference",
 )
