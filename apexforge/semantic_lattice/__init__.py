@@ -67,3 +67,19 @@ __all__ = (
     "subjects_for_identity",
     "subjects_for_kind",
 )
+
+from .validation import (
+    SemanticLatticeAuthoringValidationReceipt,
+    SemanticLatticeValidationReceipt,
+    validate_codex_semantic_lattice_proposal,
+    validate_semantic_lattice_authoring_proposal,
+    validate_semantic_lattice_snapshot,
+)
+
+__all__ = __all__ + (
+    "SemanticLatticeAuthoringValidationReceipt",
+    "SemanticLatticeValidationReceipt",
+    "validate_codex_semantic_lattice_proposal",
+    "validate_semantic_lattice_authoring_proposal",
+    "validate_semantic_lattice_snapshot",
+)
