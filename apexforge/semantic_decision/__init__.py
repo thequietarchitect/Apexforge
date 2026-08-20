@@ -20,6 +20,14 @@ from .model import (
     SemanticOutcome,
     SemanticOutcomeKind,
 )
+from .paradox import (
+    ElevatedSemanticState,
+    ParadoxElevationAssessment,
+    ParadoxElevationEvidence,
+    ParadoxIncompatibilityEvidence,
+    assess_paradox_elevation,
+    elevate_paradox_assessment,
+)
 from .resolution import (
     CORE_CONVERGENCE_POLICY_IDS,
     RankedCandidate,
@@ -46,4 +54,10 @@ __all__ = (
     "RankedCandidate",
     "SemanticConvergenceResolution",
     "apply_semantic_convergence_policy",
+    "ParadoxIncompatibilityEvidence",
+    "ParadoxElevationEvidence",
+    "ParadoxElevationAssessment",
+    "ElevatedSemanticState",
+    "assess_paradox_elevation",
+    "elevate_paradox_assessment",
 )
