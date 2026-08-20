@@ -1,5 +1,9 @@
 """AETHER-AIR 2.0 interstitial semantic representation."""
 
+from .construction import (
+    AetherAirSnapshot,
+    construct_aether_air_snapshot,
+)
 from .model import (
     CORE_AETHER_BEHAVIOR_KINDS,
     AetherAirRepresentation,
@@ -22,4 +26,6 @@ __all__ = (
     "AetherPredecessorReference",
     "AetherEvidence",
     "AetherIntentTrace",
+    "AetherAirSnapshot",
+    "construct_aether_air_snapshot",
 )
