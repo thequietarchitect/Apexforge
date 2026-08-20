@@ -7,6 +7,11 @@ from .model import (
     AetherBehaviorKind,
     AetherIntentParameter,
 )
+from .records import (
+    AetherEvidence,
+    AetherIntentTrace,
+    AetherPredecessorReference,
+)
 
 __all__ = (
     "AetherBehaviorKind",
@@ -14,4 +19,7 @@ __all__ = (
     "AetherBehaviorIntent",
     "AetherAirRepresentation",
     "CORE_AETHER_BEHAVIOR_KINDS",
+    "AetherPredecessorReference",
+    "AetherEvidence",
+    "AetherIntentTrace",
 )
