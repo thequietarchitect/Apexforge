@@ -11,6 +11,10 @@ from .model import (
     AetherBehaviorKind,
     AetherIntentParameter,
 )
+from .projection import (
+    AetherAirDownstreamProjection,
+    project_validated_aether_air,
+)
 from .records import (
     AetherEvidence,
     AetherIntentTrace,
@@ -46,4 +50,6 @@ __all__ = (
     "AetherAirTransformationValidationReceipt",
     "validate_aether_air_snapshot",
     "validate_aether_air_transformation",
+    "AetherAirDownstreamProjection",
+    "project_validated_aether_air",
 )
