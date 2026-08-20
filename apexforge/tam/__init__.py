@@ -9,6 +9,8 @@ from .model import (
     TraceMap,
     TraceRecord,
 )
+from .integration import compose_trace_maps
+
 from .production import (
     trace_identity_for_source_map_entry,
     trace_identity_for_source_span,
@@ -58,4 +60,5 @@ __all__ = (
     "trace_map_from_narrative_evidence",
     "trace_record_from_token_evidence",
     "trace_map_from_token_evidence",
+    "compose_trace_maps",
 )
