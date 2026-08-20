@@ -1,18 +1,31 @@
 """Deterministic TAM production from existing canonical compiler evidence.
 
-P11-TAM-C introduced pure SourceMap adapters. P11-TAM-D extends the same
+P11-TAM-C introduced pure SourceMap adapters. P11-TAM-D extended the same
 observational layer to frozen declaration ownership and declared identity
-metadata. No producer in this module instruments or executes the compiler.
+metadata. P11-TAM-E adds passive reference, scope, candidate, and resolution
+outcome observation. No producer in this module executes resolution.
 """
 
 from __future__ import annotations
 
 from hashlib import sha256
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 from language.compiler import SourceMap, SourceMapEntry
 from language.declarations import ProjectDeclarationOwner, ProjectDeclarationOwnership
 from language.identities import ProjectDeclaredIdentity, ProjectIdentityIndex
+from language.resolution_candidates import (
+    ProjectQualification,
+    ProjectResolutionCandidate,
+    ProjectResolutionCandidateIndex,
+)
+from language.resolution_context import ProjectResolutionContext
+from language.resolution_queries import (
+    ProjectAmbiguousResolution,
+    ProjectResolvedBinding,
+    ProjectResolutionQuery,
+    ProjectUnresolvedResolution,
+)
 from language.source import SourceSpan
 
 from .model import TraceDomain, TraceIdentity, TraceMap, TraceRecord
@@ -20,8 +33,16 @@ from .model import TraceDomain, TraceIdentity, TraceMap, TraceRecord
 
 _SOURCE_DOMAIN = TraceDomain("source")
 _DECLARATION_DOMAIN = TraceDomain("declaration")
+_REFERENCE_DOMAIN = TraceDomain("reference")
+_SCOPE_DOMAIN = TraceDomain("scope")
 _OWNERSHIP_DOMAIN = TraceDomain("ownership")
 _TRANSFORMATION_DOMAIN = TraceDomain("transformation")
+
+_ResolutionOutcome = Union[
+    ProjectResolvedBinding,
+    ProjectUnresolvedResolution,
+    ProjectAmbiguousResolution,
+]
 
 
 def _require_index(value: object) -> int:
@@ -47,6 +68,64 @@ def _span_key(span: SourceSpan) -> str:
         _position_key(span.start),
         _position_key(span.end),
     )
+
+
+def _segments_key(segments: Tuple[str, ...]) -> str:
+    return ".".join(segments)
+
+
+def _optional_segments_key(segments: object) -> str:
+    if segments is None:
+        return "<none>"
+    return _segments_key(segments)
+
+
+def _qualification_key(qualification: ProjectQualification) -> Tuple[str, ...]:
+    return (
+        qualification.kind,
+        _segments_key(qualification.module_segments),
+        _segments_key(qualification.declaration_path),
+        "legacy" if qualification.legacy else "module",
+    )
+
+
+def _query_key(query: ProjectResolutionQuery) -> Tuple[str, ...]:
+    return (
+        query.kind,
+        _segments_key(query.declaration_path),
+        _optional_segments_key(query.module_segments),
+    )
+
+
+def _context_key(context: ProjectResolutionContext) -> Tuple[str, ...]:
+    imported = "|".join(
+        _segments_key(module_segments)
+        for module_segments in context.imported_modules
+    )
+    return (
+        context.source_name,
+        _segments_key(context.module_segments),
+        imported,
+    )
+
+
+def _candidate_key(candidate: ProjectResolutionCandidate) -> Tuple[str, ...]:
+    identity = candidate.identity
+    owner = candidate.owner
+    return (
+        identity.kind,
+        identity.declared_name,
+        identity.current_air_id,
+        identity.source_name,
+        "" if identity.module_name is None else identity.module_name,
+        identity.qualified_display_name,
+        _span_key(identity.span),
+        owner.kind,
+        owner.air_id,
+        owner.source_name,
+        "" if owner.module_name is None else owner.module_name,
+        _span_key(owner.span),
+    ) + _qualification_key(candidate.qualification)
 
 
 def _digest_identity(prefix: str, parts: Tuple[str, ...]) -> TraceIdentity:
@@ -82,14 +161,7 @@ def trace_identity_for_source_map_entry(
 
 
 def trace_map_from_source_map(source_map: SourceMap) -> TraceMap:
-    """Project an existing SourceMap into immutable observational TAM records.
-
-    Every distinct source span produces one source-domain record. Every
-    SourceMapEntry produces one transformation-domain record that references
-    the existing AIR ID and exact SourceSpan. Source records are emitted at
-    the first occurrence of their span; transformation records preserve
-    SourceMap entry order.
-    """
+    """Project an existing SourceMap into immutable observational TAM records."""
 
     if not isinstance(source_map, SourceMap):
         raise TypeError("source_map must be SourceMap")
@@ -221,12 +293,7 @@ def trace_map_from_declaration_identity_indexes(
     declaration_ownership: ProjectDeclarationOwnership,
     identity_index: ProjectIdentityIndex,
 ) -> TraceMap:
-    """Project frozen ownership and identity indexes into deterministic TAM.
-
-    Ownership tuple order is preserved first. Declared-identity tuple order is
-    preserved second. No resolution, joining, collapsing, or semantic inference
-    is performed between records that happen to reference the same AIR ID.
-    """
+    """Project frozen ownership and identity indexes into deterministic TAM."""
 
     if type(declaration_ownership) is not ProjectDeclarationOwnership:
         raise TypeError(
@@ -252,6 +319,167 @@ def trace_map_from_declaration_identity_indexes(
     return TraceMap(ownership_records + identity_records)
 
 
+def trace_record_from_resolution_query(
+    query: ProjectResolutionQuery,
+) -> TraceRecord:
+    """Project an already-formed resolution query as reference evidence."""
+
+    if type(query) is not ProjectResolutionQuery:
+        raise TypeError("query must be ProjectResolutionQuery")
+    return TraceRecord(
+        trace_id=_digest_identity("resolution-query", _query_key(query)),
+        domain=_REFERENCE_DOMAIN,
+        producer="language.resolution_queries",
+        owner="language.resolution_queries",
+        representation="project-resolution-query",
+    )
+
+
+def trace_record_from_resolution_context(
+    context: ProjectResolutionContext,
+) -> TraceRecord:
+    """Project an already-formed resolution context as scope evidence."""
+
+    if type(context) is not ProjectResolutionContext:
+        raise TypeError("context must be ProjectResolutionContext")
+    return TraceRecord(
+        trace_id=_digest_identity("resolution-context", _context_key(context)),
+        domain=_SCOPE_DOMAIN,
+        producer="language.resolution_context",
+        owner="language.resolution_context",
+        representation="project-resolution-context",
+    )
+
+
+def trace_record_from_resolution_candidate(
+    candidate: ProjectResolutionCandidate,
+    *,
+    candidate_index: int,
+) -> TraceRecord:
+    """Project one passive resolution candidate without selecting it."""
+
+    if type(candidate) is not ProjectResolutionCandidate:
+        raise TypeError("candidate must be ProjectResolutionCandidate")
+    selected_index = _require_index(candidate_index)
+    identity = candidate.identity
+    return TraceRecord(
+        trace_id=_digest_identity(
+            "resolution-candidate",
+            (str(selected_index),) + _candidate_key(candidate),
+        ),
+        domain=_REFERENCE_DOMAIN,
+        producer="language.resolution_candidates",
+        owner="language.resolution_candidates",
+        representation="project-resolution-candidate",
+        source_span=identity.span,
+        canonical_identity=identity.current_air_id,
+    )
+
+
+def trace_record_from_resolution_outcome(
+    outcome: _ResolutionOutcome,
+) -> TraceRecord:
+    """Project an existing resolved, unresolved, or ambiguous outcome."""
+
+    if type(outcome) is ProjectResolvedBinding:
+        candidate = outcome.candidate
+        return TraceRecord(
+            trace_id=_digest_identity(
+                "resolved-binding",
+                _query_key(outcome.query) + _candidate_key(candidate),
+            ),
+            domain=_REFERENCE_DOMAIN,
+            producer="language.resolution_queries",
+            owner="language.resolution_queries",
+            representation="project-resolved-binding",
+            source_span=candidate.identity.span,
+            canonical_identity=candidate.identity.current_air_id,
+        )
+
+    if type(outcome) is ProjectUnresolvedResolution:
+        return TraceRecord(
+            trace_id=_digest_identity(
+                "unresolved-resolution",
+                _query_key(outcome.query),
+            ),
+            domain=_REFERENCE_DOMAIN,
+            producer="language.resolution_queries",
+            owner="language.resolution_queries",
+            representation="project-unresolved-resolution",
+        )
+
+    if type(outcome) is ProjectAmbiguousResolution:
+        candidate_parts: Tuple[str, ...] = ()
+        for candidate in outcome.candidates:
+            candidate_parts += _candidate_key(candidate)
+        return TraceRecord(
+            trace_id=_digest_identity(
+                "ambiguous-resolution",
+                _query_key(outcome.query) + candidate_parts,
+            ),
+            domain=_REFERENCE_DOMAIN,
+            producer="language.resolution_queries",
+            owner="language.resolution_queries",
+            representation="project-ambiguous-resolution",
+        )
+
+    raise TypeError(
+        "outcome must be ProjectResolvedBinding, "
+        "ProjectUnresolvedResolution, or ProjectAmbiguousResolution"
+    )
+
+
+def trace_map_from_resolution_observation(
+    index: ProjectResolutionCandidateIndex,
+    query: ProjectResolutionQuery,
+    context: ProjectResolutionContext,
+    outcome: _ResolutionOutcome,
+) -> TraceMap:
+    """Project already-existing resolution inputs and outcome without resolving."""
+
+    if type(index) is not ProjectResolutionCandidateIndex:
+        raise TypeError("index must be ProjectResolutionCandidateIndex")
+    if type(query) is not ProjectResolutionQuery:
+        raise TypeError("query must be ProjectResolutionQuery")
+    if type(context) is not ProjectResolutionContext:
+        raise TypeError("context must be ProjectResolutionContext")
+    if type(outcome) not in (
+        ProjectResolvedBinding,
+        ProjectUnresolvedResolution,
+        ProjectAmbiguousResolution,
+    ):
+        raise TypeError(
+            "outcome must be a canonical project resolution outcome"
+        )
+    if outcome.query != query:
+        raise ValueError("outcome.query must equal the observed query")
+
+    if type(outcome) is ProjectResolvedBinding:
+        if outcome.candidate not in index.candidates:
+            raise ValueError(
+                "resolved outcome candidate must belong to the observed candidate index"
+            )
+    elif type(outcome) is ProjectAmbiguousResolution:
+        if any(candidate not in index.candidates for candidate in outcome.candidates):
+            raise ValueError(
+                "ambiguous outcome candidates must belong to the observed candidate index"
+            )
+
+    records = [
+        trace_record_from_resolution_query(query),
+        trace_record_from_resolution_context(context),
+    ]
+    records.extend(
+        trace_record_from_resolution_candidate(
+            candidate,
+            candidate_index=candidate_index,
+        )
+        for candidate_index, candidate in enumerate(index.candidates)
+    )
+    records.append(trace_record_from_resolution_outcome(outcome))
+    return TraceMap(tuple(records))
+
+
 __all__ = (
     "trace_identity_for_source_map_entry",
     "trace_identity_for_source_span",
@@ -259,4 +487,9 @@ __all__ = (
     "trace_map_from_declaration_identity_indexes",
     "trace_record_from_declaration_owner",
     "trace_record_from_declared_identity",
+    "trace_record_from_resolution_query",
+    "trace_record_from_resolution_context",
+    "trace_record_from_resolution_candidate",
+    "trace_record_from_resolution_outcome",
+    "trace_map_from_resolution_observation",
 )
