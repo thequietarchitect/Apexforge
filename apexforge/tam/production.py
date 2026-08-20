@@ -1,8 +1,8 @@
-"""Deterministic TAM production from existing canonical source-map evidence.
+"""Deterministic TAM production from existing canonical compiler evidence.
 
-P11-TAM-C is a pure adapter layer. It consumes frozen SourceSpan, SourceMapEntry,
-and SourceMap evidence and emits frozen P11-TAM-B TraceRecord/TraceMap values.
-It does not instrument or execute the compiler.
+P11-TAM-C introduced pure SourceMap adapters. P11-TAM-D extends the same
+observational layer to frozen declaration ownership and declared identity
+metadata. No producer in this module instruments or executes the compiler.
 """
 
 from __future__ import annotations
@@ -11,12 +11,16 @@ from hashlib import sha256
 from typing import Dict, List, Tuple
 
 from language.compiler import SourceMap, SourceMapEntry
+from language.declarations import ProjectDeclarationOwner, ProjectDeclarationOwnership
+from language.identities import ProjectDeclaredIdentity, ProjectIdentityIndex
 from language.source import SourceSpan
 
 from .model import TraceDomain, TraceIdentity, TraceMap, TraceRecord
 
 
 _SOURCE_DOMAIN = TraceDomain("source")
+_DECLARATION_DOMAIN = TraceDomain("declaration")
+_OWNERSHIP_DOMAIN = TraceDomain("ownership")
 _TRANSFORMATION_DOMAIN = TraceDomain("transformation")
 
 
@@ -147,8 +151,112 @@ def trace_map_from_source_map(source_map: SourceMap) -> TraceMap:
     return TraceMap(tuple(records))
 
 
+def trace_record_from_declaration_owner(
+    declaration: ProjectDeclarationOwner,
+    *,
+    declaration_index: int,
+) -> TraceRecord:
+    """Project one frozen declaration-ownership record into TAM evidence."""
+
+    if type(declaration) is not ProjectDeclarationOwner:
+        raise TypeError("declaration must be ProjectDeclarationOwner")
+    selected_index = _require_index(declaration_index)
+    trace_id = _digest_identity(
+        "declaration-owner",
+        (
+            str(selected_index),
+            declaration.kind,
+            declaration.air_id,
+            declaration.source_name,
+            "" if declaration.module_name is None else declaration.module_name,
+            _span_key(declaration.span),
+        ),
+    )
+    return TraceRecord(
+        trace_id=trace_id,
+        domain=_OWNERSHIP_DOMAIN,
+        producer="language.declarations",
+        owner="language.declarations",
+        representation="project-declaration-owner",
+        source_span=declaration.span,
+        canonical_identity=declaration.air_id,
+    )
+
+
+def trace_record_from_declared_identity(
+    identity: ProjectDeclaredIdentity,
+    *,
+    identity_index: int,
+) -> TraceRecord:
+    """Project one frozen declared-identity record into TAM evidence."""
+
+    if type(identity) is not ProjectDeclaredIdentity:
+        raise TypeError("identity must be ProjectDeclaredIdentity")
+    selected_index = _require_index(identity_index)
+    trace_id = _digest_identity(
+        "declared-identity",
+        (
+            str(selected_index),
+            identity.kind,
+            identity.declared_name,
+            identity.current_air_id,
+            identity.source_name,
+            "" if identity.module_name is None else identity.module_name,
+            identity.qualified_display_name,
+            _span_key(identity.span),
+        ),
+    )
+    return TraceRecord(
+        trace_id=trace_id,
+        domain=_DECLARATION_DOMAIN,
+        producer="language.identities",
+        owner="language.identities",
+        representation="project-declared-identity",
+        source_span=identity.span,
+        canonical_identity=identity.current_air_id,
+    )
+
+
+def trace_map_from_declaration_identity_indexes(
+    declaration_ownership: ProjectDeclarationOwnership,
+    identity_index: ProjectIdentityIndex,
+) -> TraceMap:
+    """Project frozen ownership and identity indexes into deterministic TAM.
+
+    Ownership tuple order is preserved first. Declared-identity tuple order is
+    preserved second. No resolution, joining, collapsing, or semantic inference
+    is performed between records that happen to reference the same AIR ID.
+    """
+
+    if type(declaration_ownership) is not ProjectDeclarationOwnership:
+        raise TypeError(
+            "declaration_ownership must be ProjectDeclarationOwnership"
+        )
+    if type(identity_index) is not ProjectIdentityIndex:
+        raise TypeError("identity_index must be ProjectIdentityIndex")
+
+    ownership_records = tuple(
+        trace_record_from_declaration_owner(
+            declaration,
+            declaration_index=index,
+        )
+        for index, declaration in enumerate(declaration_ownership.declarations)
+    )
+    identity_records = tuple(
+        trace_record_from_declared_identity(
+            identity,
+            identity_index=index,
+        )
+        for index, identity in enumerate(identity_index.identities)
+    )
+    return TraceMap(ownership_records + identity_records)
+
+
 __all__ = (
     "trace_identity_for_source_map_entry",
     "trace_identity_for_source_span",
     "trace_map_from_source_map",
+    "trace_map_from_declaration_identity_indexes",
+    "trace_record_from_declaration_owner",
+    "trace_record_from_declared_identity",
 )

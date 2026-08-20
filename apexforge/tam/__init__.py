@@ -12,7 +12,10 @@ from .model import (
 from .production import (
     trace_identity_for_source_map_entry,
     trace_identity_for_source_span,
+    trace_map_from_declaration_identity_indexes,
     trace_map_from_source_map,
+    trace_record_from_declaration_owner,
+    trace_record_from_declared_identity,
 )
 
 __all__ = (
@@ -26,4 +29,7 @@ __all__ = (
     "trace_identity_for_source_map_entry",
     "trace_identity_for_source_span",
     "trace_map_from_source_map",
+    "trace_map_from_declaration_identity_indexes",
+    "trace_record_from_declaration_owner",
+    "trace_record_from_declared_identity",
 )
