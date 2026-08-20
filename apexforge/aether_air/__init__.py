@@ -16,6 +16,11 @@ from .records import (
     AetherIntentTrace,
     AetherPredecessorReference,
 )
+from .transformation import (
+    AetherAirTransformation,
+    normalize_aether_air_snapshot,
+    transform_aether_air_snapshot,
+)
 
 __all__ = (
     "AetherBehaviorKind",
@@ -28,4 +33,7 @@ __all__ = (
     "AetherIntentTrace",
     "AetherAirSnapshot",
     "construct_aether_air_snapshot",
+    "AetherAirTransformation",
+    "transform_aether_air_snapshot",
+    "normalize_aether_air_snapshot",
 )
