@@ -12,6 +12,23 @@ from hashlib import sha256
 from typing import Dict, List, Tuple, Union
 
 from authority.model import AuthorityCheck, AuthorityGrant, Principal
+from language.narrative_graph import NarrativeGraphEdge, NarrativeGraphNode, NarrativeSemanticGraph
+from language.narrative_model import (
+    NarrativeCharacter,
+    NarrativeChoice,
+    NarrativeChoicePath,
+    NarrativeContinuity,
+    NarrativeContinuityConstraint,
+    NarrativeDialogue,
+    NarrativeIdentity,
+    NarrativePerspective,
+    NarrativeScene,
+    NarrativeState,
+    NarrativeStateFact,
+    NarrativeStory,
+    NarrativeTimeline,
+)
+from language.narrative_validation import NarrativeValidationFinding, NarrativeValidationReport
 from language.compiler import SourceMap, SourceMapEntry
 from language.declarations import ProjectDeclarationOwner, ProjectDeclarationOwnership
 from language.identities import ProjectDeclaredIdentity, ProjectIdentityIndex
@@ -46,6 +63,7 @@ _OWNERSHIP_DOMAIN = TraceDomain("ownership")
 _TRANSFORMATION_DOMAIN = TraceDomain("transformation")
 _TYPE_DOMAIN = TraceDomain("type")
 _AUTHORITY_DOMAIN = TraceDomain("authority")
+_NARRATIVE_DOMAIN = TraceDomain("narrative")
 
 _ResolutionOutcome = Union[
     ProjectResolvedBinding,
@@ -745,6 +763,339 @@ def trace_map_from_authority_evidence(
     )
     return TraceMap(records)
 
+
+def _narrative_identity_key(value: NarrativeIdentity) -> Tuple[str, ...]:
+    parts: Tuple[str, ...] = (
+        "narrative-identity",
+        "kind",
+        value.kind,
+        "path-count",
+        str(len(value.path)),
+    )
+    for index, segment in enumerate(value.path):
+        parts += ("path", str(index), segment)
+    return parts
+
+
+def _narrative_optional_text_key(
+    label: str,
+    value: object,
+) -> Tuple[str, ...]:
+    if value is None:
+        return (label, "none")
+    return (label, "text", value)
+
+
+def _narrative_identity_tuple_key(
+    label: str,
+    values: Tuple[NarrativeIdentity, ...],
+) -> Tuple[str, ...]:
+    parts: Tuple[str, ...] = (label, "count", str(len(values)))
+    for index, identity in enumerate(values):
+        parts += (
+            label,
+            str(index),
+        ) + _narrative_identity_key(identity)
+    return parts
+
+
+def _narrative_pair_tuple_key(
+    label: str,
+    values: Tuple[Tuple[str, str], ...],
+) -> Tuple[str, ...]:
+    parts: Tuple[str, ...] = (label, "count", str(len(values)))
+    for index, pair in enumerate(values):
+        key, value = pair
+        parts += (label, str(index), key, value)
+    return parts
+
+
+def _narrative_index_tuple_key(
+    label: str,
+    values: Tuple[int, ...],
+) -> Tuple[str, ...]:
+    parts: Tuple[str, ...] = (label, "count", str(len(values)))
+    for index, value in enumerate(values):
+        parts += (label, str(index), str(value))
+    return parts
+
+
+def _narrative_structural_key(value: object) -> Tuple[str, ...]:
+    if type(value) is NarrativeIdentity:
+        return _narrative_identity_key(value)
+
+    if type(value) is NarrativeCharacter:
+        return (
+            "narrative-character",
+        ) + _narrative_identity_key(value.identity)
+
+    if type(value) is NarrativeScene:
+        return (
+            ("narrative-scene",)
+            + _narrative_identity_key(value.identity)
+            + _narrative_optional_text_key("title", value.title)
+            + _narrative_optional_text_key("body", value.body)
+        )
+
+    if type(value) is NarrativeDialogue:
+        return (
+            ("narrative-dialogue",)
+            + _narrative_identity_key(value.identity)
+            + ("scene",)
+            + _narrative_identity_key(value.scene)
+            + ("speaker",)
+            + _narrative_identity_key(value.speaker)
+            + _narrative_identity_tuple_key("participant", value.participants)
+            + _narrative_optional_text_key("text", value.text)
+        )
+
+    if type(value) is NarrativeChoicePath:
+        return (
+            ("narrative-choice-path", "label", value.label, "destination")
+            + _narrative_identity_key(value.destination)
+            + _narrative_optional_text_key("condition", value.condition)
+            + _narrative_optional_text_key("consequence", value.consequence)
+        )
+
+    if type(value) is NarrativeChoice:
+        parts: Tuple[str, ...] = (
+            ("narrative-choice",)
+            + _narrative_identity_key(value.identity)
+            + ("scene",)
+            + _narrative_identity_key(value.scene)
+            + ("path-count", str(len(value.paths)))
+        )
+        for index, path in enumerate(value.paths):
+            parts += (
+                "path",
+                str(index),
+            ) + _narrative_structural_key(path)
+        return parts
+
+    if type(value) is NarrativePerspective:
+        parts = (
+            ("narrative-perspective",)
+            + _narrative_identity_key(value.identity)
+        )
+        if value.viewpoint is None:
+            return parts + ("viewpoint", "none")
+        return parts + ("viewpoint",) + _narrative_identity_key(value.viewpoint)
+
+    if type(value) is NarrativeTimeline:
+        return (
+            ("narrative-timeline",)
+            + _narrative_identity_key(value.identity)
+            + _narrative_identity_tuple_key("scene", value.scenes)
+        )
+
+    if type(value) is NarrativeStateFact:
+        return (
+            ("narrative-state-fact", "subject")
+            + _narrative_identity_key(value.subject)
+            + ("name", value.name, "value", value.value)
+        )
+
+    if type(value) is NarrativeState:
+        parts = (
+            ("narrative-state",)
+            + _narrative_identity_key(value.identity)
+            + ("fact-count", str(len(value.facts)))
+        )
+        for index, fact in enumerate(value.facts):
+            parts += (
+                "fact",
+                str(index),
+            ) + _narrative_structural_key(fact)
+        return parts
+
+    if type(value) is NarrativeContinuityConstraint:
+        return (
+            ("narrative-continuity-constraint",)
+            + _narrative_identity_tuple_key("subject", value.subjects)
+            + ("assertion", value.assertion)
+        )
+
+    if type(value) is NarrativeContinuity:
+        parts = (
+            ("narrative-continuity",)
+            + _narrative_identity_key(value.identity)
+            + ("constraint-count", str(len(value.constraints)))
+        )
+        for index, constraint in enumerate(value.constraints):
+            parts += (
+                "constraint",
+                str(index),
+            ) + _narrative_structural_key(constraint)
+        return parts
+
+    if type(value) is NarrativeStory:
+        parts = (
+            ("narrative-story",)
+            + _narrative_identity_key(value.identity)
+        )
+        collections = (
+            ("character", value.characters),
+            ("scene", value.scenes),
+            ("dialogue", value.dialogues),
+            ("choice", value.choices),
+            ("perspective", value.perspectives),
+            ("timeline", value.timelines),
+            ("state", value.states),
+            ("continuity", value.continuities),
+        )
+        for label, records in collections:
+            parts += (label + "-count", str(len(records)))
+            for index, record in enumerate(records):
+                parts += (
+                    label,
+                    str(index),
+                ) + _narrative_structural_key(record)
+        return parts
+
+    if type(value) is NarrativeGraphNode:
+        return (
+            ("narrative-graph-node",)
+            + _narrative_identity_key(value.identity)
+            + ("declared", "true" if value.declared else "false")
+        )
+
+    if type(value) is NarrativeGraphEdge:
+        return (
+            ("narrative-graph-edge", "relation", value.relation, "source")
+            + _narrative_identity_key(value.source)
+            + ("target",)
+            + _narrative_identity_key(value.target)
+            + _narrative_pair_tuple_key("evidence", value.evidence)
+        )
+
+    if type(value) is NarrativeSemanticGraph:
+        parts = (
+            ("narrative-semantic-graph", "story")
+            + _narrative_identity_key(value.story)
+            + ("node-count", str(len(value.nodes)))
+        )
+        for index, node in enumerate(value.nodes):
+            parts += (
+                "node",
+                str(index),
+            ) + _narrative_structural_key(node)
+        parts += ("edge-count", str(len(value.edges)))
+        for index, edge in enumerate(value.edges):
+            parts += (
+                "edge",
+                str(index),
+            ) + _narrative_structural_key(edge)
+        return parts
+
+    if type(value) is NarrativeValidationFinding:
+        return (
+            ("narrative-validation-finding", "classification", value.classification)
+            + _narrative_identity_tuple_key("identity", value.identities)
+            + _narrative_index_tuple_key("node-index", value.node_indexes)
+            + _narrative_index_tuple_key("edge-index", value.edge_indexes)
+            + _narrative_pair_tuple_key("evidence", value.evidence)
+        )
+
+    if type(value) is NarrativeValidationReport:
+        parts = (
+            ("narrative-validation-report", "story")
+            + _narrative_identity_key(value.story)
+            + ("finding-count", str(len(value.findings)))
+        )
+        for index, finding in enumerate(value.findings):
+            parts += (
+                "finding",
+                str(index),
+            ) + _narrative_structural_key(finding)
+        return parts
+
+    raise TypeError("unsupported narrative evidence type")
+
+
+def _narrative_evidence_contract(
+    evidence: object,
+) -> Tuple[str, str]:
+    if type(evidence) is NarrativeIdentity:
+        return "language.narrative_model", "narrative-identity"
+    if type(evidence) is NarrativeCharacter:
+        return "language.narrative_model", "narrative-character"
+    if type(evidence) is NarrativeScene:
+        return "language.narrative_model", "narrative-scene"
+    if type(evidence) is NarrativeDialogue:
+        return "language.narrative_model", "narrative-dialogue"
+    if type(evidence) is NarrativeChoicePath:
+        return "language.narrative_model", "narrative-choice-path"
+    if type(evidence) is NarrativeChoice:
+        return "language.narrative_model", "narrative-choice"
+    if type(evidence) is NarrativePerspective:
+        return "language.narrative_model", "narrative-perspective"
+    if type(evidence) is NarrativeTimeline:
+        return "language.narrative_model", "narrative-timeline"
+    if type(evidence) is NarrativeStateFact:
+        return "language.narrative_model", "narrative-state-fact"
+    if type(evidence) is NarrativeState:
+        return "language.narrative_model", "narrative-state"
+    if type(evidence) is NarrativeContinuityConstraint:
+        return "language.narrative_model", "narrative-continuity-constraint"
+    if type(evidence) is NarrativeContinuity:
+        return "language.narrative_model", "narrative-continuity"
+    if type(evidence) is NarrativeStory:
+        return "language.narrative_model", "narrative-story"
+    if type(evidence) is NarrativeGraphNode:
+        return "language.narrative_graph", "narrative-graph-node"
+    if type(evidence) is NarrativeGraphEdge:
+        return "language.narrative_graph", "narrative-graph-edge"
+    if type(evidence) is NarrativeSemanticGraph:
+        return "language.narrative_graph", "narrative-semantic-graph"
+    if type(evidence) is NarrativeValidationFinding:
+        return "language.narrative_validation", "narrative-validation-finding"
+    if type(evidence) is NarrativeValidationReport:
+        return "language.narrative_validation", "narrative-validation-report"
+    raise TypeError(
+        "evidence must be canonical narrative model, graph, or validation evidence"
+    )
+
+
+def trace_record_from_narrative_evidence(
+    evidence: object,
+    *,
+    evidence_index: int,
+) -> TraceRecord:
+    """Project one already-existing narrative semantic value into TAM."""
+
+    selected_index = _require_index(evidence_index)
+    owner, representation = _narrative_evidence_contract(evidence)
+    key = _narrative_structural_key(evidence)
+
+    return TraceRecord(
+        trace_id=_digest_identity(
+            "narrative-evidence",
+            (str(selected_index),) + key,
+        ),
+        domain=_NARRATIVE_DOMAIN,
+        producer=owner,
+        owner=owner,
+        representation=representation,
+    )
+
+
+def trace_map_from_narrative_evidence(
+    evidence: Tuple[object, ...],
+) -> TraceMap:
+    """Project ordered passive narrative semantic evidence into TAM."""
+
+    if type(evidence) is not tuple:
+        raise TypeError("evidence must be an exact tuple")
+
+    records = tuple(
+        trace_record_from_narrative_evidence(
+            value,
+            evidence_index=index,
+        )
+        for index, value in enumerate(evidence)
+    )
+    return TraceMap(records)
+
 __all__ = (
     "trace_identity_for_source_map_entry",
     "trace_identity_for_source_span",
@@ -761,4 +1112,6 @@ __all__ = (
     "trace_map_from_type_evidence",
     "trace_record_from_authority_evidence",
     "trace_map_from_authority_evidence",
+    "trace_record_from_narrative_evidence",
+    "trace_map_from_narrative_evidence",
 )
