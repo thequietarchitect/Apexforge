@@ -28,6 +28,13 @@ from .paradox import (
     assess_paradox_elevation,
     elevate_paradox_assessment,
 )
+from .projection import (
+    SemanticDecisionDownstreamProjection,
+    project_validated_semantic_decision,
+)
+from .reporting import (
+    render_semantic_decision_downstream_projection_report,
+)
 from .resolution import (
     CORE_CONVERGENCE_POLICY_IDS,
     RankedCandidate,
@@ -74,4 +81,7 @@ __all__ = (
     "validate_semantic_convergence_resolution",
     "validate_paradox_elevation_assessment",
     "validate_elevated_semantic_state",
+    "SemanticDecisionDownstreamProjection",
+    "project_validated_semantic_decision",
+    "render_semantic_decision_downstream_projection_report",
 )
