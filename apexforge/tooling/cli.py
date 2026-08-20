@@ -20,7 +20,12 @@ from tooling.build_artifact import (
     construct_narrative_build_artifact,
     write_build_artifact_atomic,
 )
-from tooling.project_loader import PROJECT_KIND_NARRATIVE, LoadedProject, load_project
+from tooling.project_loader import (
+    PROJECT_KIND_NARRATIVE,
+    PROJECT_KIND_SEMANTIC_DECISION,
+    LoadedProject,
+    load_project,
+)
 from tooling.project_manifest import ProjectManifestError
 from tooling.project_scaffold import create_project_scaffold
 
@@ -367,6 +372,17 @@ def _run_check(
             bind_narrative_story(story)
             resolve_narrative_project_entry(story, loaded.manifest.entry)
             resolve_narrative_start_scene(story)
+        elif loaded.project_kind == PROJECT_KIND_SEMANTIC_DECISION:
+            from language.semantic_decision_project_analysis import (
+                analyze_semantic_decision_project_sources,
+            )
+
+            analyze_semantic_decision_project_sources(
+                tuple(
+                    (source.name, source.source)
+                    for source in loaded.sources
+                )
+            )
         else:
             selected_builder(
                 loaded.source_mapping(),
@@ -375,7 +391,7 @@ def _run_check(
     except CLIProjectCheckError:
         raise
     except Exception as exc:
-        # Narrative and injected/test builders share the deterministic check boundary.
+        # All source families and injected/test builders share this check boundary.
         raise CLIProjectCheckError(str(exc)) from exc
 
     success_text = (

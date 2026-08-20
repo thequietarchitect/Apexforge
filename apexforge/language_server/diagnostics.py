@@ -14,6 +14,8 @@ from typing import Final, Mapping, Optional
 from language.diagnostics import BuildDiagnostic, diagnostics_from_exception
 from language.modules import parse_module_source
 from language.narrative_analysis import analyze_narrative_source
+from language.semantic_decision_analysis import analyze_semantic_decision_source
+from language.semantic_decision_parser import is_semantic_decision_source_document
 from language.parser import parse_source_unit
 from language.source import SourceSpan
 
@@ -141,6 +143,11 @@ def analyze_document(
     try:
         if source.lstrip().startswith("story "):
             analyze_narrative_source(source, source_name=selected_uri)
+        elif is_semantic_decision_source_document(source):
+            analyze_semantic_decision_source(
+                source,
+                source_name=selected_uri,
+            )
         else:
             module_source = parse_module_source(selected_uri, source)
             parse_source_unit(

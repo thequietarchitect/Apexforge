@@ -8,6 +8,9 @@ from types import MappingProxyType
 from typing import Mapping, Tuple, Union
 
 from language.narrative_parser import is_narrative_source_document
+from language.semantic_decision_parser import (
+    is_semantic_decision_source_document,
+)
 from tooling.project_manifest import (
     PROJECT_MANIFEST_NAME,
     ProjectManifest,
@@ -18,7 +21,14 @@ from tooling.project_manifest import (
 
 PROJECT_KIND_AIR = "air"
 PROJECT_KIND_NARRATIVE = "narrative"
-_PROJECT_KINDS = frozenset((PROJECT_KIND_AIR, PROJECT_KIND_NARRATIVE))
+PROJECT_KIND_SEMANTIC_DECISION = "semantic_decision"
+_PROJECT_KINDS = frozenset(
+    (
+        PROJECT_KIND_AIR,
+        PROJECT_KIND_NARRATIVE,
+        PROJECT_KIND_SEMANTIC_DECISION,
+    )
+)
 
 
 @dataclass(frozen=True)
@@ -67,7 +77,8 @@ class LoadedProject:
             raise TypeError("LoadedProject.manifest must be ProjectManifest.")
         if type(self.project_kind) is not str or self.project_kind not in _PROJECT_KINDS:
             raise ValueError(
-                "LoadedProject.project_kind must be 'air' or 'narrative'."
+                "LoadedProject.project_kind must be 'air', 'narrative', "
+                "or 'semantic_decision'."
             )
 
         normalized_sources = tuple(self.sources)
@@ -203,15 +214,18 @@ def load_project(
         )
 
     loaded_sources = tuple(loaded)
-    project_kind = (
-        PROJECT_KIND_NARRATIVE
-        if loaded_sources
-        and all(
-            is_narrative_source_document(source.source)
-            for source in loaded_sources
-        )
-        else PROJECT_KIND_AIR
-    )
+    if loaded_sources and all(
+        is_narrative_source_document(source.source)
+        for source in loaded_sources
+    ):
+        project_kind = PROJECT_KIND_NARRATIVE
+    elif loaded_sources and all(
+        is_semantic_decision_source_document(source.source)
+        for source in loaded_sources
+    ):
+        project_kind = PROJECT_KIND_SEMANTIC_DECISION
+    else:
+        project_kind = PROJECT_KIND_AIR
 
     return LoadedProject(
         root=root,
@@ -225,6 +239,7 @@ def load_project(
 __all__ = (
     "PROJECT_KIND_AIR",
     "PROJECT_KIND_NARRATIVE",
+    "PROJECT_KIND_SEMANTIC_DECISION",
     "LoadedProject",
     "LoadedProjectSource",
     "find_project_manifest",
