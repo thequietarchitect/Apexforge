@@ -34,6 +34,14 @@ from .resolution import (
     SemanticConvergenceResolution,
     apply_semantic_convergence_policy,
 )
+from .validation import (
+    ElevatedSemanticStateValidationReceipt,
+    ParadoxElevationValidationReceipt,
+    SemanticDecisionValidationReceipt,
+    validate_elevated_semantic_state,
+    validate_paradox_elevation_assessment,
+    validate_semantic_convergence_resolution,
+)
 
 __all__ = (
     "AdvancedCondition",
@@ -60,4 +68,10 @@ __all__ = (
     "ElevatedSemanticState",
     "assess_paradox_elevation",
     "elevate_paradox_assessment",
+    "SemanticDecisionValidationReceipt",
+    "ParadoxElevationValidationReceipt",
+    "ElevatedSemanticStateValidationReceipt",
+    "validate_semantic_convergence_resolution",
+    "validate_paradox_elevation_assessment",
+    "validate_elevated_semantic_state",
 )
