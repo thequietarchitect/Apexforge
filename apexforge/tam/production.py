@@ -27,6 +27,12 @@ from language.resolution_queries import (
     ProjectUnresolvedResolution,
 )
 from language.source import SourceSpan
+from type_system.constraints import ApexTypeConstraint
+from type_system.generics import ApexTypeVariable
+from type_system.inference import FunctionSignature
+from type_system.model import ApexType
+from type_system.specialization import GenericSpecialization
+from type_system.substitution import GenericSubstitution
 
 from .model import TraceDomain, TraceIdentity, TraceMap, TraceRecord
 
@@ -37,6 +43,7 @@ _REFERENCE_DOMAIN = TraceDomain("reference")
 _SCOPE_DOMAIN = TraceDomain("scope")
 _OWNERSHIP_DOMAIN = TraceDomain("ownership")
 _TRANSFORMATION_DOMAIN = TraceDomain("transformation")
+_TYPE_DOMAIN = TraceDomain("type")
 
 _ResolutionOutcome = Union[
     ProjectResolvedBinding,
@@ -480,6 +487,186 @@ def trace_map_from_resolution_observation(
     return TraceMap(tuple(records))
 
 
+
+def _type_identity_key(value: object) -> Tuple[str, ...]:
+    if type(value) is ApexType:
+        parts: Tuple[str, ...] = (
+            "apex-type",
+            value.name,
+            str(len(value.arguments)),
+        )
+        for index, argument in enumerate(value.arguments):
+            parts += ("argument", str(index)) + _type_identity_key(argument)
+        return parts
+
+    if type(value) is ApexTypeVariable:
+        parts = (
+            "apex-type-variable",
+            value.name,
+            value.owner,
+            str(len(value.constraints)),
+        )
+        for index, constraint in enumerate(value.constraints):
+            parts += (
+                "constraint",
+                str(index),
+                constraint.name,
+                constraint.description,
+            )
+        return parts
+
+    raise TypeError("value must be ApexType or ApexTypeVariable")
+
+
+def _optional_type_identity_key(value: object) -> Tuple[str, ...]:
+    if value is None:
+        return ("none",)
+    return ("type",) + _type_identity_key(value)
+
+
+def _function_signature_key(value: FunctionSignature) -> Tuple[str, ...]:
+    parts: Tuple[str, ...] = (
+        "function-signature",
+        value.name,
+        "parameter-count",
+        str(len(value.parameter_types)),
+    )
+    for index, parameter_type in enumerate(value.parameter_types):
+        parts += (
+            "parameter",
+            str(index),
+        ) + _optional_type_identity_key(parameter_type)
+
+    parts += ("return",) + _optional_type_identity_key(value.return_type)
+    parts += ("type-parameter-count", str(len(value.type_parameters)))
+    for index, variable in enumerate(value.type_parameters):
+        parts += (
+            "type-parameter",
+            str(index),
+        ) + _type_identity_key(variable)
+    return parts
+
+
+def _generic_substitution_key(value: GenericSubstitution) -> Tuple[str, ...]:
+    parts: Tuple[str, ...] = (
+        "generic-substitution",
+        "binding-count",
+        str(len(value.bindings)),
+    )
+    for index, binding in enumerate(value.bindings):
+        variable, value_type = binding
+        parts += (
+            "binding",
+            str(index),
+            "variable",
+        ) + _type_identity_key(variable)
+        parts += ("value",) + _type_identity_key(value_type)
+    return parts
+
+
+def _generic_specialization_key(
+    value: GenericSpecialization,
+) -> Tuple[str, ...]:
+    parts: Tuple[str, ...] = (
+        "generic-specialization",
+        "target",
+        value.key.target,
+        "type-argument-count",
+        str(len(value.key.type_arguments)),
+    )
+    for index, type_argument in enumerate(value.key.type_arguments):
+        parts += (
+            "type-argument",
+            str(index),
+        ) + _type_identity_key(type_argument)
+
+    parts += (
+        "parameter-count",
+        str(len(value.parameter_types)),
+    )
+    for index, parameter_type in enumerate(value.parameter_types):
+        parts += (
+            "parameter",
+            str(index),
+        ) + _optional_type_identity_key(parameter_type)
+
+    parts += ("return",) + _optional_type_identity_key(value.return_type)
+    return parts
+
+
+def trace_record_from_type_evidence(
+    evidence: object,
+    *,
+    evidence_index: int,
+) -> TraceRecord:
+    """Project one already-existing canonical type-system value into TAM."""
+
+    selected_index = _require_index(evidence_index)
+
+    if type(evidence) is ApexType:
+        owner = "type_system.model"
+        representation = "apex-type"
+        key = _type_identity_key(evidence)
+    elif type(evidence) is ApexTypeConstraint:
+        owner = "type_system.constraints"
+        representation = "apex-type-constraint"
+        key = (
+            "apex-type-constraint",
+            evidence.name,
+            evidence.description,
+        )
+    elif type(evidence) is ApexTypeVariable:
+        owner = "type_system.generics"
+        representation = "apex-type-variable"
+        key = _type_identity_key(evidence)
+    elif type(evidence) is FunctionSignature:
+        owner = "type_system.inference"
+        representation = "function-signature"
+        key = _function_signature_key(evidence)
+    elif type(evidence) is GenericSubstitution:
+        owner = "type_system.substitution"
+        representation = "generic-substitution"
+        key = _generic_substitution_key(evidence)
+    elif type(evidence) is GenericSpecialization:
+        owner = "type_system.specialization"
+        representation = "generic-specialization"
+        key = _generic_specialization_key(evidence)
+    else:
+        raise TypeError(
+            "evidence must be ApexType, ApexTypeConstraint, "
+            "ApexTypeVariable, FunctionSignature, GenericSubstitution, "
+            "or GenericSpecialization"
+        )
+
+    return TraceRecord(
+        trace_id=_digest_identity(
+            "type-evidence",
+            (str(selected_index),) + key,
+        ),
+        domain=_TYPE_DOMAIN,
+        producer=owner,
+        owner=owner,
+        representation=representation,
+    )
+
+
+def trace_map_from_type_evidence(
+    evidence: Tuple[object, ...],
+) -> TraceMap:
+    """Project an ordered tuple of already-existing type evidence into TAM."""
+
+    if type(evidence) is not tuple:
+        raise TypeError("evidence must be an exact tuple")
+
+    records = tuple(
+        trace_record_from_type_evidence(
+            value,
+            evidence_index=index,
+        )
+        for index, value in enumerate(evidence)
+    )
+    return TraceMap(records)
+
 __all__ = (
     "trace_identity_for_source_map_entry",
     "trace_identity_for_source_span",
@@ -492,4 +679,6 @@ __all__ = (
     "trace_record_from_resolution_candidate",
     "trace_record_from_resolution_outcome",
     "trace_map_from_resolution_observation",
+    "trace_record_from_type_evidence",
+    "trace_map_from_type_evidence",
 )
