@@ -15,6 +15,9 @@ from .projection import (
     AetherAirDownstreamProjection,
     project_validated_aether_air,
 )
+from .reporting import (
+    render_aether_air_downstream_projection_report,
+)
 from .records import (
     AetherEvidence,
     AetherIntentTrace,
@@ -52,4 +55,5 @@ __all__ = (
     "validate_aether_air_transformation",
     "AetherAirDownstreamProjection",
     "project_validated_aether_air",
+    "render_aether_air_downstream_projection_report",
 )
