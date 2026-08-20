@@ -12,6 +12,7 @@ from hashlib import sha256
 from typing import Dict, List, Tuple, Union
 
 from authority.model import AuthorityCheck, AuthorityGrant, Principal
+from language.lexer import Token
 from language.narrative_graph import NarrativeGraphEdge, NarrativeGraphNode, NarrativeSemanticGraph
 from language.narrative_model import (
     NarrativeCharacter,
@@ -64,6 +65,7 @@ _TRANSFORMATION_DOMAIN = TraceDomain("transformation")
 _TYPE_DOMAIN = TraceDomain("type")
 _AUTHORITY_DOMAIN = TraceDomain("authority")
 _NARRATIVE_DOMAIN = TraceDomain("narrative")
+_TOKEN_DOMAIN = TraceDomain("token")
 
 _ResolutionOutcome = Union[
     ProjectResolvedBinding,
@@ -1096,6 +1098,80 @@ def trace_map_from_narrative_evidence(
     )
     return TraceMap(records)
 
+
+def _token_span_key(span: object) -> Tuple[str, ...]:
+    if span is None:
+        return ("span", "none")
+    return (
+        "span",
+        "source-name",
+        span.source_name,
+        "start-line",
+        str(span.start.line),
+        "start-column",
+        str(span.start.column),
+        "end-line",
+        str(span.end.line),
+        "end-column",
+        str(span.end.column),
+    )
+
+
+def trace_record_from_token_evidence(
+    token: Token,
+    *,
+    token_index: int,
+) -> TraceRecord:
+    """Project one already-existing canonical lexer token into TAM."""
+
+    selected_index = _require_index(token_index)
+    if type(token) is not Token:
+        raise TypeError("token must be an exact language.lexer.Token")
+
+    key = (
+        "token",
+        "kind",
+        token.kind,
+        "value",
+        token.value,
+    ) + _token_span_key(token.span)
+
+    return TraceRecord(
+        trace_id=_digest_identity(
+            "token-evidence",
+            (str(selected_index),) + key,
+        ),
+        domain=_TOKEN_DOMAIN,
+        producer="language.lexer",
+        owner="language.lexer",
+        representation="token",
+        source_span=token.span,
+    )
+
+
+def trace_map_from_token_evidence(
+    tokens: Tuple[Token, ...],
+) -> TraceMap:
+    """Project an ordered tuple of canonical lexer tokens into TAM."""
+
+    if type(tokens) is not tuple:
+        raise TypeError("tokens must be an exact tuple")
+    for token in tokens:
+        if type(token) is not Token:
+            raise TypeError(
+                "tokens must contain exact language.lexer.Token values"
+            )
+
+    return TraceMap(
+        tuple(
+            trace_record_from_token_evidence(
+                token,
+                token_index=index,
+            )
+            for index, token in enumerate(tokens)
+        )
+    )
+
 __all__ = (
     "trace_identity_for_source_map_entry",
     "trace_identity_for_source_span",
@@ -1114,4 +1190,6 @@ __all__ = (
     "trace_map_from_authority_evidence",
     "trace_record_from_narrative_evidence",
     "trace_map_from_narrative_evidence",
+    "trace_record_from_token_evidence",
+    "trace_map_from_token_evidence",
 )
