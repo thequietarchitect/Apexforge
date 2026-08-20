@@ -11,6 +11,7 @@ from __future__ import annotations
 from hashlib import sha256
 from typing import Dict, List, Tuple, Union
 
+from authority.model import AuthorityCheck, AuthorityGrant, Principal
 from language.compiler import SourceMap, SourceMapEntry
 from language.declarations import ProjectDeclarationOwner, ProjectDeclarationOwnership
 from language.identities import ProjectDeclaredIdentity, ProjectIdentityIndex
@@ -44,6 +45,7 @@ _SCOPE_DOMAIN = TraceDomain("scope")
 _OWNERSHIP_DOMAIN = TraceDomain("ownership")
 _TRANSFORMATION_DOMAIN = TraceDomain("transformation")
 _TYPE_DOMAIN = TraceDomain("type")
+_AUTHORITY_DOMAIN = TraceDomain("authority")
 
 _ResolutionOutcome = Union[
     ProjectResolvedBinding,
@@ -667,6 +669,82 @@ def trace_map_from_type_evidence(
     )
     return TraceMap(records)
 
+
+def _authority_check_key(value: AuthorityCheck) -> Tuple[str, ...]:
+    return (
+        "authority-check",
+        value.id,
+        value.principal,
+        value.capability,
+        value.resource,
+    )
+
+
+def _authority_grant_key(value: AuthorityGrant) -> Tuple[str, ...]:
+    return (
+        "authority-grant",
+        value.principal,
+        value.capability,
+        value.resource,
+    )
+
+
+def trace_record_from_authority_evidence(
+    evidence: object,
+    *,
+    evidence_index: int,
+) -> TraceRecord:
+    """Project one already-existing canonical authority value into TAM."""
+
+    selected_index = _require_index(evidence_index)
+
+    if type(evidence) is Principal:
+        representation = "principal"
+        key = ("principal", evidence.id)
+        canonical_identity = evidence.id
+    elif type(evidence) is AuthorityCheck:
+        representation = "authority-check"
+        key = _authority_check_key(evidence)
+        canonical_identity = evidence.id
+    elif type(evidence) is AuthorityGrant:
+        representation = "authority-grant"
+        key = _authority_grant_key(evidence)
+        canonical_identity = None
+    else:
+        raise TypeError(
+            "evidence must be Principal, AuthorityCheck, or AuthorityGrant"
+        )
+
+    return TraceRecord(
+        trace_id=_digest_identity(
+            "authority-evidence",
+            (str(selected_index),) + key,
+        ),
+        domain=_AUTHORITY_DOMAIN,
+        producer="authority.model",
+        owner="authority.model",
+        representation=representation,
+        canonical_identity=canonical_identity,
+    )
+
+
+def trace_map_from_authority_evidence(
+    evidence: Tuple[object, ...],
+) -> TraceMap:
+    """Project an ordered tuple of passive authority evidence into TAM."""
+
+    if type(evidence) is not tuple:
+        raise TypeError("evidence must be an exact tuple")
+
+    records = tuple(
+        trace_record_from_authority_evidence(
+            value,
+            evidence_index=index,
+        )
+        for index, value in enumerate(evidence)
+    )
+    return TraceMap(records)
+
 __all__ = (
     "trace_identity_for_source_map_entry",
     "trace_identity_for_source_span",
@@ -681,4 +759,6 @@ __all__ = (
     "trace_map_from_resolution_observation",
     "trace_record_from_type_evidence",
     "trace_map_from_type_evidence",
+    "trace_record_from_authority_evidence",
+    "trace_map_from_authority_evidence",
 )

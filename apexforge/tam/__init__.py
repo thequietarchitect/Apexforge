@@ -23,6 +23,8 @@ from .production import (
     trace_record_from_resolution_query,
     trace_map_from_type_evidence,
     trace_record_from_type_evidence,
+    trace_map_from_authority_evidence,
+    trace_record_from_authority_evidence,
 )
 
 __all__ = (
@@ -46,4 +48,6 @@ __all__ = (
     "trace_map_from_resolution_observation",
     "trace_record_from_type_evidence",
     "trace_map_from_type_evidence",
+    "trace_record_from_authority_evidence",
+    "trace_map_from_authority_evidence",
 )
