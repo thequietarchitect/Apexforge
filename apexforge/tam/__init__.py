@@ -9,6 +9,11 @@ from .model import (
     TraceMap,
     TraceRecord,
 )
+from .production import (
+    trace_identity_for_source_map_entry,
+    trace_identity_for_source_span,
+    trace_map_from_source_map,
+)
 
 __all__ = (
     "CANONICAL_TRACE_DOMAINS",
@@ -18,4 +23,7 @@ __all__ = (
     "TraceIdentity",
     "TraceMap",
     "TraceRecord",
+    "trace_identity_for_source_map_entry",
+    "trace_identity_for_source_span",
+    "trace_map_from_source_map",
 )
