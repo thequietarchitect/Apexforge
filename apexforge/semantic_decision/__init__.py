@@ -20,6 +20,12 @@ from .model import (
     SemanticOutcome,
     SemanticOutcomeKind,
 )
+from .resolution import (
+    CORE_CONVERGENCE_POLICY_IDS,
+    RankedCandidate,
+    SemanticConvergenceResolution,
+    apply_semantic_convergence_policy,
+)
 
 __all__ = (
     "AdvancedCondition",
@@ -36,4 +42,8 @@ __all__ = (
     "EvaluatedCandidate",
     "SemanticConvergenceSet",
     "construct_semantic_convergence_set",
+    "CORE_CONVERGENCE_POLICY_IDS",
+    "RankedCandidate",
+    "SemanticConvergenceResolution",
+    "apply_semantic_convergence_policy",
 )
