@@ -21,6 +21,12 @@ from .transformation import (
     normalize_aether_air_snapshot,
     transform_aether_air_snapshot,
 )
+from .validation import (
+    AetherAirTransformationValidationReceipt,
+    AetherAirValidationReceipt,
+    validate_aether_air_snapshot,
+    validate_aether_air_transformation,
+)
 
 __all__ = (
     "AetherBehaviorKind",
@@ -36,4 +42,8 @@ __all__ = (
     "AetherAirTransformation",
     "transform_aether_air_snapshot",
     "normalize_aether_air_snapshot",
+    "AetherAirValidationReceipt",
+    "AetherAirTransformationValidationReceipt",
+    "validate_aether_air_snapshot",
+    "validate_aether_air_transformation",
 )
