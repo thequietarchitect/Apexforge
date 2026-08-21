@@ -5,9 +5,11 @@ from .model import (
     TapCheckAuditLedger,
     TapCheckLedgerEntry,
 )
+from .projection import audit_trace_map
 
 __all__ = (
     "TAP_CHECK_CATEGORY_IDS",
     "TapCheckLedgerEntry",
     "TapCheckAuditLedger",
+    "audit_trace_map",
 )
