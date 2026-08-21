@@ -1,4 +1,4 @@
-"""Passive TAP Check audit-ledger contracts and read-only adapters."""
+"""Passive TAP Check audit-ledger contracts and read-only operations."""
 
 from .adapters import (
     adapt_active_directive,
@@ -6,6 +6,10 @@ from .adapters import (
     adapt_convergence_ruling,
     adapt_narrative_state_change,
     adapt_runtime_result,
+)
+from .aggregation import (
+    compose_tap_check_ledgers,
+    tap_check_category_coverage,
 )
 from .model import (
     TAP_CHECK_CATEGORY_IDS,
@@ -24,4 +28,6 @@ __all__ = (
     "adapt_narrative_state_change",
     "adapt_air_lowering",
     "adapt_active_directive",
+    "compose_tap_check_ledgers",
+    "tap_check_category_coverage",
 )
