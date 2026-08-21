@@ -232,6 +232,17 @@ def _parser() -> _ArgumentParser:
         help="existing canonical P11.6H narrative session file",
     )
 
+    tap_check = commands.add_parser(
+        "tap-check",
+        help="report observed TAP Check evidence without creating prerequisites",
+    )
+    tap_check.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="project directory, source path, or apexforge.json path",
+    )
+
     new = commands.add_parser(
         "new",
         help="create a deterministic ApexForge project scaffold",
@@ -282,6 +293,36 @@ def _write_project_summary(
 def _run_project(path: str, *, stdout: TextIO) -> int:
     loaded = load_project(Path(path))
     _write_project_summary(loaded, stream=stdout)
+    return EXIT_SUCCESS
+
+
+def _run_tap_check(path: str, *, stdout: TextIO) -> int:
+    # Report already-observed TAP evidence without producing prerequisites.
+
+    loaded = load_project(Path(path))
+
+    from governance import TAP_CHECK_MODE
+    from tap_check.aggregation import (
+        compose_tap_check_ledgers,
+        tap_check_category_coverage,
+    )
+
+    ledger = compose_tap_check_ledgers(())
+    coverage = tap_check_category_coverage(ledger)
+
+    print("TAP CHECK", file=stdout)
+    print(f"Project: {loaded.manifest.name}", file=stdout)
+    print(f"Root: {loaded.root}", file=stdout)
+    print(f"Mode: {TAP_CHECK_MODE}", file=stdout)
+    print(f"Sources: {len(loaded.sources)}", file=stdout)
+    print(f"Entries: {len(ledger.entries)}", file=stdout)
+    print("Coverage:", file=stdout)
+    for category_id, count in coverage:
+        print(f"  {category_id}: {count}", file=stdout)
+    print(
+        "Zero counts mean no observed TAP evidence, not a negative semantic result.",
+        file=stdout,
+    )
     return EXIT_SUCCESS
 
 
@@ -1032,6 +1073,8 @@ def main(
                 builder=project_builder,
                 styler=output_styler,
             )
+        if namespace.command == "tap-check":
+            return _run_tap_check(namespace.path, stdout=output)
         if namespace.command == "run":
             return _run_execute(
                 namespace.path,
