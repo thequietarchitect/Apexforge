@@ -12,13 +12,16 @@ from pathlib import Path
 import re
 from typing import Any, Mapping, Optional, Tuple, Union
 
+from rich_documents.model import PackageDescriptor, PackageTier
+
 
 P10_T1_TOOLING_VERSION = "10-T1.1"
 PROJECT_MANIFEST_NAME = "apexforge.json"
 PROJECT_MANIFEST_SCHEMA = 1
 
 _PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
-_ALLOWED_FIELDS = frozenset(("schema", "name", "sources", "entry"))
+_ALLOWED_FIELDS = frozenset(("schema", "name", "sources", "entry", "package"))
+_PACKAGE_ALLOWED_FIELDS = frozenset(("id", "tier", "version", "documents"))
 
 
 class ProjectManifestError(ValueError):
@@ -172,6 +175,137 @@ def _normalize_entry(value: Any) -> Optional[str]:
     return normalized
 
 
+def _package_error(message: str) -> ProjectManifestError:
+    return ProjectManifestError(code="APX-TOOL-009", message=message)
+
+
+def _normalize_manifest_package(
+    value: Optional[PackageDescriptor],
+    *,
+    sources: Tuple[str, ...],
+) -> Optional[PackageDescriptor]:
+    if value is None:
+        return None
+    if type(value) is not PackageDescriptor:
+        raise _package_error(
+            "Project package must be an exact PackageDescriptor or None; "
+            "received {}.".format(type(value).__name__)
+        )
+    if value.metadata:
+        raise _package_error(
+            "Project manifest package metadata is not represented in P11.13F1."
+        )
+
+    documents = []
+    seen = set()
+    for index, document in enumerate(value.documents):
+        try:
+            normalized = _normalize_source_path(document, index=index)
+        except ProjectManifestError as exc:
+            raise _package_error(
+                "Project package document[{}] is invalid: {}.".format(
+                    index,
+                    exc.message,
+                )
+            ) from exc
+        if not normalized.endswith(".apexdoc"):
+            raise _package_error(
+                "Project package document[{}] must end in lowercase "
+                "'.apexdoc'.".format(index)
+            )
+        if normalized not in sources:
+            raise _package_error(
+                "Project package document {!r} is not declared in "
+                "manifest sources.".format(normalized)
+            )
+        if normalized in seen:
+            raise _package_error(
+                "Project package contains duplicate document {!r}.".format(
+                    normalized
+                )
+            )
+        seen.add(normalized)
+        documents.append(normalized)
+
+    return PackageDescriptor(
+        package_id=value.package_id,
+        tier=value.tier,
+        version=value.version,
+        documents=tuple(documents),
+        metadata=(),
+    )
+
+
+def _package_from_mapping(
+    value: Any,
+    *,
+    sources: Tuple[str, ...],
+) -> Optional[PackageDescriptor]:
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        raise _package_error(
+            "ApexForge manifest field 'package' must be a JSON object or null; "
+            "received {}.".format(type(value).__name__)
+        )
+
+    unknown = tuple(
+        sorted(
+            (str(key) for key in value.keys() if key not in _PACKAGE_ALLOWED_FIELDS),
+            key=lambda item: (item.casefold(), item),
+        )
+    )
+    if unknown:
+        raise _package_error(
+            "ApexForge manifest package contains unknown field(s): "
+            + ", ".join(repr(field) for field in unknown)
+            + "."
+        )
+
+    missing = tuple(
+        field
+        for field in ("id", "tier", "version", "documents")
+        if field not in value
+    )
+    if missing:
+        raise _package_error(
+            "ApexForge manifest package is missing required field(s): "
+            + ", ".join(repr(field) for field in missing)
+            + "."
+        )
+
+    tier_value = value["tier"]
+    if type(tier_value) is not str:
+        raise _package_error("ApexForge manifest package tier must be a string.")
+    try:
+        tier = PackageTier(tier_value)
+    except ValueError as exc:
+        raise _package_error(
+            "ApexForge manifest package tier must be one of: "
+            + ", ".join(repr(item.value) for item in PackageTier)
+            + "."
+        ) from exc
+
+    documents = value["documents"]
+    if type(documents) is not list:
+        raise _package_error(
+            "ApexForge manifest package field 'documents' must be a JSON array."
+        )
+
+    try:
+        descriptor = PackageDescriptor(
+            package_id=value["id"],
+            tier=tier,
+            version=value["version"],
+            documents=tuple(documents),
+            metadata=(),
+        )
+    except (TypeError, ValueError) as exc:
+        raise _package_error(str(exc)) from exc
+
+    return _normalize_manifest_package(descriptor, sources=sources)
+
+
 @dataclass(frozen=True)
 class ProjectManifest:
     """One validated, immutable ApexForge project manifest."""
@@ -180,6 +314,7 @@ class ProjectManifest:
     sources: Tuple[str, ...]
     entry: Optional[str] = None
     schema: int = PROJECT_MANIFEST_SCHEMA
+    package: Optional[PackageDescriptor] = None
 
     def __post_init__(self) -> None:
         if type(self.schema) is not int or self.schema != PROJECT_MANIFEST_SCHEMA:
@@ -236,6 +371,14 @@ class ProjectManifest:
         object.__setattr__(self, "name", normalized_name)
         object.__setattr__(self, "sources", canonical_sources)
         object.__setattr__(self, "entry", _normalize_entry(self.entry))
+        object.__setattr__(
+            self,
+            "package",
+            _normalize_manifest_package(
+                self.package,
+                sources=canonical_sources,
+            ),
+        )
 
     @classmethod
     def from_mapping(cls, value: Mapping[str, Any]) -> "ProjectManifest":
@@ -288,20 +431,43 @@ class ProjectManifest:
                 ),
             )
 
+        normalized_sources = tuple(
+            _normalize_source_path(source, index=index)
+            for index, source in enumerate(sources)
+        )
+        canonical_sources = tuple(
+            sorted(
+                normalized_sources,
+                key=lambda item: (item.casefold(), item),
+            )
+        )
+
         return cls(
             schema=value["schema"],
             name=value["name"],
             sources=tuple(sources),
             entry=value.get("entry"),
+            package=_package_from_mapping(
+                value.get("package"),
+                sources=canonical_sources,
+            ),
         )
 
     def to_mapping(self) -> Mapping[str, Any]:
-        return {
+        value = {
             "schema": self.schema,
             "name": self.name,
             "sources": list(self.sources),
             "entry": self.entry,
         }
+        if self.package is not None:
+            value["package"] = {
+                "id": self.package.package_id,
+                "tier": self.package.tier.value,
+                "version": self.package.version,
+                "documents": list(self.package.documents),
+            }
+        return value
 
     def canonical_json(self) -> str:
         """Return one deterministic UTF-8-safe JSON representation."""
