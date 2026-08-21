@@ -814,11 +814,13 @@ def _run_build(
     entry: Optional[str],
     *,
     stdout: TextIO,
+    builder: Optional[ProjectBuilder] = None,
     styler: Optional[Any] = None,
 ) -> int:
     from language.project import ProjectBuildError
 
     loaded = load_project(Path(path))
+    selected_builder = builder or _default_project_builder
     selected_entry = entry if entry is not None else loaded.manifest.entry
     if loaded.project_kind == PROJECT_KIND_NARRATIVE:
         try:
@@ -847,7 +849,7 @@ def _run_build(
         except ProjectBuildError as exc:
             raise CLIProjectCheckError(str(exc)) from exc
     else:
-        build = _default_project_builder(
+        build = selected_builder(
             loaded.source_mapping(),
             selected_entry,
         )
@@ -1100,6 +1102,7 @@ def main(
                 namespace.output,
                 namespace.entry,
                 stdout=output,
+            builder=project_builder,
                 styler=output_styler,
             )
         if namespace.command == "narrative":
