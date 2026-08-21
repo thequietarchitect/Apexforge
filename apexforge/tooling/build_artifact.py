@@ -16,6 +16,10 @@ from tooling.narrative_artifact import (
     NarrativeProjectBuildArtifact,
     narrative_build_artifact_payload,
 )
+from rich_documents.project_build import (
+    RichDocumentProjectBuild,
+    rich_document_project_build_payload,
+)
 from tooling.project_loader import LoadedProject
 
 
@@ -25,6 +29,7 @@ if TYPE_CHECKING:
 
 BUILD_ARTIFACT_SCHEMA = "apexforge.build-artifact/v1"
 BUILD_ARTIFACT_SCHEMA_V2 = "apexforge.build-artifact/v2"
+BUILD_ARTIFACT_SCHEMA_V3 = "apexforge.build-artifact/v3"
 BUILD_ARTIFACT_FINGERPRINT_ALGORITHM = "sha256"
 
 
@@ -166,6 +171,71 @@ def construct_narrative_build_artifact(
     )
 
 
+def construct_rich_document_build_artifact(
+    loaded: LoadedProject,
+    rich_document_build: RichDocumentProjectBuild,
+) -> CanonicalBuildArtifact:
+    """Construct one native rich-document artifact without synthetic AIR."""
+
+    if type(rich_document_build) is not RichDocumentProjectBuild:
+        raise TypeError(
+            "construct_rich_document_build_artifact requires an exact "
+            "RichDocumentProjectBuild."
+        )
+    if loaded.manifest.package is None:
+        raise ValueError(
+            "construct_rich_document_build_artifact requires a package "
+            "declaration."
+        )
+    if rich_document_build.package is not loaded.manifest.package:
+        raise ValueError(
+            "rich-document build package must be the exact package owned "
+            "by LoadedProject.manifest."
+        )
+
+    sources = [
+        {
+            "path": source.name,
+            "sha256": hashlib.sha256(source.source_bytes).hexdigest(),
+        }
+        for source in loaded.sources
+    ]
+    project = {
+        "entry": None,
+        "name": loaded.manifest.name,
+        "source_count": len(sources),
+        "sources": sources,
+    }
+    package = {
+        "id": rich_document_build.package.package_id,
+        "tier": rich_document_build.package.tier.value,
+        "version": rich_document_build.package.version,
+        "documents": list(rich_document_build.package.documents),
+    }
+    payload = {
+        "package": package,
+        "project": project,
+        "rich_documents": rich_document_project_build_payload(
+            rich_document_build
+        ),
+        "schema": BUILD_ARTIFACT_SCHEMA_V3,
+    }
+    fingerprint = hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
+    artifact = dict(payload)
+    artifact["fingerprint"] = {
+        "algorithm": BUILD_ARTIFACT_FINGERPRINT_ALGORITHM,
+        "value": fingerprint,
+    }
+
+    return CanonicalBuildArtifact(
+        content=canonical_json_bytes(artifact),
+        entry=None,
+        fingerprint=fingerprint,
+        source_count=len(sources),
+        narrative_artifact=None,
+    )
+
+
 def write_build_artifact_atomic(
     artifact: CanonicalBuildArtifact,
     output_path: Union[str, Path],
@@ -212,10 +282,12 @@ __all__ = (
     "BUILD_ARTIFACT_FINGERPRINT_ALGORITHM",
     "BUILD_ARTIFACT_SCHEMA",
     "BUILD_ARTIFACT_SCHEMA_V2",
+    "BUILD_ARTIFACT_SCHEMA_V3",
     "BuildArtifactOutputError",
     "CanonicalBuildArtifact",
     "canonical_json_bytes",
     "construct_build_artifact",
     "construct_narrative_build_artifact",
+    "construct_rich_document_build_artifact",
     "write_build_artifact_atomic",
 )
