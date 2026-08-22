@@ -15,9 +15,11 @@ from typing import Any, Callable, Mapping, Optional, Sequence, TextIO
 from tooling.build_artifact import (
     BUILD_ARTIFACT_SCHEMA,
     BUILD_ARTIFACT_SCHEMA_V2,
+    BUILD_ARTIFACT_SCHEMA_V3,
     BuildArtifactOutputError,
     construct_build_artifact,
     construct_narrative_build_artifact,
+    construct_rich_document_build_artifact,
     write_build_artifact_atomic,
 )
 from tooling.project_loader import (
@@ -401,7 +403,11 @@ def _run_check(
     loaded = load_project(Path(path))
     selected_builder = builder or _default_project_builder
     try:
-        if loaded.project_kind == PROJECT_KIND_NARRATIVE:
+        if loaded.manifest.package is not None:
+            from rich_documents.project_build import build_rich_document_project
+
+            build_rich_document_project(loaded)
+        elif loaded.project_kind == PROJECT_KIND_NARRATIVE:
             from runtime.narrative_binding import bind_narrative_story
             from tooling.narrative_project import (
                 resolve_narrative_project_entry,
@@ -822,7 +828,21 @@ def _run_build(
     loaded = load_project(Path(path))
     selected_builder = builder or _default_project_builder
     selected_entry = entry if entry is not None else loaded.manifest.entry
-    if loaded.project_kind == PROJECT_KIND_NARRATIVE:
+    if loaded.manifest.package is not None:
+        try:
+            from rich_documents.project_build import build_rich_document_project
+
+            rich_document_build = build_rich_document_project(loaded)
+            artifact = construct_rich_document_build_artifact(
+                loaded,
+                rich_document_build,
+            )
+        except CLIProjectCheckError:
+            raise
+        except Exception as exc:
+            raise CLIProjectCheckError(str(exc)) from exc
+        artifact_schema = BUILD_ARTIFACT_SCHEMA_V3
+    elif loaded.project_kind == PROJECT_KIND_NARRATIVE:
         try:
             from runtime.narrative_binding import bind_narrative_story
             from tooling.narrative_project import resolve_narrative_project_entry
@@ -848,6 +868,7 @@ def _run_build(
             )
         except ProjectBuildError as exc:
             raise CLIProjectCheckError(str(exc)) from exc
+        artifact_schema = BUILD_ARTIFACT_SCHEMA_V2
     else:
         build = selected_builder(
             loaded.source_mapping(),
@@ -857,6 +878,7 @@ def _run_build(
             artifact = construct_build_artifact(loaded, build)
         except ProjectBuildError as exc:
             raise CLIProjectCheckError(str(exc)) from exc
+        artifact_schema = BUILD_ARTIFACT_SCHEMA
 
     write_build_artifact_atomic(artifact, Path(output_path))
 
@@ -865,7 +887,7 @@ def _run_build(
         styler.success(build_success) if styler is not None else build_success,
         file=stdout,
     )
-    print(f"Schema: {BUILD_ARTIFACT_SCHEMA_V2 if loaded.project_kind == PROJECT_KIND_NARRATIVE else BUILD_ARTIFACT_SCHEMA}", file=stdout)
+    print(f"Schema: {artifact_schema}", file=stdout)
     print(
         f"Entry: {artifact.entry if artifact.entry is not None else '<none>'}",
         file=stdout,
