@@ -1,0 +1,355 @@
+{
+  "baseline": {
+    "p11_16d_freeze_commit": "3ffe6e2b9f04507abfa756f750e97aef493eaaa2",
+    "p11_16d_freeze_tag": "afp-p11-16d-freeze"
+  },
+  "durable_execution": {
+    "fail": 0,
+    "pass": 48,
+    "results": [
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_1a_performance_baseline_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_2a_declaration_model_audit_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_2c_heterogeneous_source_unit_parser_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_2d_canonical_declaration_models_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_2f_authority_graph_legality_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_2f_canonical_linker_collision_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_2f_concordat_conflict_evidence_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_2f_heterogeneous_air_verifier_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_2f_requirement_ownership_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_3b_project_document_graph_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7a_quad_vector_engine_architecture_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7a_quad_vector_module_contract_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7b_quad_vector_field_matrix_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7c_quad_vector_synchronization_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7d_quad_vector_resultant_resolution_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7e_quad_vector_module_registry_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7f_quad_vector_module_execution_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7g_quad_vector_engine_orchestration_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7h_quad_vector_integration_adapters_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7i_quad_vector_authoring_adapter_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7j_quad_vector_module_admission_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7k_quad_vector_module_discovery_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7l_quad_vector_descriptor_parsing_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7m_quad_vector_descriptor_validation_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7n_quad_vector_descriptor_canonicalization_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7o_quad_vector_descriptor_registration_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7p_quad_vector_descriptor_binding_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7q_quad_vector_descriptor_execution_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7r_quad_vector_descriptor_lifecycle_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7s_quad_vector_descriptor_engine_orchestration_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_7t_quad_vector_descriptor_integration_orchestration_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_8a_parametric_semantic_lattice_architecture_audit_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_8b_minimal_immutable_lattice_model_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_8c_canonical_subject_relations_evidence_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_8d_deterministic_lattice_construction_indexing_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_8e_canonical_projection_adapters_codex_advisory_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_8f_validation_collision_provenance_extension_contracts_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_8g_semantic_lattice_reporting_tooling_compatibility_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_9b_minimal_immutable_aether_air_interstitial_model_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_9c_canonical_predecessor_references_identity_evidence_provenance_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_9d_deterministic_interstitial_construction_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_9e_non_executing_transformation_normalization_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_9f_validation_collision_closure_extension_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_9g_explicit_downstream_projection_boundary_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_src_d_semantic_decision_lowering_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_src_e_semantic_decision_source_validation_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_src_f_real_apex_compile_analysis_acceptance_smoke_test.py"
+      },
+      {
+        "exit_code": 0,
+        "path": "apexforge/p11_src_g_semantic_decision_project_lsp_compatibility_smoke_test.py"
+      }
+    ],
+    "total": 48
+  },
+  "freeze_chain": [
+    {
+      "annotated": true,
+      "commit": "56286b04905a063988d325c5e699c268cdc835a4",
+      "stage": "A",
+      "tag": "afp-p11-16a-freeze"
+    },
+    {
+      "annotated": true,
+      "commit": "4c1de19080a7dfbe51492041c8968ddcd409ec77",
+      "stage": "B",
+      "tag": "afp-p11-16b-freeze"
+    },
+    {
+      "annotated": true,
+      "commit": "715d41c733674b1b8681b0d3eb27b9143181bce7",
+      "stage": "C",
+      "tag": "afp-p11-16c-freeze"
+    },
+    {
+      "annotated": true,
+      "commit": "3ffe6e2b9f04507abfa756f750e97aef493eaaa2",
+      "stage": "D",
+      "tag": "afp-p11-16d-freeze"
+    }
+  ],
+  "git_connectivity": {
+    "mode": "git fsck --connectivity-only --no-dangling",
+    "status": "PASS"
+  },
+  "legacy_unittest_surface": {
+    "current_fail": 0,
+    "current_pass": 12,
+    "current_results": [
+      {
+        "exit_code": 0,
+        "file": "test_authority_inheritance.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_compiler.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_compiler_dispatch.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_lexer.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_principal_authorization.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_principal_capabilities.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_principal_execution.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_principal_parser.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_requirements.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_role_authority_resolver.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_role_registry.py"
+      },
+      {
+        "exit_code": 0,
+        "file": "test_workflow.py"
+      }
+    ],
+    "current_test_file_total": 12,
+    "execution_context": {
+      "cwd": "REPOSITORY_ROOT",
+      "pythonpath_includes": "apexforge"
+    },
+    "stale_test_file_total": 1,
+    "stale_tests": [
+      {
+        "compiler_history_commits": 24,
+        "introduction_commit": "842c19efdf9d06a7eb12f1aa98ec71a087a993f8",
+        "path": "apexforge/tests/test_execution_pipeline.py",
+        "reason": "TEST_CONTRACT_UNSATISFIED_AT_INTRODUCTION",
+        "required_symbol": "language.compiler.source",
+        "required_symbol_history_matches": 0
+      }
+    ],
+    "test_file_total": 13,
+    "workflow_current_contract": "PASS"
+  },
+  "production_mutation": false,
+  "repository_mutation_during_execution": false,
+  "repository_sentinels": {
+    "performance_baseline": {
+      "execution": "READ_ONLY_DEFAULT",
+      "exit_code": 0,
+      "fixtures": [
+        "minimal",
+        "representative-linked"
+      ],
+      "json_output_requested": false,
+      "measured_samples": 5,
+      "threshold_policy": "ADVISORY_ONLY_NO_PASS_FAIL_THRESHOLD",
+      "volatile_timings_frozen": false,
+      "warmups": 1
+    },
+    "regression_harness": {
+      "broad_execution_authorized": false,
+      "execution": "DISCOVERY_ONLY",
+      "option": "--list",
+      "post_candidate_expected_smoke_tests": 276,
+      "pre_candidate_discovered_smoke_tests": 275,
+      "reason": "P11.16 routed matrix forbids treating historical/environment/toolchain rows as unconditional current executions"
+    }
+  },
+  "routed_matrix": {
+    "closure": "PASS",
+    "corrected_class_counts": {
+      "DURABLE_CURRENT": 48,
+      "ENVIRONMENT_FIXTURE_BOUND": 32,
+      "EXTERNAL_TOOLCHAIN_BOUND": 16,
+      "HISTORICAL_EXACT_FREEZE": 82
+    },
+    "durable_executed": 48,
+    "non_durable_resolved_by_p11_16d": 130,
+    "total": 178
+  },
+  "schema": "apexforge.p11-final-verification-repository-wide/v1",
+  "scope": "REPOSITORY_WIDE_VERIFICATION_EVIDENCE_ONLY",
+  "stage": "P11.16E",
+  "successor": "P11.16F_FINAL_FREEZE",
+  "tracked_python": {
+    "count": 610,
+    "parse_fail": 0,
+    "parse_pass": 610,
+    "python_version_contract": "3.9"
+  },
+  "volatile_performance_timings_frozen": false
+}
