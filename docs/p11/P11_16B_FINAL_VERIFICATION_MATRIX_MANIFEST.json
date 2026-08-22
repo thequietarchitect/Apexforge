@@ -1,0 +1,4504 @@
+{
+  "architecture_freeze_commit": "56286b04905a063988d325c5e699c268cdc835a4",
+  "class_counts": {
+    "DURABLE_CURRENT": 54,
+    "ENVIRONMENT_FIXTURE_BOUND": 30,
+    "EXTERNAL_TOOLCHAIN_BOUND": 16,
+    "HISTORICAL_EXACT_FREEZE": 78
+  },
+  "classification_policy": {
+    "durable_rule": "no stronger non-durable classification evidence",
+    "explicit_toolchains": [
+      "Visual Studio",
+      "VSCode",
+      "PowerShell tooling compatibility"
+    ],
+    "historical_exact_rule": "freeze evidence plus exact-hash/git evidence, or exact-hash plus git evidence",
+    "p11validation_primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+    "precedence": [
+      "EXTERNAL_TOOLCHAIN_BOUND",
+      "ENVIRONMENT_FIXTURE_BOUND",
+      "HISTORICAL_EXACT_FREEZE",
+      "DURABLE_CURRENT"
+    ],
+    "subprocess_alone_is_external": false
+  },
+  "classification_version": "p11.16b/v1",
+  "entries": [
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "8f5feae2e2e7b8644940f85fc32e17766118f9c7",
+      "name": "p11_10a_advanced_conditionals_convergence_paradox_elevation_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_10a_advanced_conditionals_convergence_paradox_elevation_architecture_audit_smoke_test.py",
+      "phase": 10,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "80323A334C77C76F4D716CD947BBA76050424F70A67D60FEEED1F77940402584"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "063ee90ca81345b7dea4a4cc36331a8d75c739bb",
+      "name": "p11_10b_minimal_immutable_advanced_conditional_candidate_outcome_model_smoke_test.py",
+      "path": "apexforge/p11_10b_minimal_immutable_advanced_conditional_candidate_outcome_model_smoke_test.py",
+      "phase": 10,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "A033541B9D9EC31F41D9F012C2A842E7C3F3665A0DFCD86BBED88BB9255A224A"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "f24bf4c46d3448024d21acc42ba71e4028a890e8",
+      "name": "p11_10c_condition_evidence_admissibility_higher_order_evaluation_smoke_test.py",
+      "path": "apexforge/p11_10c_condition_evidence_admissibility_higher_order_evaluation_smoke_test.py",
+      "phase": 10,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "173D459ABC92F62FAEA0108DE3085C31ABFB19C88EABCF5CD4E7AEAEFC9B32F3"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "ac4b4c786be676b8ac5f4120d2d062c3a11ebe8f",
+      "name": "p11_10d_semantic_convergence_set_explicit_policy_boundary_smoke_test.py",
+      "path": "apexforge/p11_10d_semantic_convergence_set_explicit_policy_boundary_smoke_test.py",
+      "phase": 10,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "A52DEBA1B3E4D669D9C47B68E58E515A65CEF5B8C2AF898C14EFF4355FCDF6C1"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "fc85ef6f236999fe8b921479d6b830f5e4d8bcb7",
+      "name": "p11_10e_deterministic_convergence_selection_composition_ranking_smoke_test.py",
+      "path": "apexforge/p11_10e_deterministic_convergence_selection_composition_ranking_smoke_test.py",
+      "phase": 10,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "1E1DD2BF9398D11B038F2E7C67F5BB993B13A25F5FC034B1B538C81974DACDE9"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "1756ea7f3cda46b63cab9dda0eddb136f5200201",
+      "name": "p11_10f_paradox_elevation_eligibility_elevated_semantic_state_smoke_test.py",
+      "path": "apexforge/p11_10f_paradox_elevation_eligibility_elevated_semantic_state_smoke_test.py",
+      "phase": 10,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "18FA10FA9FE762B4F33E16C28039CBA5A120D4A7AFDA9EB7D57D79C0A0FECBD4"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "c62b26913a013caf141c41b8a591d0bc08336a34",
+      "name": "p11_10g_validation_collision_closure_provenance_extension_smoke_test.py",
+      "path": "apexforge/p11_10g_validation_collision_closure_provenance_extension_smoke_test.py",
+      "phase": 10,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "CAA21704AE22C280F2D9B7F2E59395094FE37B2115AE9DCB3C914C79B788F19B"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "629cca68f52e83cda962b9e905bb806f7e82a67b",
+      "name": "p11_10h_downstream_compatibility_reporting_tooling_traceability_smoke_test.py",
+      "path": "apexforge/p11_10h_downstream_compatibility_reporting_tooling_traceability_smoke_test.py",
+      "phase": 10,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "D654F8FE1CA266135914DCDFB07054DF3062B844BEC0443959E6896AB8124A35"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "29df9a2a12326c13096d6a64e6b135ca14a46feb",
+      "name": "p11_10i_final_integration_regression_freeze_smoke_test.py",
+      "path": "apexforge/p11_10i_final_integration_regression_freeze_smoke_test.py",
+      "phase": 10,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "47ABD6131F609A0FCC5E315F55446549F1BFE47954F99D250A6A0643096C2F8B"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "4cabc6b94799d93fc60e007ebba28c3dc2a670e2",
+      "name": "p11_11a_tap_check_architecture_ownership_audit_smoke_test.py",
+      "path": "apexforge/p11_11a_tap_check_architecture_ownership_audit_smoke_test.py",
+      "phase": 11,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "48C71D9E41131098F75BD67204CFF633C1DFB2D5B765912A1617258B58FCA7B7"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "ada557a35b9a1556f05b8bfb513a01f66f784e26",
+      "name": "p11_11b_minimal_immutable_tap_audit_ledger_model_smoke_test.py",
+      "path": "apexforge/p11_11b_minimal_immutable_tap_audit_ledger_model_smoke_test.py",
+      "phase": 11,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "C06658BFA2E09AC8242DA106C610C4CA0C9A58E17C8998EBF53CF2F9DB5540C3"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "564563f57ee8dfe743bc1f2d649cbfc2a3d51b13",
+      "name": "p11_11c_trace_map_observational_audit_projection_smoke_test.py",
+      "path": "apexforge/p11_11c_trace_map_observational_audit_projection_smoke_test.py",
+      "phase": 11,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "5CB06947633CBDB1D7A5A1D173E2D546196B3029095047AE3146BCE9183F489D"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "ed06c2d894d585d7e33ad1b026559aa7aefbbb88",
+      "name": "p11_11d_read_only_owner_evidence_adapters_smoke_test.py",
+      "path": "apexforge/p11_11d_read_only_owner_evidence_adapters_smoke_test.py",
+      "phase": 11,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "76DD972536B65974E9E4A461885AE0E25753DE8E9342662F70ED2A72B80FD88F"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "dd4d1bc1a41084e9d0970f60bbe6dd6676d1f679",
+      "name": "p11_11e_deterministic_whole_ledger_aggregation_coverage_smoke_test.py",
+      "path": "apexforge/p11_11e_deterministic_whole_ledger_aggregation_coverage_smoke_test.py",
+      "phase": 11,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "E4456D2FDD29062270A9DF0631EDE787F774258FADEB8853C1376501246B7709"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "253b23d2d6d9a3176c0561f20adbcee6e5e5a2dc",
+      "name": "p11_11f_tap_check_cli_project_acceptance_smoke_test.py",
+      "path": "apexforge/p11_11f_tap_check_cli_project_acceptance_smoke_test.py",
+      "phase": 11,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "8C7758D82FA666EC9C75B7E5446E9019D906977325B5FED57758EFF07790B8DC"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "258d435767cf4a682493d81e47c8465648ac42fd",
+      "name": "p11_11g_final_tap_check_integration_regression_freeze_smoke_test.py",
+      "path": "apexforge/p11_11g_final_tap_check_integration_regression_freeze_smoke_test.py",
+      "phase": 11,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "161525B73E079B2C9B87BCFAAB2675E8623B80883ECC3717D14BE75D53EBF57B"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "4b4c6681fc236b0455c491bb12c1e8ce4857f1a3",
+      "name": "p11_12a_three_layer_incremental_cache_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_12a_three_layer_incremental_cache_architecture_audit_smoke_test.py",
+      "phase": 12,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "B4D5C73EA65B64DE6CD436F8DBF66F22BA8C47AB576B4690AAF6C0B701BCAD15"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "c5b104b131d767aa3c5fb99205e742458a155944",
+      "name": "p11_12b_minimal_immutable_incremental_cache_model_smoke_test.py",
+      "path": "apexforge/p11_12b_minimal_immutable_incremental_cache_model_smoke_test.py",
+      "phase": 12,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "97AE4C7668847BD9AF0BCF5804ADD23BFFA1A49AF5AEC1A5CAB42C41F408E3C1"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "86ef11e0146ad427fe110d658cf5089730bd1f72",
+      "name": "p11_12c_capture_layer_document_token_formatting_reuse_smoke_test.py",
+      "path": "apexforge/p11_12c_capture_layer_document_token_formatting_reuse_smoke_test.py",
+      "phase": 12,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "D19C142E32E33052A35734170C5F1634EEE1F21B74857298CCAB4A3622FDB9DA"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "5c89737e27f78ce0572cc13cd981e9b3bcd2b3e4",
+      "name": "p11_12d_resonance_layer_owner_reuse_smoke_test.py",
+      "path": "apexforge/p11_12d_resonance_layer_owner_reuse_smoke_test.py",
+      "phase": 12,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "20369D1B085C2B9A0AAD0A76CEE7FB3784732C49E807898A2B005BE95D6D39C8"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "4708ff4a8ecce35c3c27e2d3642587350a5af3c9",
+      "name": "p11_12e_stability_layer_verified_air_execution_plan_reuse_smoke_test.py",
+      "path": "apexforge/p11_12e_stability_layer_verified_air_execution_plan_reuse_smoke_test.py",
+      "phase": 12,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "28DE2D18465E2366AD007FD373279E431203E58F29BB6B142D4A654E50743868"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "8d76a0880d4c19eb19c764394370d603da14e4a9",
+      "name": "p11_12f_dependency_aware_operational_cache_smoke_test.py",
+      "path": "apexforge/p11_12f_dependency_aware_operational_cache_smoke_test.py",
+      "phase": 12,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "10EA7B264B8B19F77D4D6A78B4295201E18C502DE90610B7C522E573A766CF8B"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "09a01ce998501daa4c32df388d1d255abcbad025",
+      "name": "p11_12g_project_builder_tooling_cache_integration_smoke_test.py",
+      "path": "apexforge/p11_12g_project_builder_tooling_cache_integration_smoke_test.py",
+      "phase": 12,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "0022DBF0368C2558221576FD5312341AF4CCD6F14137E6B1F00CAEDBF73003D4"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "41aaf3aabc0ad1d95bccfa7ab84f90db589942f2",
+      "name": "p11_12h_three_layer_incremental_cache_final_acceptance_smoke_test.py",
+      "path": "apexforge/p11_12h_three_layer_incremental_cache_final_acceptance_smoke_test.py",
+      "phase": 12,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "2A918CD790BB7530D4043C4B2939FFA208BFBA1D6C86398765972A91FFEF5BD2"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "77579f839d999f6a52d385e1afcc98fe8c8cf54f",
+      "name": "p11_13a_rich_documents_package_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_13a_rich_documents_package_architecture_audit_smoke_test.py",
+      "phase": 13,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "F9942B6138CA7E947CE887249CACCCC580DDA735D9D033A9C8167E580A534D31"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "fad9faac3a8d1efb930fefef45e31aaf1c79445f",
+      "name": "p11_13b_minimal_immutable_rich_document_package_tier_model_smoke_test.py",
+      "path": "apexforge/p11_13b_minimal_immutable_rich_document_package_tier_model_smoke_test.py",
+      "phase": 13,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "281C3731DDE0CB9EF3E9D273CDC98ED9E35980B819E8C460EB747DD13A9D6764"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "1c7da075266098b976c8a847b86d083ed55d1338",
+      "name": "p11_13c_experimental_codex_adapter_smoke_test.py",
+      "path": "apexforge/p11_13c_experimental_codex_adapter_smoke_test.py",
+      "phase": 13,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "15B55816663CD169D5D29D9E7FAA74F75511CCD478E85A802B7826D5FDCADCBB"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "0a4c44d041b72eb53486ae854d333ed1af2330da",
+      "name": "p11_13d_apexdoc_parser_executable_block_source_mapping_smoke_test.py",
+      "path": "apexforge/p11_13d_apexdoc_parser_executable_block_source_mapping_smoke_test.py",
+      "phase": 13,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "BBEBAC23F852597C914975322355DB3CF04368EC93029933136DD26C63064D7A"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "9b381eb40c0b85b88f412331ea69eccf0b287356",
+      "name": "p11_13e_rich_document_semantic_projections_smoke_test.py",
+      "path": "apexforge/p11_13e_rich_document_semantic_projections_smoke_test.py",
+      "phase": 13,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "83035148129174C7A5A0FCFE0ED0042761C48AC577E4C52781CF97B049A4AC0C"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "5246e4bc08906e3d540409aa409654a92a1d7a41",
+      "name": "p11_13f1_manifest_package_declaration_integration_smoke_test.py",
+      "path": "apexforge/p11_13f1_manifest_package_declaration_integration_smoke_test.py",
+      "phase": 13,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "9F82CB934D3222248A49947BB34FB159B4B792C76671EE648E826246B307F316"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "e967e3807da79c0fab8b69e3b27b4b6dd0d7d942",
+      "name": "p11_13f2_native_rich_document_project_build_artifact_smoke_test.py",
+      "path": "apexforge/p11_13f2_native_rich_document_project_build_artifact_smoke_test.py",
+      "phase": 13,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "176A36F61717CD59A0AF19ECC6F9DA9A300782BB594942FAA1CAA5279BC42971"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "88eb73212fb82a5820071593effb93bf7befc526",
+      "name": "p11_13f3_cli_package_project_routing_final_acceptance_smoke_test.py",
+      "path": "apexforge/p11_13f3_cli_package_project_routing_final_acceptance_smoke_test.py",
+      "phase": 13,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "3F1A2DCB02B2032BBB39D6463F749048FA7D89B495DDEBEEBF0F071025DDA357"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "323380a127484245baff2d97424e00ce886c4b6e",
+      "name": "p11_14a_agent_character_professional_archetype_declaration_model_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_14a_agent_character_professional_archetype_declaration_model_architecture_audit_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "94F0C16651F2D0B4FC79FDCE5D716920B14CAE0DF8E7ACCD3DC5F97532D19529"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "44ec8fba0ac38787601873e22ee1abbe249f1c0e",
+      "name": "p11_14b_minimal_immutable_agent_domain_model_smoke_test.py",
+      "path": "apexforge/p11_14b_minimal_immutable_agent_domain_model_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "D2529EF742E5962FC5E6738087708385BD095AC59B1B6A07722B241343073D7F"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "c0718d674172f9268687d33eb7e67912b111fe71",
+      "name": "p11_14c_immutable_professional_archetype_catalog_resolution_smoke_test.py",
+      "path": "apexforge/p11_14c_immutable_professional_archetype_catalog_resolution_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "C86C22527E944B301B9D652BBE56B1541FBC3DA08631A9AC6D2A01EE3B7FCE50"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "586db19c2311217b074612b5c10136a8798293bf",
+      "name": "p11_14d_agent_narrative_character_binding_smoke_test.py",
+      "path": "apexforge/p11_14d_agent_narrative_character_binding_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "2768E8722740CEFED3F84777ACE22AEBF92F463FC43988E65496C357719F86C7"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "a443f2b9af8659458d523dea9ec0e1e3d6a3317d",
+      "name": "p11_14e_agent_successor_semantics_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_14e_agent_successor_semantics_architecture_boundary_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "7ED63BD4DB931CD03D03372FCC70776BD8937B37619FA5319077897C686DC96B"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "5cd15ef47cb481589f089046ed6917f607df2eec",
+      "name": "p11_14f_first_operative_agent_contract_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_14f_first_operative_agent_contract_architecture_boundary_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "9D77BC7C825AC1CD49E4824B6614195A59D8B644DE5791C5A75200E30AAE58B8"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "84c1c07a6ea1a3467b8fd0560c66fa9c39794422",
+      "name": "p11_14g_minimal_immutable_agent_plan_effect_intents_smoke_test.py",
+      "path": "apexforge/p11_14g_minimal_immutable_agent_plan_effect_intents_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "568359CC05A1CA745D0FA83EA280317905462787930F5AD027021A0EAB429D7A"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "6efbfb28c91145658482a36cf5bfc4fae4bd5711",
+      "name": "p11_14h_agent_plan_consumer_action_generalization_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_14h_agent_plan_consumer_action_generalization_architecture_boundary_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "673105BFD142CAA2F7F23A7DDDDC901495A6B144C04AD91F8DF007BB237FE17C"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "8fffc9e3d4bab1bccf2a7910bd1c322487c9d5fd",
+      "name": "p11_14i_pure_agent_plan_effect_intent_projection_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_14i_pure_agent_plan_effect_intent_projection_architecture_boundary_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "319A16E56395C0212B10FDA2EE048D056F4A9435EF2125D560B875232A18B892"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "b521448bc8fd482748e911afc821bc2d0c1a9ee7",
+      "name": "p11_14j_pure_agent_plan_effect_intent_projection_smoke_test.py",
+      "path": "apexforge/p11_14j_pure_agent_plan_effect_intent_projection_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "DB2ABB3FB5AE72EBADD694EC77381ADB124375CE77EF0858F0CD3FC701B91698"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "eae1f19c67feaa19bdab04b0603424d137da4fe5",
+      "name": "p11_14k_projected_effect_handoff_execution_successor_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_14k_projected_effect_handoff_execution_successor_architecture_boundary_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "934087C2C83E842708EC4E818DEEB9ABE93928F1B6EE561547C3DC36BBD657B2"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "7b704e1855fe925ddbe362a8bc7802e6a72c9cb6",
+      "name": "p11_14l_host_effect_execution_seam_ownership_contract_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_14l_host_effect_execution_seam_ownership_contract_architecture_boundary_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "064BBF6CF33F98820156FF964F0D27CDFA812B2D9B59965DED6B79B60FC52274"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "af188ab9aa6086c2ddd4b5586226d6e107dda67f",
+      "name": "p11_14m_explicit_reusable_host_effect_execution_seam_smoke_test.py",
+      "path": "apexforge/p11_14m_explicit_reusable_host_effect_execution_seam_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "3806DC386484C6C2828FE11D10C2CC1F5B1766CA2950628B5B8D232FF94F0566"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "8cd85ca6dbf366322d414f510a2d327420e812bd",
+      "name": "p11_14n_agent_plan_host_effect_consumption_successor_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_14n_agent_plan_host_effect_consumption_successor_architecture_boundary_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "1E3FCA202E8DE26474BCEFE34AFC55FBDFAFFE6B261B34F43E4B470AE3D16159"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "64129b4d0b7a69ad98c7bf7c88f89d42c7051e42",
+      "name": "p11_14o_agent_plan_host_effect_execution_composition_smoke_test.py",
+      "path": "apexforge/p11_14o_agent_plan_host_effect_execution_composition_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "F586C3DE8B017CFE249D1CF70EA0CF3D3EA26E9FA180661638F7876C6E867DA3"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "22ba3b560c5a4fb9572c47a14e25648ced9070c4",
+      "name": "p11_14p_agent_operative_core_completion_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_14p_agent_operative_core_completion_architecture_boundary_smoke_test.py",
+      "phase": 14,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "2CAB6BDF1E217DBDF42F4C806BF53AE3C208D1A25765B3DEFD6A3BC4A583369D"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "ff29d733ae5bbdbe97be9bbfcd1d9fb713ac2b24",
+      "name": "p11_15a_interoperability_ownership_first_contract_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_15a_interoperability_ownership_first_contract_architecture_boundary_smoke_test.py",
+      "phase": 15,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "7F5F4FB3E81241763C4B323F397C8A111A7C7D9C90ABB8A4B09CDCEEC0DA84F9"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "9f65b24c54bdb83b26889d39e890066985c9e369",
+      "name": "p11_15b_passive_build_artifact_interchange_smoke_test.py",
+      "path": "apexforge/p11_15b_passive_build_artifact_interchange_smoke_test.py",
+      "phase": 15,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "11E8C68C8170D76A9653D84AE74114D87F39C35A0F9A4B478C5BC4ED0A31BC84"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "49b75da60ba31730d5c87cb6198477a02037c6aa",
+      "name": "p11_15c_build_artifact_fingerprint_integrity_successor_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_15c_build_artifact_fingerprint_integrity_successor_architecture_boundary_smoke_test.py",
+      "phase": 15,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "13C23C6BABCAE372E79731A2BD3AC4A342A264AA1950AD429AEFE6ADC60E536F"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "ac568049a85303727fb1f31315144a5170d95f66",
+      "name": "p11_15d_build_artifact_fingerprint_integrity_smoke_test.py",
+      "path": "apexforge/p11_15d_build_artifact_fingerprint_integrity_smoke_test.py",
+      "phase": 15,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "B22C7474AE92DAEDED6032A484A5D2A39CDE72487E5D6CA117C42DF4889C7A99"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "51ea45d9843eee08010eb29dd7e1a416fe806a84",
+      "name": "p11_15e_narrative_execution_fingerprint_delegation_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_15e_narrative_execution_fingerprint_delegation_architecture_boundary_smoke_test.py",
+      "phase": 15,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "5A338F75A0C4BA2F8976D005D2C4C2D517BDAF15493ED13158BDEA8A99AC934D"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "7242c9b1258db5df60bc974029c50482df6a6c38",
+      "name": "p11_15f_narrative_execution_fingerprint_delegation_smoke_test.py",
+      "path": "apexforge/p11_15f_narrative_execution_fingerprint_delegation_smoke_test.py",
+      "phase": 15,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "F4A883B781E7EC2F186151181AB366EE9C9AE2E7829EDF9DE0959C98F877642A"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "23f5a9c18a3439df332d138b00b2b66cf42900db",
+      "name": "p11_15g_narrative_session_fingerprint_delegation_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_15g_narrative_session_fingerprint_delegation_architecture_boundary_smoke_test.py",
+      "phase": 15,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "5633ECFDDBB84286189F3ADFE294E499F4611DD623E6072A1BBC53CEBCE9DD02"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "0a152af0888e34497f1bfaf1c7e9289d56a42426",
+      "name": "p11_15h_narrative_session_fingerprint_delegation_smoke_test.py",
+      "path": "apexforge/p11_15h_narrative_session_fingerprint_delegation_smoke_test.py",
+      "phase": 15,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "9CE006DA6F25FC71122FBD9BFC457F5DB057143A0EFFFF420DF4DC586CFCD2D0"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "98d9ac114d826f46228adf4556b0ba8a12738a9c",
+      "name": "p11_15i_interoperability_closure_architecture_boundary_smoke_test.py",
+      "path": "apexforge/p11_15i_interoperability_closure_architecture_boundary_smoke_test.py",
+      "phase": 15,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "45D59495C27853CC81519FD6BE8A052CC9A8A5D5C8EF2701A5DF8B5863D7A258"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "ee888e9ea75d827108a384c4e03283821c06f624",
+      "name": "p11_1a_performance_baseline_smoke_test.py",
+      "path": "apexforge/p11_1a_performance_baseline_smoke_test.py",
+      "phase": 1,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "3BACC8FE8D72A6B7E1BEEC5E258B6C36E44C4F97CF694D0993754CC5CDD90FF5"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "df2572337bae560ce23dc785f97cf2d11842c7da",
+      "name": "p11_1b_run_command_smoke_test.py",
+      "path": "apexforge/p11_1b_run_command_smoke_test.py",
+      "phase": 1,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "05967CA7335BBB8C43182B8F4339727366D7FF52F9A7E15AC50039472C83216F"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "76d2a0db35f6235b95c3abe4429e3514d7d5634c",
+      "name": "p11_1c_build_artifact_smoke_test.py",
+      "path": "apexforge/p11_1c_build_artifact_smoke_test.py",
+      "phase": 1,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "6D1B5B1C3CB58EAD440BB4F868A229287B98BD664EF15A0D79A2DABC295D0CEA"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "88957ae8ff93d1e144dab23e1046ab245b93c3be",
+      "name": "p11_1d_integration_freeze_gate_smoke_test.py",
+      "path": "apexforge/p11_1d_integration_freeze_gate_smoke_test.py",
+      "phase": 1,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "8329C02F0A105A7553F5C8E090F82E605CB7795A68082EC7343D7BC91502E49B"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "7b3135e8e7c95c2374e1860be09241e8d7481643",
+      "name": "p11_2a_declaration_model_audit_smoke_test.py",
+      "path": "apexforge/p11_2a_declaration_model_audit_smoke_test.py",
+      "phase": 2,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "2677651CC68EB0F35C8FD9FFF8BD3DA5A94B1697BDAF32351B208EA1AF081905"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "3347b6bc985bb1d03147ada56d9d147cb4686ae8",
+      "name": "p11_2b_multi_directive_source_unit_smoke_test.py",
+      "path": "apexforge/p11_2b_multi_directive_source_unit_smoke_test.py",
+      "phase": 2,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "F7CEE7F7FA68AB87C0543169298D059CC756936A9C6F68071FEA2B31EB2C2EA5"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "8196257b1f4dc9fea7dbf5753ae19bdbab1ec2b2",
+      "name": "p11_2c_heterogeneous_source_unit_parser_smoke_test.py",
+      "path": "apexforge/p11_2c_heterogeneous_source_unit_parser_smoke_test.py",
+      "phase": 2,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "47C5DEAB71F54B3C5B2E998B84B9384D260C0C5B783DB58F23C2CF985EA1FAD9"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "2defec20fad2018cf0f5a24a197ad96818cb038a",
+      "name": "p11_2d_canonical_declaration_models_smoke_test.py",
+      "path": "apexforge/p11_2d_canonical_declaration_models_smoke_test.py",
+      "phase": 2,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "0B6C15C5EEDE056D69021FBC6A24AC2479D81B8D3D80AE0A0398FC3229170608"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "f9848046c53c4505cb77dc374c0ffd603dd64fb8",
+      "name": "p11_2e_heterogeneous_air_program_compilation_smoke_test.py",
+      "path": "apexforge/p11_2e_heterogeneous_air_program_compilation_smoke_test.py",
+      "phase": 2,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": true,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "21FC319849700493C8361C624BE97683EF38AD314A2EFEB1D4FF794F0640FF02"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "6a956fbb4e0f725ec9a84c192451a7a1fd77f39e",
+      "name": "p11_2f_authority_graph_legality_smoke_test.py",
+      "path": "apexforge/p11_2f_authority_graph_legality_smoke_test.py",
+      "phase": 2,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "A78895F43A1D7E6CA369F5BA243B4551ADBBDCD79D5557ED2D6BBF5AE06BEF0A"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "b4c741471445b033b95554625b066961a3498048",
+      "name": "p11_2f_canonical_linker_collision_smoke_test.py",
+      "path": "apexforge/p11_2f_canonical_linker_collision_smoke_test.py",
+      "phase": 2,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "6E27C036FF187628980750E235FF5CA303DF9570E553B614FAFE02D7992CB5B2"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "5f895e04723ccd2646a3ad42db5364b39068ba66",
+      "name": "p11_2f_concordat_conflict_evidence_smoke_test.py",
+      "path": "apexforge/p11_2f_concordat_conflict_evidence_smoke_test.py",
+      "phase": 2,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "E779317786169948C341FBFCD42A61629B0BA40DBFB957214A166C038AB59EC0"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "8554ba327ad50030970795a322103a4fc16c702b",
+      "name": "p11_2f_heterogeneous_air_verifier_smoke_test.py",
+      "path": "apexforge/p11_2f_heterogeneous_air_verifier_smoke_test.py",
+      "phase": 2,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "19338BCB1779F5896A8BDCA11C0AD8113FEEC689A10BF1C474612E022CD57A54"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "665c52836c4b549e1963333874b41f7a57ea2f9f",
+      "name": "p11_2f_linked_air_legality_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_2f_linked_air_legality_architecture_audit_smoke_test.py",
+      "phase": 2,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "B0B21506D955101A7B5C3E748FF2D444DA4D35CA0C71FEAAC88EFC121FD59A3A"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "26c0666f75b09a65e108499cbb6b7a4e33bb93ce",
+      "name": "p11_2f_requirement_ownership_smoke_test.py",
+      "path": "apexforge/p11_2f_requirement_ownership_smoke_test.py",
+      "phase": 2,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "530FA602FAE218D20F1760CC86E8C2B594344CBBF1C6568216411FF92F2D7F18"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "c7c59a19612bcd4c371c79ada9868f8ce632651b",
+      "name": "p11_2g_post_freeze_continuity_pulse_smoke_test.py",
+      "path": "apexforge/p11_2g_post_freeze_continuity_pulse_smoke_test.py",
+      "phase": 2,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "15553F292EA48227872D244D50A432AF71BABAF2A16181D5E476D28E11BF0201"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "0e5a06fb0f7c9099141b5bc24b7ce72bff06f5b2",
+      "name": "p11_2h_heterogeneous_language_service_sync_smoke_test.py",
+      "path": "apexforge/p11_2h_heterogeneous_language_service_sync_smoke_test.py",
+      "phase": 2,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "A0E932E4BEDFD13039BE3CCA6ADFFD6B33D9D6FCD1D8B2E71EC3766992CAF449"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "ace0cb2711585ea222447dcfc4d4c61653bbf644",
+      "name": "p11_2h_language_intelligence_sync_smoke_test.py",
+      "path": "apexforge/p11_2h_language_intelligence_sync_smoke_test.py",
+      "phase": 2,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "B69EA44F7F338BE92ECC4E4C285E36B752F3B89AE9FE2E36AB747B5E55F2B257"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "2022501cbfaec8ea683967bb7d669e81cb45cb04",
+      "name": "p11_2i_opt_in_runtime_result_report_smoke_test.py",
+      "path": "apexforge/p11_2i_opt_in_runtime_result_report_smoke_test.py",
+      "phase": 2,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "094A5194CAB14D57A75E9F504C5E868032E138F5E760496B91670E95EF1FD711"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "19dd61f1bdea49a8ff7dbef2bf1f6647429308f8",
+      "name": "p11_2i_runtime_result_reporting_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_2i_runtime_result_reporting_architecture_audit_smoke_test.py",
+      "phase": 2,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "EBDA202CFFFC125269F7A33A1A32B93130F1C077A510365F83913B9958FC6CB0"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "82233590d99d33ec451c312a5f363f5bacda3de2",
+      "name": "p11_3a_module_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_3a_module_architecture_audit_smoke_test.py",
+      "phase": 3,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "2F37D57C9E9FA9B4246FCE37D88739982D5AC1884D2C4543C1DAA42D77730217"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "79568e1834168e7454afd1d8c0e5bdf76148a3f5",
+      "name": "p11_3b_project_document_graph_smoke_test.py",
+      "path": "apexforge/p11_3b_project_document_graph_smoke_test.py",
+      "phase": 3,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "FA8137F279F0328C1ACF0C1CFFF6379F5BF3A304680583C6F591BCFE418711EF"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "39ce90b79b7f536f2351d75ed5fab4e390b01e40",
+      "name": "p11_3c_export_visibility_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_3c_export_visibility_architecture_audit_smoke_test.py",
+      "phase": 3,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "F3B19AA0E62F415632447B88E4BE2DA9E2737422300599E328BA0261D68B06E1"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "70efcd35034e0da9dc29e963d25e0f8fe9f5ad97",
+      "name": "p11_3d_canonical_declaration_ownership_smoke_test.py",
+      "path": "apexforge/p11_3d_canonical_declaration_ownership_smoke_test.py",
+      "phase": 3,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "FA9F8B0AFC213A91443E753DA9838F71E9DCFDC91D24B83C469B28C36ABA689E"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "665ee7c78363dce9069863612b79e0a0eb6dfbfd",
+      "name": "p11_4a_identity_nesting_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_4a_identity_nesting_architecture_audit_smoke_test.py",
+      "phase": 4,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "392D214DF2404A631CB7CB5C3F56E1C790985FF3E722A814ADEA5D204C52C3BF"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "81eb77702823f12833ec4b78e839235c220ecc5e",
+      "name": "p11_4b_declared_identity_metadata_smoke_test.py",
+      "path": "apexforge/p11_4b_declared_identity_metadata_smoke_test.py",
+      "phase": 4,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "9FC3894A6A209555043980A2C91E95D4C1BD9C7E925E871BA6640C3882180414"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "0e5620b2036f3ea0783d348595b54e9637704250",
+      "name": "p11_4c_resolver_qualification_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_4c_resolver_qualification_architecture_audit_smoke_test.py",
+      "phase": 4,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "4FC7390CAD3B79784DF596BD21BEB91FDC229A358AE63F0916F89F725E2ABFBE"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "9ab39674d100d74dea1b788f9b38acc8af30a356",
+      "name": "p11_4d_passive_resolver_candidate_index_smoke_test.py",
+      "path": "apexforge/p11_4d_passive_resolver_candidate_index_smoke_test.py",
+      "phase": 4,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "EA9E820FC1B2E589842DE5E907F4625D4BB677B9884F9FF8A616E93ADEFE05CD"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio",
+        "vscode"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "2ff2645efdfa4854b866a1bed26265f1835a2c2c",
+      "name": "p11_4e_structured_resolution_query_binding_smoke_test.py",
+      "path": "apexforge/p11_4e_structured_resolution_query_binding_smoke_test.py",
+      "phase": 4,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": true,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "999A100FAE6E3747CEDE6FD04D0C8D216E173D609C048EFD4C171D2355F2327D"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio",
+        "vscode"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "1a052e29fea929165419ec0002ce945a9b272ff7",
+      "name": "p11_4f_resolution_context_visibility_evidence_smoke_test.py",
+      "path": "apexforge/p11_4f_resolution_context_visibility_evidence_smoke_test.py",
+      "phase": 4,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": true,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "DA084464E1066610157AE69E1A60CBF64ADE724237B8F5DFC2ECE2E23500CF16"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio",
+        "vscode"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "461c4b3bf7f4b267a089db09c15883de0f2f136e",
+      "name": "p11_4g_visibility_policy_contextual_candidate_filtering_smoke_test.py",
+      "path": "apexforge/p11_4g_visibility_policy_contextual_candidate_filtering_smoke_test.py",
+      "phase": 4,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": true,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "7E6AEDE031EA1C28608BF759A726584149A95B8A7008E154296AE5E86387083E"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio",
+        "vscode"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "9147097d9539212c84cf9d288d7f164b15c3a3f1",
+      "name": "p11_4h_contextual_resolution_outcome_classification_smoke_test.py",
+      "path": "apexforge/p11_4h_contextual_resolution_outcome_classification_smoke_test.py",
+      "phase": 4,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": true,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "FD2BA07970273E1A215B466EDAB9DB21E027329A79FEFD662ADFF680622A168B"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "a0c6f76fbd670fc2253183c331166af93169125c",
+      "name": "p11_5_integration_and_freeze_gate_smoke_test.py",
+      "path": "apexforge/p11_5_integration_and_freeze_gate_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "D262F6577CE6D79DBD9645ECE1ECB3A93E94FF2F24889488A5D9D8C1A046E45E"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "322d5af44aad37dfd4ffa0542c08c621ec6e7ea8",
+      "name": "p11_5a_narrative_semantic_foundation_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_5a_narrative_semantic_foundation_architecture_audit_smoke_test.py",
+      "phase": 5,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "C6DB007CC25FA76FB1522788AC5A6677E9264E0E7FDB16E10C1B74D036E55BC0"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "af9c2663bdb40dad542434ed0ffd0677f86bcf16",
+      "name": "p11_5b_minimal_narrative_semantic_model_smoke_test.py",
+      "path": "apexforge/p11_5b_minimal_narrative_semantic_model_smoke_test.py",
+      "phase": 5,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "0DF8882B50DAADF882CBCB6EE4D6F1B027DE7FF7DF05BF60405AE955FE59DB8A"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "31b0275ad7f2f019c38247d052e3417d0210e4d2",
+      "name": "p11_5c_narrative_semantic_graph_construction_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_5c_narrative_semantic_graph_construction_architecture_audit_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "3F50A702BE03A423B640CCDF357E7058686A21C7BAB545FA0D2D85A448433523"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "89664d6017b1badd5fae76443cfa434c68757ac9",
+      "name": "p11_5c_narrative_semantic_graph_construction_smoke_test.py",
+      "path": "apexforge/p11_5c_narrative_semantic_graph_construction_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "14A11E6D6E2F6C5D7DCD7CDA595200A638B61CE4BEA147EBA2FED9B3D8E4DBA0"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "c37bbba3cb3268b4b7ce8cefe96beea62deb36e6",
+      "name": "p11_5d_narrative_graph_validation_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_5d_narrative_graph_validation_architecture_audit_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "95A0BCA71CE50404A4E8DECF258E62FAB169C0B9C0CA72876D82E46C21657C9B"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "510a5826e7dc4582633ce9126c80f783b2290fa8",
+      "name": "p11_5d_passive_narrative_graph_validation_smoke_test.py",
+      "path": "apexforge/p11_5d_passive_narrative_graph_validation_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "86B666C859B6A938CF23B1156886FF6CD578A397604A4441DFD3BE23F3F0783E"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "94e4acdb3a0596f80f34677a17758b6946c86498",
+      "name": "p11_5e_immutable_narrative_source_ast_smoke_test.py",
+      "path": "apexforge/p11_5e_immutable_narrative_source_ast_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "72559D2453D082589014368A7054B2A5CAB4B711187C86BF045EDA4E58C16FE1"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "d2a46bae3ebb40d5f5b5ba02163da6705e93f9a9",
+      "name": "p11_5e_narrative_source_syntax_foundation_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_5e_narrative_source_syntax_foundation_architecture_audit_smoke_test.py",
+      "phase": 5,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "6FE401512ED77F762C93355B1BBE3CA7CCEAC0D77336AF363668C31F1C095E0D"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "a652c82377bc6aae2b3dd69d7075a91c3606ded3",
+      "name": "p11_5f_opt_in_narrative_source_parser_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_5f_opt_in_narrative_source_parser_architecture_audit_smoke_test.py",
+      "phase": 5,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "97B9EA3F49E869F9D74BE9CBCE309B5EB3810750FD78D6A5CF694BC2DC7D6672"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "5fdcca97b8032771ca585d583356e334fbad1e04",
+      "name": "p11_5f_opt_in_narrative_source_parser_smoke_test.py",
+      "path": "apexforge/p11_5f_opt_in_narrative_source_parser_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "130438A43F02EA8974D90900A65C0CFE999B03C54F02FB509AF7E692A9A1F28F"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "50c7fa5ef24d48352c0c6f1ccda9f616f9659133",
+      "name": "p11_5g_narrative_semantic_lowering_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_5g_narrative_semantic_lowering_architecture_audit_smoke_test.py",
+      "phase": 5,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "EFEF4C92C44463BC06CB7E09C06A76AF9643DC3F735A7EFA6A1CC9C683BB1FEE"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "acddbda0fe75dc29cd7ef32f1d7848037819be1d",
+      "name": "p11_5g_narrative_semantic_lowering_smoke_test.py",
+      "path": "apexforge/p11_5g_narrative_semantic_lowering_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "AF000C27578001F028A3A7698B300C1BCE6B806366FDC1E8E43FAA14C19C5BF8"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "001866be9f59638dbacc9328fa11547499b85247",
+      "name": "p11_5h_opt_in_narrative_analysis_pipeline_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_5h_opt_in_narrative_analysis_pipeline_architecture_audit_smoke_test.py",
+      "phase": 5,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "96B5716573C15B71600C258B5CB1FC53EF4B44950D8E645E15252C9F5EDCC057"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "624e5cd80d1d98da7397df68e97f3016e14a31e3",
+      "name": "p11_5h_opt_in_narrative_analysis_pipeline_smoke_test.py",
+      "path": "apexforge/p11_5h_opt_in_narrative_analysis_pipeline_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "A5E7E70A463B1F4D32DC16FB4266772569E12A1B8697F78A189D70AA64A74624"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "6c6e9cbe6f10731da2e5cf9dde02cccc6203147e",
+      "name": "p11_5i_narrative_analysis_result_reporting_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_5i_narrative_analysis_result_reporting_architecture_audit_smoke_test.py",
+      "phase": 5,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "26DE2288A254561D567BEE0BDEEEACD14FB64419AE588DC63DD8106788DB3BAA"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "be05d5259bcfbde4c301dfbc0107775571757229",
+      "name": "p11_5i_narrative_analysis_result_reporting_smoke_test.py",
+      "path": "apexforge/p11_5i_narrative_analysis_result_reporting_smoke_test.py",
+      "phase": 5,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "2A9F60C305A53E3A3637CE107DCDA893E498914A61BB293FCDD4EE6B6F9FD5DF"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "059890a456e69f4e945fae65ed4e331647d1707a",
+      "name": "p11_6a_narrative_execution_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_6a_narrative_execution_architecture_audit_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "700165984E0CEE6B3857C6344B14364716732F02EBB9AB936D6574A0A18C5484"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "c72f01793f37b80d791f7be643e6915bf5fbf243",
+      "name": "p11_6b_immutable_narrative_execution_state_result_contracts_smoke_test.py",
+      "path": "apexforge/p11_6b_immutable_narrative_execution_state_result_contracts_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "DC9C1AF49F1E5046FC0DA8EEDC8FC0B98BC6C7B3C7601C6338857283093D5DBE"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "d3dc091a47ee75e18cba2a238f57447b886a60d8",
+      "name": "p11_6c_executable_condition_consequence_binding_model_smoke_test.py",
+      "path": "apexforge/p11_6c_executable_condition_consequence_binding_model_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "A2559147DBE90BE380F86ECBF72B893FC3045820F4EC6F4494B568FEE1AA4D57"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "1777d27d78f3d3c523044f9388747b49017758b5",
+      "name": "p11_6d_deterministic_scene_choice_transition_engine_smoke_test.py",
+      "path": "apexforge/p11_6d_deterministic_scene_choice_transition_engine_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "F66819A37E5ACA098C08C60BCB91CF5B76ADD365CBAEA2A24C7BBDC51EA06CE4"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "6031f28f0e9e6a199a8cdaa15db313a36105d8d7",
+      "name": "p11_6e_narrative_trace_diagnostics_termination_semantics_smoke_test.py",
+      "path": "apexforge/p11_6e_narrative_trace_diagnostics_termination_semantics_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "B81F27E77F2AED2D650A867FDA248EFE6938D14EF660293102F4033C54C0E98C"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "327394be0765d7652d719ca28d57b4c95a0cfd5e",
+      "name": "p11_6f_narrative_artifact_routing_integration_smoke_test.py",
+      "path": "apexforge/p11_6f_narrative_artifact_routing_integration_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "5F63C9B7D73AB67E37EA3A632021E13ACD9234BAC47C69C6D1FE07A44198BC94"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "b2edf8260e8590aaf0170c8bcf32bdb630b40ca7",
+      "name": "p11_6g_user_facing_narrative_execution_routing_smoke_test.py",
+      "path": "apexforge/p11_6g_user_facing_narrative_execution_routing_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "EC6067DFDA8A2A0EDA54654849FC904E5F8D06D03FB144CA6C881ED4A53DEA5A"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "c5a68e5ad678010d56b69b9235974a90120568b3",
+      "name": "p11_6h_narrative_session_state_lifecycle_smoke_test.py",
+      "path": "apexforge/p11_6h_narrative_session_state_lifecycle_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "6B8BD1494C264BDFD8B78959EF69074D8B9B2A389E1C22F531A431092FF80142"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "a2459c12f449b5b69d0c9dac39d818f083c8edcb",
+      "name": "p11_6i_interactive_narrative_session_ux_smoke_test.py",
+      "path": "apexforge/p11_6i_interactive_narrative_session_ux_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "27BE51CF20C47A422012649174F9E540F16BA4B209BD4F871A798C625F61EC6E"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "a787ef2e05dd67559c0c99b334c38b099d393747",
+      "name": "p11_6j_narrative_presentation_rendering_smoke_test.py",
+      "path": "apexforge/p11_6j_narrative_presentation_rendering_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "A02CFB7D41589A80FD9A4690FD41D1D3C8B0E31C559A4768B2E64A1A0FFC9390"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "90f13235e397a211ee84814e04cae069112d547b",
+      "name": "p11_6k_canonical_narrative_prose_model_smoke_test.py",
+      "path": "apexforge/p11_6k_canonical_narrative_prose_model_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "DF4A5636CA7F79FC62961AB2A43676A7C8A23329A61B8B1948B4124CEE957EE4"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "813ce967a279d329404d578952df56145bd0ba61",
+      "name": "p11_6l_canonical_narrative_content_ordering_smoke_test.py",
+      "path": "apexforge/p11_6l_canonical_narrative_content_ordering_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "5703E09525BD812DFAF66CB4031CB305CEB2BD233910A3F8DB71ED270202DAB4"
+    },
+    {
+      "classification_reason_codes": [
+        "requires_examples_p11validation"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "2d8d9edda8127c92a886d18b03ed2a9bd58024d6",
+      "name": "p11_6m_final_narrative_integration_freeze_smoke_test.py",
+      "path": "apexforge/p11_6m_final_narrative_integration_freeze_smoke_test.py",
+      "phase": 6,
+      "primary_class": "ENVIRONMENT_FIXTURE_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": true,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "6491D024566CDF8793F380653257B56853E50E9B40608E60D4956C92AE39B818"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "266bf244a9fb35b0eebd48939e6d4efa3b41c842",
+      "name": "p11_7a_quad_vector_engine_architecture_smoke_test.py",
+      "path": "apexforge/p11_7a_quad_vector_engine_architecture_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "616993B73F9DD715FE07052D39D5A5284B4363FF522C5A4B486BC15A37565147"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "aaf18ce1b752d847c824093811f1d0d1a2b92307",
+      "name": "p11_7a_quad_vector_module_contract_smoke_test.py",
+      "path": "apexforge/p11_7a_quad_vector_module_contract_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "6A947CB86AFB78B67975841655E2C0A8CA9B7D8CF0165511F61FBA36F47304D6"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "7972adf506f91befaf2a9eea000111923489e173",
+      "name": "p11_7b_quad_vector_field_matrix_smoke_test.py",
+      "path": "apexforge/p11_7b_quad_vector_field_matrix_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "246BDAF06F2070B25A58966E0025CD6C9FFF31416ECB97725D89C687C49B1556"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "756bebc8132e14dda4f468796c4b62db7e45cb7e",
+      "name": "p11_7c_quad_vector_synchronization_smoke_test.py",
+      "path": "apexforge/p11_7c_quad_vector_synchronization_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "327B45E1F736946BB13E1A76ED244CEA9E68E5FAEFA561730617CEA6E6BB1AB5"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "9358a1d524b18381af70929c1aab8f2df6ceeb3f",
+      "name": "p11_7d_quad_vector_resultant_resolution_smoke_test.py",
+      "path": "apexforge/p11_7d_quad_vector_resultant_resolution_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "44C87EBB59837970878355DECC52D610B545AE750B4E9A46B959D7DD6F18E8E5"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "b7c46b2acd31c1e61fc2edeb82561f2487f43e9e",
+      "name": "p11_7e_quad_vector_module_registry_smoke_test.py",
+      "path": "apexforge/p11_7e_quad_vector_module_registry_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "A32D303326F8B8A452D85C1A2E39B572F7B64ADE4C2E608E46255FACB7255A65"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "9c1ce8facbcbef617370545d2b72a0d01ffe0fb9",
+      "name": "p11_7f_quad_vector_module_execution_smoke_test.py",
+      "path": "apexforge/p11_7f_quad_vector_module_execution_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "C197113BD6CAB94E40A96E0A9843746D91D70A1BD471361A7766628A30CCD27E"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "3d113e6223930f757f0ba979d87675060db1dda1",
+      "name": "p11_7g_quad_vector_engine_orchestration_smoke_test.py",
+      "path": "apexforge/p11_7g_quad_vector_engine_orchestration_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "B89FF06982CBCA1B47428DADF23BF256C4AD01E7249F8E9934F793D14201C67A"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "d6b93a95201bfeb16ae94e77669a815847ebdf28",
+      "name": "p11_7h_quad_vector_integration_adapters_smoke_test.py",
+      "path": "apexforge/p11_7h_quad_vector_integration_adapters_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "EAD68B17B6D9F2F12695FC676E0534AD5D289407FFF6515DD5ED2FF67DB8CE83"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "c9fcdc403bb8a7fc96cbc963de9586d869850597",
+      "name": "p11_7i_quad_vector_authoring_adapter_smoke_test.py",
+      "path": "apexforge/p11_7i_quad_vector_authoring_adapter_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "7F5ED51B9A1FC448E607A089EA6C9CDEB872512871D6B74DE5AFC56B693FD809"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "28a860a14256db7fadfaa3089c6fe270205ebb97",
+      "name": "p11_7j_quad_vector_module_admission_smoke_test.py",
+      "path": "apexforge/p11_7j_quad_vector_module_admission_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "249660DED2780E0BCEB420EAFB4C14ECB7DCAB332522DC2E07F618C964D1AB96"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "bdca517828ffcd8ff9560524e82665d07f68ee6c",
+      "name": "p11_7k_quad_vector_module_discovery_smoke_test.py",
+      "path": "apexforge/p11_7k_quad_vector_module_discovery_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "67D162A08342FE91BB38FE168F1F45F1A6F3EAFC2D4BE778E4C1EE64D6A55A81"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "9c99eeff867f23734960fd8339569a1f65bd6ae9",
+      "name": "p11_7l_quad_vector_descriptor_parsing_smoke_test.py",
+      "path": "apexforge/p11_7l_quad_vector_descriptor_parsing_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "3D7413926DB3DC2D6F874725702C14FCB601F4EDE5E1D8A1432D921EB4656884"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "740e0141d58fb78c0fa6c56e4d6ce5d7ea22bcbe",
+      "name": "p11_7m_quad_vector_descriptor_validation_smoke_test.py",
+      "path": "apexforge/p11_7m_quad_vector_descriptor_validation_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "E8FCC6B212B77B114ED5A1B44FEA14C9C11BB9BD97DA52EF1DFBA1E063C4D85E"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "b3d66ef6ca58ad26ad61893a286d41dbed95b9ba",
+      "name": "p11_7n_quad_vector_descriptor_canonicalization_smoke_test.py",
+      "path": "apexforge/p11_7n_quad_vector_descriptor_canonicalization_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "8632866DCAEE07DF05B60E5C3DB002E8D3B526322A5D79489A5E045124DC865C"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "5bdb24e2cd2fba7d54b74203126e9f925ba05912",
+      "name": "p11_7o_quad_vector_descriptor_registration_smoke_test.py",
+      "path": "apexforge/p11_7o_quad_vector_descriptor_registration_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "6C2D78108D61533E6AB0BC79C85A7C26A7AFAF8F004F65C3C223BD1862D33C50"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "d3a29b6e0c5039ef10abfb47a6d9c68460808db9",
+      "name": "p11_7p_quad_vector_descriptor_binding_smoke_test.py",
+      "path": "apexforge/p11_7p_quad_vector_descriptor_binding_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "43E6E57B5F3670213A3733AF7BA3C837B01E07408786B2DE12E799439902427A"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "d89685f2eafd32f2d3380e56aca0a3058416caf8",
+      "name": "p11_7q_quad_vector_descriptor_execution_smoke_test.py",
+      "path": "apexforge/p11_7q_quad_vector_descriptor_execution_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "F9BC4BDB5F15907125EB16909B40BAACD39BE2DA726E4848B44F06927C2D07C0"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "9fab5c769d371ed0c2abca54e9c01ecf0210982e",
+      "name": "p11_7r_quad_vector_descriptor_lifecycle_smoke_test.py",
+      "path": "apexforge/p11_7r_quad_vector_descriptor_lifecycle_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "943B9A0A519C46BBC2F827C06C659839770FEF8772EEFF7814CD563F3763F3BE"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "fdcbdc3de5143df5d2f3134e36d46d1d9985ae0c",
+      "name": "p11_7s_quad_vector_descriptor_engine_orchestration_smoke_test.py",
+      "path": "apexforge/p11_7s_quad_vector_descriptor_engine_orchestration_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "DB93D92F851EF2045DC64DD099B739C8A307E7FA5BA451B08789C5BE2701D9CB"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "cf1a79b6de78c6c0c6b96c5f058ee7d88a88c16e",
+      "name": "p11_7t_quad_vector_descriptor_integration_orchestration_smoke_test.py",
+      "path": "apexforge/p11_7t_quad_vector_descriptor_integration_orchestration_smoke_test.py",
+      "phase": 7,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "D7DF334D3F8BC1B263D780B5F1513ED5B093D916ACD3C83BC56C6A9F3774F4FB"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "e81f5b6578a96dac2921704994f38fdaf0baabbd",
+      "name": "p11_8a_parametric_semantic_lattice_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_8a_parametric_semantic_lattice_architecture_audit_smoke_test.py",
+      "phase": 8,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "6DFD48872847F9CBE840A799EECF26E46913AB0891BCDAA2ABC095812C378004"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "069cac7a2f9d0637055f70d2ddf7bc3358f718fe",
+      "name": "p11_8b_minimal_immutable_lattice_model_smoke_test.py",
+      "path": "apexforge/p11_8b_minimal_immutable_lattice_model_smoke_test.py",
+      "phase": 8,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "5D641F8B5399EA50ADAB8780BA68969E8D034804047F49EFF822C55F63FB0440"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "19416873964a79a12e0e623819463271778d91e0",
+      "name": "p11_8c_canonical_subject_relations_evidence_smoke_test.py",
+      "path": "apexforge/p11_8c_canonical_subject_relations_evidence_smoke_test.py",
+      "phase": 8,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "2B55206FB752433A85A9BF285BB0220302A20C0AE26B9273FBC0010AE312E095"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "f0b7f8b08490fd49de54c2774a4752d5d219a579",
+      "name": "p11_8d_deterministic_lattice_construction_indexing_smoke_test.py",
+      "path": "apexforge/p11_8d_deterministic_lattice_construction_indexing_smoke_test.py",
+      "phase": 8,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "FC7A424498C3FFF0618BADAD73DFF5134CEB2F8A5A808B63A620296F435FB1FE"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "ce45a8bd4839e78569c3296a496fc72de84bb9f8",
+      "name": "p11_8e_canonical_projection_adapters_codex_advisory_smoke_test.py",
+      "path": "apexforge/p11_8e_canonical_projection_adapters_codex_advisory_smoke_test.py",
+      "phase": 8,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "8CAA9AE54106890DF47378CE009CD2745D5E7F3F2730BBF227E7B34FBB0AEA51"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "519bbc9954789a158eb4277cd760e82739eafd1c",
+      "name": "p11_8f_validation_collision_provenance_extension_contracts_smoke_test.py",
+      "path": "apexforge/p11_8f_validation_collision_provenance_extension_contracts_smoke_test.py",
+      "phase": 8,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "ACF356A88E377661893208B9DD50CD4C967A97FA0F81E097562A63F8B1E58FE7"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "8bea1a1c4432678d9bbc18417c1f198457734572",
+      "name": "p11_8g_semantic_lattice_reporting_tooling_compatibility_smoke_test.py",
+      "path": "apexforge/p11_8g_semantic_lattice_reporting_tooling_compatibility_smoke_test.py",
+      "phase": 8,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "FB43B77A21CB4EDC480ECF597B550C69BD3AB0215545DC1B124EAD78FD23E42B"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "bf195f3e530706138843431370d094538d43e2a4",
+      "name": "p11_8h_final_semantic_lattice_integration_regression_freeze_smoke_test.py",
+      "path": "apexforge/p11_8h_final_semantic_lattice_integration_regression_freeze_smoke_test.py",
+      "phase": 8,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "8DEB8E41A398A853FB09D79BA0517707CEABBFE3A6A1A85CE3F23DDC6C729F6E"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "78ee3501f5a536b9fa98bbe66f597c5106a8cc93",
+      "name": "p11_9a_aether_air_2_interstitial_behavior_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_9a_aether_air_2_interstitial_behavior_architecture_audit_smoke_test.py",
+      "phase": 9,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "797B7A880C76D5DA4B357DE52C34788493529F7BF0FF7B3C7C42A6357D59B962"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "b4404404c393a72388a8b6a6ee9fa15d50ec8b13",
+      "name": "p11_9b_minimal_immutable_aether_air_interstitial_model_smoke_test.py",
+      "path": "apexforge/p11_9b_minimal_immutable_aether_air_interstitial_model_smoke_test.py",
+      "phase": 9,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "BD85DA1ACD172905306AE19F9E28B8A239767A8BF062C0D7D723D9BF9F18FBBA"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "29ed171b77bd2e4fb6ac445025b57ad5d8384c1f",
+      "name": "p11_9c_canonical_predecessor_references_identity_evidence_provenance_smoke_test.py",
+      "path": "apexforge/p11_9c_canonical_predecessor_references_identity_evidence_provenance_smoke_test.py",
+      "phase": 9,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "0DE2B7EB05BDDC598612551791DABBBF7FD8A2DBD44CEDB779DD81A708E38620"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "b7d235504358c0efc89ea32704ef5763f0f5bbe2",
+      "name": "p11_9d_deterministic_interstitial_construction_smoke_test.py",
+      "path": "apexforge/p11_9d_deterministic_interstitial_construction_smoke_test.py",
+      "phase": 9,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "2FD276134F0DC73FE7D863DB59C41659CDAA62020BFE4B74239A5BEA234DCE71"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "a9adf27e2859ca9f1ab70ed7f9258475b636a0fc",
+      "name": "p11_9e_non_executing_transformation_normalization_smoke_test.py",
+      "path": "apexforge/p11_9e_non_executing_transformation_normalization_smoke_test.py",
+      "phase": 9,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "99674D31332810E3DDA302219526910048C3699957853D78EE24463786D72D2A"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "5708c8bd265f69b6a432e42e252184ac62c92c25",
+      "name": "p11_9f_validation_collision_closure_extension_smoke_test.py",
+      "path": "apexforge/p11_9f_validation_collision_closure_extension_smoke_test.py",
+      "phase": 9,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "611D8DED43BDE0B8BEA99E2A0C7781430E976D4AAB39FA683FB16B3C60D35D85"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "7091f204facdef12ff3a5d8ade06caee1405a9f4",
+      "name": "p11_9g_explicit_downstream_projection_boundary_smoke_test.py",
+      "path": "apexforge/p11_9g_explicit_downstream_projection_boundary_smoke_test.py",
+      "phase": 9,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "25F2427A4697E151A03C95F7FF83B482EDE9EC1E44AD3707727500B34A22BB19"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "NUMBERED",
+      "git_blob_oid": "84ea0f71ae3f7b03964980f610e004a44881d257",
+      "name": "p11_9h_aether_air_reporting_tooling_traceability_smoke_test.py",
+      "path": "apexforge/p11_9h_aether_air_reporting_tooling_traceability_smoke_test.py",
+      "phase": 9,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "4654D29568B8E5FFB5E5B915AF5AFA8CC1076B43867658656A719CD61B1428B1"
+    },
+    {
+      "classification_reason_codes": [
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "NUMBERED",
+      "git_blob_oid": "d5b0935d7fc1b3ca4e576c9671d1711ff1380861",
+      "name": "p11_9i_final_aether_air_2_integration_regression_freeze_smoke_test.py",
+      "path": "apexforge/p11_9i_final_aether_air_2_integration_regression_freeze_smoke_test.py",
+      "phase": 9,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "F9EA3E3A327E0B473A84BC2DF7B2805606ED08369A9955993A4888219AFF47CA"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "SRC",
+      "git_blob_oid": "a2e9ca89fa400d51af5c6bffea80bf5b9f83b28d",
+      "name": "p11_src_a_semantic_decision_source_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_src_a_semantic_decision_source_architecture_audit_smoke_test.py",
+      "phase": null,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "E522D972651F47F4448513B8D0827B19AE32E80DE1F1E31FA0391FAFF5AB810C"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "SRC",
+      "git_blob_oid": "4db1af3e55d8ebe5f6f48ddeed30e038b9df14aa",
+      "name": "p11_src_b_immutable_semantic_decision_source_ast_smoke_test.py",
+      "path": "apexforge/p11_src_b_immutable_semantic_decision_source_ast_smoke_test.py",
+      "phase": null,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "AAA954A9745FCFF8B4F8E2395AC00592305D9BD3D87BEAEC769D546E0AF2B9B4"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "SRC",
+      "git_blob_oid": "bb1927eb3f0048e25a79483efacc4bc98e8456fe",
+      "name": "p11_src_c_deterministic_semantic_decision_source_parser_smoke_test.py",
+      "path": "apexforge/p11_src_c_deterministic_semantic_decision_source_parser_smoke_test.py",
+      "phase": null,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "9D9969C882BBEA9567C05230AAA82B8CF1F186100498E21725F38FC0D50BEA54"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "SRC",
+      "git_blob_oid": "ce67181e7b55164bb89599b32f154081790ed4aa",
+      "name": "p11_src_d_semantic_decision_lowering_smoke_test.py",
+      "path": "apexforge/p11_src_d_semantic_decision_lowering_smoke_test.py",
+      "phase": null,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "B3CB03766668804F8ECE4247E9360FF6F6556DBB1A6FBE06013561D51420B8C4"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "SRC",
+      "git_blob_oid": "064eb51e420c3f642100271bea249a963199497a",
+      "name": "p11_src_e_semantic_decision_source_validation_smoke_test.py",
+      "path": "apexforge/p11_src_e_semantic_decision_source_validation_smoke_test.py",
+      "phase": null,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": false
+      },
+      "source_sha256": "CD1CB28D0F715A46838D1C18999AA73A62B38B33AFB7B971F208F3B1056D08EA"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "SRC",
+      "git_blob_oid": "34b09666021d62490be6de97e460621a61039500",
+      "name": "p11_src_f_real_apex_compile_analysis_acceptance_smoke_test.py",
+      "path": "apexforge/p11_src_f_real_apex_compile_analysis_acceptance_smoke_test.py",
+      "phase": null,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "4DB7C25DA2D0B81AFA5782EBA17E2F0D83E7BE401AC6F2DC1C12B557F9703C5A"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "powershell_tooling_compatibility"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "SRC",
+      "git_blob_oid": "1e4918da212ef0b18dd2083ee7f74c4133e25147",
+      "name": "p11_src_g_powershell_tooling_compatibility_smoke_test.py",
+      "path": "apexforge/p11_src_g_powershell_tooling_compatibility_smoke_test.py",
+      "phase": null,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": true,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": false,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "B4D769FD5462709E8C72533ED04832EF698FBB3307146F56176E03D6EB564957"
+    },
+    {
+      "classification_reason_codes": [
+        "current_semantic_candidate"
+      ],
+      "execution_stage": "P11.16C",
+      "family": "SRC",
+      "git_blob_oid": "332c4efd99852ce6fbf768be4c1fd350e479916b",
+      "name": "p11_src_g_semantic_decision_project_lsp_compatibility_smoke_test.py",
+      "path": "apexforge/p11_src_g_semantic_decision_project_lsp_compatibility_smoke_test.py",
+      "phase": null,
+      "primary_class": "DURABLE_CURRENT",
+      "risk_flags": {
+        "exact_hash_evidence": false,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": false,
+        "requires_p11validation": false,
+        "uses_subprocess": false,
+        "uses_tempfile": true
+      },
+      "source_sha256": "D51CF13CF020C85B4E1DFFC0AF701E936718ED17F579B7B29A95E5FE1C1186F8"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "SRC",
+      "git_blob_oid": "9685be279abd34326301841a062c92f0a5d0a9f1",
+      "name": "p11_src_h_final_integration_regression_freeze_smoke_test.py",
+      "path": "apexforge/p11_src_h_final_integration_regression_freeze_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": true
+      },
+      "source_sha256": "72AC59681E7C4411D92F3DB844E9248C635ADDBC65E27148195B833F0C89194D"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "5ed4fd764a7ad84a788c08fa5664a7bf9906ca56",
+      "name": "p11_tam_a_architecture_traceability_ownership_audit_smoke_test.py",
+      "path": "apexforge/p11_tam_a_architecture_traceability_ownership_audit_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "206B79DD3841A538C571E4A440233D97A88A2EDC15030AEE1785EA5AF62B8B61"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "db59c6ca027d442f62a285df0dc3128d32de8631",
+      "name": "p11_tam_b_minimal_immutable_trace_model_smoke_test.py",
+      "path": "apexforge/p11_tam_b_minimal_immutable_trace_model_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "5B336AF4D622F3068C715E05827D7C99658CCD5CEC311593BC169F65E06A573B"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "d755d80db7e6f00b994ed50807911b0a0c37201d",
+      "name": "p11_tam_c_deterministic_trace_production_foundation_smoke_test.py",
+      "path": "apexforge/p11_tam_c_deterministic_trace_production_foundation_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "D3F06B998BCABCB87DC6F0615D2B00020B4C73CCE5B2E8524F124585DDEA3FE0"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "b2c2a16b1fb5959c915cc6bd8677753931fda11a",
+      "name": "p11_tam_d_declaration_identity_ownership_trace_production_smoke_test.py",
+      "path": "apexforge/p11_tam_d_declaration_identity_ownership_trace_production_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "BC8FD9957C28E25B5D698AD6FE7DE5C078529CAE7D838B4075C755034C18359D"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "0fb9ba5cd3a96ced7d6a023b330995d8357cd553",
+      "name": "p11_tam_e_reference_scope_resolution_evidence_trace_production_smoke_test.py",
+      "path": "apexforge/p11_tam_e_reference_scope_resolution_evidence_trace_production_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "17E425F587E3B8D7700D12A455B693771CCE231C0F4EE1EAD4AEE249861BC174"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "a26e219ce01cbdff5ab75a2c1c45165384c172c3",
+      "name": "p11_tam_f_type_evidence_trace_production_smoke_test.py",
+      "path": "apexforge/p11_tam_f_type_evidence_trace_production_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "131DAAEA77A415DC6ADAF18B08EA73FE16E6EE57D9BEB8067C0B264999658601"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "8a4f8e3bdff57b67e44db13d3481feabfe34e134",
+      "name": "p11_tam_g_authority_evidence_trace_production_smoke_test.py",
+      "path": "apexforge/p11_tam_g_authority_evidence_trace_production_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "C84E1FC23BAA3768656E12F49B2EDDA1718050BFB70FF94A2778083AF1704632"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "29243b5de8fafb777e23cfc134aa419faead7912",
+      "name": "p11_tam_h_narrative_evidence_trace_production_smoke_test.py",
+      "path": "apexforge/p11_tam_h_narrative_evidence_trace_production_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "052E4BE60DF5B803F8083F293AE9AEDA1CE94E3264857834DC9BB5CFEAB5F421"
+    },
+    {
+      "classification_reason_codes": [
+        "explicit_external_toolchain_identity",
+        "visual_studio",
+        "vscode"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "1c1c3458166ca1af10588935f1361e0bc23020af",
+      "name": "p11_tam_i_token_evidence_trace_production_smoke_test.py",
+      "path": "apexforge/p11_tam_i_token_evidence_trace_production_smoke_test.py",
+      "phase": null,
+      "primary_class": "EXTERNAL_TOOLCHAIN_BOUND",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": true,
+        "explicit_vscode": true,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "2EC822B3DCDB5BD1EEC3CE48EF28AE31186B583D75745432E926F68828E61B9D"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "8a2c8a038589565ab80d56aaed5c6e3f23b2bb55",
+      "name": "p11_tam_j_final_integration_architecture_audit_smoke_test.py",
+      "path": "apexforge/p11_tam_j_final_integration_architecture_audit_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "B5B104D225C86A7416CC439E1628D292B723E966EB27EFD8063216E61B2D0323"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "67d73bb954f9da1b3b6a4b048bb13d86125dfd29",
+      "name": "p11_tam_k_deterministic_whole_map_composition_smoke_test.py",
+      "path": "apexforge/p11_tam_k_deterministic_whole_map_composition_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "1C765C9D68ECC23D376BD57C58268AD3E67B23DBA146710422CC55B4AD07AF03"
+    },
+    {
+      "classification_reason_codes": [
+        "exact_hash_evidence",
+        "freeze_evidence",
+        "git_evidence"
+      ],
+      "execution_stage": "P11.16D",
+      "family": "TAM",
+      "git_blob_oid": "e5c57d46c86238f28653389189d8956c22fa1a3e",
+      "name": "p11_tam_l_final_integration_regression_freeze_smoke_test.py",
+      "path": "apexforge/p11_tam_l_final_integration_regression_freeze_smoke_test.py",
+      "phase": null,
+      "primary_class": "HISTORICAL_EXACT_FREEZE",
+      "risk_flags": {
+        "exact_hash_evidence": true,
+        "explicit_powershell_toolchain": false,
+        "explicit_visual_studio": false,
+        "explicit_vscode": false,
+        "freeze_evidence": true,
+        "git_evidence": true,
+        "requires_p11validation": false,
+        "uses_subprocess": true,
+        "uses_tempfile": false
+      },
+      "source_sha256": "692714C04EAE5E3685CDD913E9240C637AC05732EC6522061FC447554213A19B"
+    }
+  ],
+  "family_counts": {
+    "NUMBERED": 157,
+    "SRC": 9,
+    "TAM": 12
+  },
+  "matrix_baseline_commit": "12f1e568bec83f5d74c661e042f7bcef25f0b5b9",
+  "phase_counts": {
+    "1": 4,
+    "10": 9,
+    "11": 7,
+    "12": 8,
+    "13": 8,
+    "14": 16,
+    "15": 9,
+    "2": 16,
+    "3": 4,
+    "4": 8,
+    "5": 17,
+    "6": 13,
+    "7": 21,
+    "8": 8,
+    "9": 9
+  },
+  "risk_counts": {
+    "exact_hash_evidence": 103,
+    "explicit_powershell_toolchain": 1,
+    "explicit_visual_studio": 15,
+    "explicit_vscode": 5,
+    "freeze_evidence": 161,
+    "git_evidence": 118,
+    "requires_p11validation": 35,
+    "uses_subprocess": 122,
+    "uses_tempfile": 40
+  },
+  "row_count": 178,
+  "schema": "apexforge.p11-final-verification-matrix/v1",
+  "scope": "pre-P11.16 P11 smoke tests",
+  "verification_classes": [
+    "DURABLE_CURRENT",
+    "HISTORICAL_EXACT_FREEZE",
+    "ENVIRONMENT_FIXTURE_BOUND",
+    "EXTERNAL_TOOLCHAIN_BOUND"
+  ]
+}
