@@ -10,7 +10,6 @@ semantics.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping, Optional, Union
@@ -31,8 +30,12 @@ from runtime.narrative_execution import (
     NarrativeExecutionTraceEvent,
     NarrativeTermination,
 )
+from interoperability.build_artifact import BuildArtifactInterchange
+from interoperability.build_artifact_integrity import (
+    verify_build_artifact_interchange_fingerprint,
+)
+
 from tooling.build_artifact import (
-    BUILD_ARTIFACT_FINGERPRINT_ALGORITHM,
     BUILD_ARTIFACT_SCHEMA,
     BUILD_ARTIFACT_SCHEMA_V2,
     canonical_json_bytes,
@@ -555,21 +558,12 @@ def load_narrative_execution_material(
         else:
             raise ValueError("build artifact shape or schema mismatch")
 
-        fingerprint = _mapping(
-            value["fingerprint"],
-            frozenset(("algorithm", "value")),
+        verify_build_artifact_interchange_fingerprint(
+            BuildArtifactInterchange(
+                schema=schema,
+                content=content,
+            )
         )
-        if (
-            fingerprint["algorithm"]
-            != BUILD_ARTIFACT_FINGERPRINT_ALGORITHM
-            or type(fingerprint["value"]) is not str
-        ):
-            raise ValueError("build artifact fingerprint shape mismatch")
-        payload = dict(value)
-        del payload["fingerprint"]
-        expected = hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
-        if fingerprint["value"] != expected:
-            raise ValueError("build artifact fingerprint mismatch")
         if keys == historical_keys:
             raise NarrativeExecutionRoutingError(
                 "unavailable_narrative_material"
