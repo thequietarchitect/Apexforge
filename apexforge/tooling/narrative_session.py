@@ -9,7 +9,6 @@ does not infer scenes, select transitions, loop, or own narrative semantics.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -30,6 +29,11 @@ from runtime.narrative_execution import (
     NarrativeExecutionState,
     NarrativeTermination,
 )
+from interoperability.build_artifact import BuildArtifactInterchange
+from interoperability.build_artifact_integrity import (
+    verify_build_artifact_interchange_fingerprint,
+)
+
 from tooling.build_artifact import (
     BUILD_ARTIFACT_FINGERPRINT_ALGORITHM,
     BUILD_ARTIFACT_SCHEMA,
@@ -638,19 +642,12 @@ def load_narrative_session_material(
                 raise ValueError("native narrative build artifact shape mismatch")
         else:
             raise ValueError("build artifact schema mismatch")
-        fingerprint = _mapping(
-            value["fingerprint"], frozenset(("algorithm", "value"))
+        artifact_fingerprint = verify_build_artifact_interchange_fingerprint(
+            BuildArtifactInterchange(
+                schema=schema,
+                content=content,
+            )
         )
-        if (
-            fingerprint["algorithm"] != BUILD_ARTIFACT_FINGERPRINT_ALGORITHM
-            or type(fingerprint["value"]) is not str
-        ):
-            raise ValueError("build artifact fingerprint shape mismatch")
-        payload = dict(value)
-        del payload["fingerprint"]
-        expected = hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
-        if fingerprint["value"] != expected:
-            raise ValueError("build artifact fingerprint mismatch")
         if "narrative" not in value:
             raise NarrativeSessionError("unavailable_narrative_material")
         narrative_value = value["narrative"]
@@ -698,7 +695,7 @@ def load_narrative_session_material(
     except (OSError, ValueError) as exc:
         raise NarrativeSessionError("malformed_build_artifact") from exc
     return NarrativeSessionMaterial(
-        artifact_fingerprint=fingerprint["value"],
+        artifact_fingerprint=artifact_fingerprint,
         story=story,
         scenes=scenes,
         declared_identities=identities,
