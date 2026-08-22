@@ -1,0 +1,86 @@
+{
+  "baseline": {
+    "p11_16e_freeze_commit": "5283471832281f8a591438073d05bdc619d62072",
+    "p11_16e_freeze_tag": "afp-p11-16e-freeze"
+  },
+  "completion": {
+    "p11_16_status": "COMPLETE",
+    "p11_final_verification_status": "COMPLETE",
+    "p11_status": "VERIFIED_COMPLETE"
+  },
+  "current_e_freeze_inventory_before_f_candidate": {
+    "smoke_test_discovery": 276,
+    "tracked_python": 611,
+    "tracked_python_parse_pass": 611
+  },
+  "fixture_restoration": false,
+  "freeze_chain": [
+    {
+      "annotated": true,
+      "commit": "56286b04905a063988d325c5e699c268cdc835a4",
+      "stage": "A",
+      "tag": "afp-p11-16a-freeze"
+    },
+    {
+      "annotated": true,
+      "commit": "4c1de19080a7dfbe51492041c8968ddcd409ec77",
+      "stage": "B",
+      "tag": "afp-p11-16b-freeze"
+    },
+    {
+      "annotated": true,
+      "commit": "715d41c733674b1b8681b0d3eb27b9143181bce7",
+      "stage": "C",
+      "tag": "afp-p11-16c-freeze"
+    },
+    {
+      "annotated": true,
+      "commit": "3ffe6e2b9f04507abfa756f750e97aef493eaaa2",
+      "stage": "D",
+      "tag": "afp-p11-16d-freeze"
+    },
+    {
+      "annotated": true,
+      "commit": "5283471832281f8a591438073d05bdc619d62072",
+      "stage": "E",
+      "tag": "afp-p11-16e-freeze"
+    }
+  ],
+  "intended_terminal_tags": [
+    "afp-p11-16f-freeze",
+    "afp-p11-16-freeze"
+  ],
+  "p11_16_verification_closure": {
+    "closure": "PASS",
+    "durable_current": 48,
+    "durable_pass": 48,
+    "environment_fixture_bound": 32,
+    "external_toolchain_bound": 16,
+    "historical_exact_freeze": 82,
+    "matrix_total": 178,
+    "non_durable_resolved": 130
+  },
+  "post_f_candidate_expected_inventory": {
+    "smoke_test_discovery": 277,
+    "tracked_python": 612
+  },
+  "production_mutation": false,
+  "repository_wide_evidence": {
+    "legacy_current_pass": 12,
+    "legacy_stale": 1,
+    "legacy_test_files": 13,
+    "performance_baseline": "PASS",
+    "regression_discovery_after_e": 276,
+    "regression_harness_execution": "DISCOVERY_ONLY",
+    "tracked_python_parse_pass_at_e": 610,
+    "tracked_python_verified_at_e": 610,
+    "volatile_performance_timings_frozen": false,
+    "workflow_current_contract": "PASS"
+  },
+  "schema": "apexforge.p11-final-verification-final-freeze/v1",
+  "scope": "FINAL_VERIFICATION_BINDING_ONLY",
+  "semantic_reclassification": false,
+  "stage": "P11.16F",
+  "successor": "P12_NATIVE_BACKEND",
+  "test_weakening": false
+}
