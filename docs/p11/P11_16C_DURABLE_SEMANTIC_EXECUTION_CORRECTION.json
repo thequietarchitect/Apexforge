@@ -1,0 +1,393 @@
+{
+    "schema":  "apexforge.p11-final-verification-correction/v1",
+    "stage":  "P11.16C",
+    "frozen_b_commit":  "4c1de19080a7dfbe51492041c8968ddcd409ec77",
+    "frozen_b_tag":  "afp-p11-16b-freeze",
+    "frozen_b_manifest_sha256":  "950719EC51C523FCA3BF2BC39771AD068109EA3E8E7A23407E4C15C38E53AC2E",
+    "frozen_b_manifest_mutated":  false,
+    "production_mutation":  false,
+    "correction_count":  6,
+    "corrections":  [
+                        {
+                            "path":  "apexforge/p11_1b_run_command_smoke_test.py",
+                            "from_class":  "DURABLE_CURRENT",
+                            "to_class":  "ENVIRONMENT_FIXTURE_BOUND",
+                            "reason":  "packaged entry environment dependency",
+                            "evidence":  {
+                                             "direct_cli_returncode":  0,
+                                             "packaged_entry_returncode":  1,
+                                             "packaged_entry_error":  "ModuleNotFoundError: No module named \u0027tooling\u0027"
+                                         }
+                        },
+                        {
+                            "path":  "apexforge/p11_1c_build_artifact_smoke_test.py",
+                            "from_class":  "DURABLE_CURRENT",
+                            "to_class":  "ENVIRONMENT_FIXTURE_BOUND",
+                            "reason":  "packaged entry environment dependency",
+                            "evidence":  {
+                                             "direct_cli_returncode":  0,
+                                             "packaged_entry_returncode":  1,
+                                             "packaged_entry_error":  "ModuleNotFoundError: No module named \u0027tooling\u0027",
+                                             "downstream_missing_artifact":  "packaged.json"
+                                         }
+                        },
+                        {
+                            "path":  "apexforge/p11_9h_aether_air_reporting_tooling_traceability_smoke_test.py",
+                            "from_class":  "DURABLE_CURRENT",
+                            "to_class":  "HISTORICAL_EXACT_FREEZE",
+                            "reason":  "temporal supersession of P11.9H guarded tooling surfaces",
+                            "evidence":  {
+                                             "p11_9g_freeze_commit":  "39bc07fd5df753cfe40f49e7a40fa0e7a01cecae",
+                                             "p11_9h_freeze_commit":  "f613403447041dd928ce385196df969992162efb",
+                                             "guarded_diff_g_to_h_count":  0,
+                                             "guarded_diff_h_to_b_count":  7,
+                                             "later_changed_paths":  [
+                                                                         "apexforge/language_server/diagnostics.py",
+                                                                         "apexforge/tooling/build_artifact.py",
+                                                                         "apexforge/tooling/cli.py",
+                                                                         "apexforge/tooling/narrative_execution.py",
+                                                                         "apexforge/tooling/narrative_session.py",
+                                                                         "apexforge/tooling/project_loader.py",
+                                                                         "apexforge/tooling/project_manifest.py"
+                                                                     ]
+                                         }
+                        },
+                        {
+                            "path":  "apexforge/p11_src_a_semantic_decision_source_architecture_audit_smoke_test.py",
+                            "from_class":  "DURABLE_CURRENT",
+                            "to_class":  "HISTORICAL_EXACT_FREEZE",
+                            "reason":  "temporal supersession by later semantic decision source production",
+                            "evidence":  {
+                                             "test_intro_commit":  "a3826cefb0c35ce263b052de13c15ca20ed6fad1",
+                                             "later_path":  "apexforge/language/semantic_decision_source.py",
+                                             "later_path_add_commit":  "146e89185be7f27e4b25fd3b762965fc16393daf"
+                                         }
+                        },
+                        {
+                            "path":  "apexforge/p11_src_b_immutable_semantic_decision_source_ast_smoke_test.py",
+                            "from_class":  "DURABLE_CURRENT",
+                            "to_class":  "HISTORICAL_EXACT_FREEZE",
+                            "reason":  "temporal supersession by later semantic decision parser production",
+                            "evidence":  {
+                                             "test_intro_commit":  "146e89185be7f27e4b25fd3b762965fc16393daf",
+                                             "later_path":  "apexforge/language/semantic_decision_parser.py",
+                                             "later_path_add_commit":  "8cd2c645e183d5042aea2ab4c807c132267a69d0"
+                                         }
+                        },
+                        {
+                            "path":  "apexforge/p11_src_c_deterministic_semantic_decision_source_parser_smoke_test.py",
+                            "from_class":  "DURABLE_CURRENT",
+                            "to_class":  "HISTORICAL_EXACT_FREEZE",
+                            "reason":  "temporal supersession by later semantic decision lowering production",
+                            "evidence":  {
+                                             "test_intro_commit":  "8cd2c645e183d5042aea2ab4c807c132267a69d0",
+                                             "later_path":  "apexforge/language/semantic_decision_lowering.py",
+                                             "later_path_add_commit":  "5754de5e1033ead24431184be311aaae9e4717af"
+                                         }
+                        }
+                    ],
+    "corrected_class_counts":  {
+                                   "DURABLE_CURRENT":  48,
+                                   "HISTORICAL_EXACT_FREEZE":  82,
+                                   "ENVIRONMENT_FIXTURE_BOUND":  32,
+                                   "EXTERNAL_TOOLCHAIN_BOUND":  16
+                               },
+    "corrected_matrix_total":  178,
+    "durable_execution":  {
+                              "total":  48,
+                              "pass":  48,
+                              "fail":  0,
+                              "repository_mutation":  false,
+                              "results":  [
+                                              {
+                                                  "path":  "apexforge/p11_1a_performance_baseline_smoke_test.py",
+                                                  "source_sha256":  "3BACC8FE8D72A6B7E1BEEC5E258B6C36E44C4F97CF694D0993754CC5CDD90FF5",
+                                                  "git_blob_oid":  "ee888e9ea75d827108a384c4e03283821c06f624",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_2a_declaration_model_audit_smoke_test.py",
+                                                  "source_sha256":  "2677651CC68EB0F35C8FD9FFF8BD3DA5A94B1697BDAF32351B208EA1AF081905",
+                                                  "git_blob_oid":  "7b3135e8e7c95c2374e1860be09241e8d7481643",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_2c_heterogeneous_source_unit_parser_smoke_test.py",
+                                                  "source_sha256":  "47C5DEAB71F54B3C5B2E998B84B9384D260C0C5B783DB58F23C2CF985EA1FAD9",
+                                                  "git_blob_oid":  "8196257b1f4dc9fea7dbf5753ae19bdbab1ec2b2",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_2d_canonical_declaration_models_smoke_test.py",
+                                                  "source_sha256":  "0B6C15C5EEDE056D69021FBC6A24AC2479D81B8D3D80AE0A0398FC3229170608",
+                                                  "git_blob_oid":  "2defec20fad2018cf0f5a24a197ad96818cb038a",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_2f_authority_graph_legality_smoke_test.py",
+                                                  "source_sha256":  "A78895F43A1D7E6CA369F5BA243B4551ADBBDCD79D5557ED2D6BBF5AE06BEF0A",
+                                                  "git_blob_oid":  "6a956fbb4e0f725ec9a84c192451a7a1fd77f39e",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_2f_canonical_linker_collision_smoke_test.py",
+                                                  "source_sha256":  "6E27C036FF187628980750E235FF5CA303DF9570E553B614FAFE02D7992CB5B2",
+                                                  "git_blob_oid":  "b4c741471445b033b95554625b066961a3498048",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_2f_concordat_conflict_evidence_smoke_test.py",
+                                                  "source_sha256":  "E779317786169948C341FBFCD42A61629B0BA40DBFB957214A166C038AB59EC0",
+                                                  "git_blob_oid":  "5f895e04723ccd2646a3ad42db5364b39068ba66",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_2f_heterogeneous_air_verifier_smoke_test.py",
+                                                  "source_sha256":  "19338BCB1779F5896A8BDCA11C0AD8113FEEC689A10BF1C474612E022CD57A54",
+                                                  "git_blob_oid":  "8554ba327ad50030970795a322103a4fc16c702b",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_2f_requirement_ownership_smoke_test.py",
+                                                  "source_sha256":  "530FA602FAE218D20F1760CC86E8C2B594344CBBF1C6568216411FF92F2D7F18",
+                                                  "git_blob_oid":  "26c0666f75b09a65e108499cbb6b7a4e33bb93ce",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_3b_project_document_graph_smoke_test.py",
+                                                  "source_sha256":  "FA8137F279F0328C1ACF0C1CFFF6379F5BF3A304680583C6F591BCFE418711EF",
+                                                  "git_blob_oid":  "79568e1834168e7454afd1d8c0e5bdf76148a3f5",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7a_quad_vector_engine_architecture_smoke_test.py",
+                                                  "source_sha256":  "616993B73F9DD715FE07052D39D5A5284B4363FF522C5A4B486BC15A37565147",
+                                                  "git_blob_oid":  "266bf244a9fb35b0eebd48939e6d4efa3b41c842",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7a_quad_vector_module_contract_smoke_test.py",
+                                                  "source_sha256":  "6A947CB86AFB78B67975841655E2C0A8CA9B7D8CF0165511F61FBA36F47304D6",
+                                                  "git_blob_oid":  "aaf18ce1b752d847c824093811f1d0d1a2b92307",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7b_quad_vector_field_matrix_smoke_test.py",
+                                                  "source_sha256":  "246BDAF06F2070B25A58966E0025CD6C9FFF31416ECB97725D89C687C49B1556",
+                                                  "git_blob_oid":  "7972adf506f91befaf2a9eea000111923489e173",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7c_quad_vector_synchronization_smoke_test.py",
+                                                  "source_sha256":  "327B45E1F736946BB13E1A76ED244CEA9E68E5FAEFA561730617CEA6E6BB1AB5",
+                                                  "git_blob_oid":  "756bebc8132e14dda4f468796c4b62db7e45cb7e",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7d_quad_vector_resultant_resolution_smoke_test.py",
+                                                  "source_sha256":  "44C87EBB59837970878355DECC52D610B545AE750B4E9A46B959D7DD6F18E8E5",
+                                                  "git_blob_oid":  "9358a1d524b18381af70929c1aab8f2df6ceeb3f",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7e_quad_vector_module_registry_smoke_test.py",
+                                                  "source_sha256":  "A32D303326F8B8A452D85C1A2E39B572F7B64ADE4C2E608E46255FACB7255A65",
+                                                  "git_blob_oid":  "b7c46b2acd31c1e61fc2edeb82561f2487f43e9e",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7f_quad_vector_module_execution_smoke_test.py",
+                                                  "source_sha256":  "C197113BD6CAB94E40A96E0A9843746D91D70A1BD471361A7766628A30CCD27E",
+                                                  "git_blob_oid":  "9c1ce8facbcbef617370545d2b72a0d01ffe0fb9",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7g_quad_vector_engine_orchestration_smoke_test.py",
+                                                  "source_sha256":  "B89FF06982CBCA1B47428DADF23BF256C4AD01E7249F8E9934F793D14201C67A",
+                                                  "git_blob_oid":  "3d113e6223930f757f0ba979d87675060db1dda1",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7h_quad_vector_integration_adapters_smoke_test.py",
+                                                  "source_sha256":  "EAD68B17B6D9F2F12695FC676E0534AD5D289407FFF6515DD5ED2FF67DB8CE83",
+                                                  "git_blob_oid":  "d6b93a95201bfeb16ae94e77669a815847ebdf28",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7i_quad_vector_authoring_adapter_smoke_test.py",
+                                                  "source_sha256":  "7F5ED51B9A1FC448E607A089EA6C9CDEB872512871D6B74DE5AFC56B693FD809",
+                                                  "git_blob_oid":  "c9fcdc403bb8a7fc96cbc963de9586d869850597",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7j_quad_vector_module_admission_smoke_test.py",
+                                                  "source_sha256":  "249660DED2780E0BCEB420EAFB4C14ECB7DCAB332522DC2E07F618C964D1AB96",
+                                                  "git_blob_oid":  "28a860a14256db7fadfaa3089c6fe270205ebb97",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7k_quad_vector_module_discovery_smoke_test.py",
+                                                  "source_sha256":  "67D162A08342FE91BB38FE168F1F45F1A6F3EAFC2D4BE778E4C1EE64D6A55A81",
+                                                  "git_blob_oid":  "bdca517828ffcd8ff9560524e82665d07f68ee6c",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7l_quad_vector_descriptor_parsing_smoke_test.py",
+                                                  "source_sha256":  "3D7413926DB3DC2D6F874725702C14FCB601F4EDE5E1D8A1432D921EB4656884",
+                                                  "git_blob_oid":  "9c99eeff867f23734960fd8339569a1f65bd6ae9",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7m_quad_vector_descriptor_validation_smoke_test.py",
+                                                  "source_sha256":  "E8FCC6B212B77B114ED5A1B44FEA14C9C11BB9BD97DA52EF1DFBA1E063C4D85E",
+                                                  "git_blob_oid":  "740e0141d58fb78c0fa6c56e4d6ce5d7ea22bcbe",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7n_quad_vector_descriptor_canonicalization_smoke_test.py",
+                                                  "source_sha256":  "8632866DCAEE07DF05B60E5C3DB002E8D3B526322A5D79489A5E045124DC865C",
+                                                  "git_blob_oid":  "b3d66ef6ca58ad26ad61893a286d41dbed95b9ba",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7o_quad_vector_descriptor_registration_smoke_test.py",
+                                                  "source_sha256":  "6C2D78108D61533E6AB0BC79C85A7C26A7AFAF8F004F65C3C223BD1862D33C50",
+                                                  "git_blob_oid":  "5bdb24e2cd2fba7d54b74203126e9f925ba05912",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7p_quad_vector_descriptor_binding_smoke_test.py",
+                                                  "source_sha256":  "43E6E57B5F3670213A3733AF7BA3C837B01E07408786B2DE12E799439902427A",
+                                                  "git_blob_oid":  "d3a29b6e0c5039ef10abfb47a6d9c68460808db9",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7q_quad_vector_descriptor_execution_smoke_test.py",
+                                                  "source_sha256":  "F9BC4BDB5F15907125EB16909B40BAACD39BE2DA726E4848B44F06927C2D07C0",
+                                                  "git_blob_oid":  "d89685f2eafd32f2d3380e56aca0a3058416caf8",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7r_quad_vector_descriptor_lifecycle_smoke_test.py",
+                                                  "source_sha256":  "943B9A0A519C46BBC2F827C06C659839770FEF8772EEFF7814CD563F3763F3BE",
+                                                  "git_blob_oid":  "9fab5c769d371ed0c2abca54e9c01ecf0210982e",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7s_quad_vector_descriptor_engine_orchestration_smoke_test.py",
+                                                  "source_sha256":  "DB93D92F851EF2045DC64DD099B739C8A307E7FA5BA451B08789C5BE2701D9CB",
+                                                  "git_blob_oid":  "fdcbdc3de5143df5d2f3134e36d46d1d9985ae0c",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_7t_quad_vector_descriptor_integration_orchestration_smoke_test.py",
+                                                  "source_sha256":  "D7DF334D3F8BC1B263D780B5F1513ED5B093D916ACD3C83BC56C6A9F3774F4FB",
+                                                  "git_blob_oid":  "cf1a79b6de78c6c0c6b96c5f058ee7d88a88c16e",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_8a_parametric_semantic_lattice_architecture_audit_smoke_test.py",
+                                                  "source_sha256":  "6DFD48872847F9CBE840A799EECF26E46913AB0891BCDAA2ABC095812C378004",
+                                                  "git_blob_oid":  "e81f5b6578a96dac2921704994f38fdaf0baabbd",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_8b_minimal_immutable_lattice_model_smoke_test.py",
+                                                  "source_sha256":  "5D641F8B5399EA50ADAB8780BA68969E8D034804047F49EFF822C55F63FB0440",
+                                                  "git_blob_oid":  "069cac7a2f9d0637055f70d2ddf7bc3358f718fe",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_8c_canonical_subject_relations_evidence_smoke_test.py",
+                                                  "source_sha256":  "2B55206FB752433A85A9BF285BB0220302A20C0AE26B9273FBC0010AE312E095",
+                                                  "git_blob_oid":  "19416873964a79a12e0e623819463271778d91e0",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_8d_deterministic_lattice_construction_indexing_smoke_test.py",
+                                                  "source_sha256":  "FC7A424498C3FFF0618BADAD73DFF5134CEB2F8A5A808B63A620296F435FB1FE",
+                                                  "git_blob_oid":  "f0b7f8b08490fd49de54c2774a4752d5d219a579",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_8e_canonical_projection_adapters_codex_advisory_smoke_test.py",
+                                                  "source_sha256":  "8CAA9AE54106890DF47378CE009CD2745D5E7F3F2730BBF227E7B34FBB0AEA51",
+                                                  "git_blob_oid":  "ce45a8bd4839e78569c3296a496fc72de84bb9f8",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_8f_validation_collision_provenance_extension_contracts_smoke_test.py",
+                                                  "source_sha256":  "ACF356A88E377661893208B9DD50CD4C967A97FA0F81E097562A63F8B1E58FE7",
+                                                  "git_blob_oid":  "519bbc9954789a158eb4277cd760e82739eafd1c",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_8g_semantic_lattice_reporting_tooling_compatibility_smoke_test.py",
+                                                  "source_sha256":  "FB43B77A21CB4EDC480ECF597B550C69BD3AB0215545DC1B124EAD78FD23E42B",
+                                                  "git_blob_oid":  "8bea1a1c4432678d9bbc18417c1f198457734572",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_9b_minimal_immutable_aether_air_interstitial_model_smoke_test.py",
+                                                  "source_sha256":  "BD85DA1ACD172905306AE19F9E28B8A239767A8BF062C0D7D723D9BF9F18FBBA",
+                                                  "git_blob_oid":  "b4404404c393a72388a8b6a6ee9fa15d50ec8b13",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_9c_canonical_predecessor_references_identity_evidence_provenance_smoke_test.py",
+                                                  "source_sha256":  "0DE2B7EB05BDDC598612551791DABBBF7FD8A2DBD44CEDB779DD81A708E38620",
+                                                  "git_blob_oid":  "29ed171b77bd2e4fb6ac445025b57ad5d8384c1f",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_9d_deterministic_interstitial_construction_smoke_test.py",
+                                                  "source_sha256":  "2FD276134F0DC73FE7D863DB59C41659CDAA62020BFE4B74239A5BEA234DCE71",
+                                                  "git_blob_oid":  "b7d235504358c0efc89ea32704ef5763f0f5bbe2",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_9e_non_executing_transformation_normalization_smoke_test.py",
+                                                  "source_sha256":  "99674D31332810E3DDA302219526910048C3699957853D78EE24463786D72D2A",
+                                                  "git_blob_oid":  "a9adf27e2859ca9f1ab70ed7f9258475b636a0fc",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_9f_validation_collision_closure_extension_smoke_test.py",
+                                                  "source_sha256":  "611D8DED43BDE0B8BEA99E2A0C7781430E976D4AAB39FA683FB16B3C60D35D85",
+                                                  "git_blob_oid":  "5708c8bd265f69b6a432e42e252184ac62c92c25",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_9g_explicit_downstream_projection_boundary_smoke_test.py",
+                                                  "source_sha256":  "25F2427A4697E151A03C95F7FF83B482EDE9EC1E44AD3707727500B34A22BB19",
+                                                  "git_blob_oid":  "7091f204facdef12ff3a5d8ade06caee1405a9f4",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_src_d_semantic_decision_lowering_smoke_test.py",
+                                                  "source_sha256":  "B3CB03766668804F8ECE4247E9360FF6F6556DBB1A6FBE06013561D51420B8C4",
+                                                  "git_blob_oid":  "ce67181e7b55164bb89599b32f154081790ed4aa",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_src_e_semantic_decision_source_validation_smoke_test.py",
+                                                  "source_sha256":  "CD1CB28D0F715A46838D1C18999AA73A62B38B33AFB7B971F208F3B1056D08EA",
+                                                  "git_blob_oid":  "064eb51e420c3f642100271bea249a963199497a",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_src_f_real_apex_compile_analysis_acceptance_smoke_test.py",
+                                                  "source_sha256":  "4DB7C25DA2D0B81AFA5782EBA17E2F0D83E7BE401AC6F2DC1C12B557F9703C5A",
+                                                  "git_blob_oid":  "34b09666021d62490be6de97e460621a61039500",
+                                                  "exit_code":  0
+                                              },
+                                              {
+                                                  "path":  "apexforge/p11_src_g_semantic_decision_project_lsp_compatibility_smoke_test.py",
+                                                  "source_sha256":  "D51CF13CF020C85B4E1DFFC0AF701E936718ED17F579B7B29A95E5FE1C1186F8",
+                                                  "git_blob_oid":  "332c4efd99852ce6fbf768be4c1fd350e479916b",
+                                                  "exit_code":  0
+                                              }
+                                          ]
+                          },
+    "successor":  "P11.16D_HISTORICAL_ENVIRONMENT_TOOLCHAIN_RESOLUTION"
+}
