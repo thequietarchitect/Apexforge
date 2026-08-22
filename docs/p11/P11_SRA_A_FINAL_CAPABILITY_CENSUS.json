@@ -1,0 +1,508 @@
+{
+  "baseline": {
+    "branch": "p11-sra-a-final-capability-census",
+    "p11_terminal_commit": "1d2a6b8fc43eeb361b684f89f6486c9c90a7b14c",
+    "p11_terminal_tag": "afp-p11-16-freeze"
+  },
+  "census": {
+    "aether_air": {
+      "behavior_kind_ids": [
+        "behavior.intent",
+        "transformation.intent",
+        "constraint.intent",
+        "projection.intent"
+      ],
+      "core_behavior_kinds": 4
+    },
+    "agents": {
+      "execution_boundary_note": "Agent planning and projection remain explicit; host effects are handed off through the established execution seam rather than silently executed by agent models.",
+      "implementation_modules": 7,
+      "module_contracts": {
+        "apexforge/agents/catalog.py": [
+          "ProfessionalArchetypeCatalog"
+        ],
+        "apexforge/agents/character_binding.py": [
+          "AgentCharacterBinding"
+        ],
+        "apexforge/agents/execution.py": [
+          "execute_agent_plan"
+        ],
+        "apexforge/agents/model.py": [
+          "AgentIdentity",
+          "ProfessionalArchetype",
+          "AgentDefinition"
+        ],
+        "apexforge/agents/plan_projection.py": [
+          "project_agent_plan_effect_intents"
+        ],
+        "apexforge/agents/planning.py": [
+          "AgentPlan"
+        ],
+        "apexforge/agents/resolution.py": [
+          "AgentArchetypeResolution",
+          "resolve_agent_archetypes"
+        ]
+      },
+      "module_ids": [
+        "apexforge/agents/catalog.py",
+        "apexforge/agents/character_binding.py",
+        "apexforge/agents/execution.py",
+        "apexforge/agents/model.py",
+        "apexforge/agents/plan_projection.py",
+        "apexforge/agents/planning.py",
+        "apexforge/agents/resolution.py"
+      ],
+      "module_public_contract_elements": 10,
+      "public_class_declarations": 7,
+      "public_function_declarations": 3,
+      "root_explicit_exports": 0
+    },
+    "authority_workflow_governance": {
+      "explicit_exports": 4,
+      "owner_files": 24,
+      "owner_ids": [
+        "apexforge/authority/__.init__.py",
+        "apexforge/authority/authority.py",
+        "apexforge/authority/compiler.py",
+        "apexforge/authority/engine.py",
+        "apexforge/authority/model.py",
+        "apexforge/authority/registry.py",
+        "apexforge/authority/validator.py",
+        "apexforge/authorization/role_resolver.py",
+        "apexforge/governance/conflicts.py",
+        "apexforge/principal_compiler.py",
+        "apexforge/workflow/air_registry.py",
+        "apexforge/workflow/air_runner.py",
+        "apexforge/workflow/air_workflow.py",
+        "apexforge/workflow/compiler.py",
+        "apexforge/workflow/context.py",
+        "apexforge/workflow/directive_engine.py",
+        "apexforge/workflow/engine.py",
+        "apexforge/workflow/events.py",
+        "apexforge/workflow/governance.py",
+        "apexforge/workflow/registry.py",
+        "apexforge/workflow/router.py",
+        "apexforge/workflow/rules.py",
+        "apexforge/workflow/workflow_engine.py",
+        "apexforge/workflow/workflow_loader.py"
+      ],
+      "owner_subfamilies": {
+        "authority": 7,
+        "authorization": 1,
+        "governance": 1,
+        "principal_compiler": 1,
+        "workflow": 14
+      },
+      "public_class_declarations": 45,
+      "public_function_declarations": 23,
+      "tap_check_mode": "observational"
+    },
+    "cli": {
+      "add_parser_declaration_count": 10,
+      "narrative_session_actions": [
+        "create",
+        "step",
+        "terminate",
+        "interact"
+      ],
+      "nested_action_count": 4,
+      "note": "The add_parser declaration count is not the same metric as top-level commands: interact is nested under narrative-session, while create/step/terminate are exposed by the narrative-session action contract.",
+      "public_route_count": 13,
+      "top_level_command_count": 9,
+      "top_level_commands": [
+        "project",
+        "check",
+        "run",
+        "simulate",
+        "build",
+        "narrative",
+        "narrative-session",
+        "tap-check",
+        "new"
+      ]
+    },
+    "contract_fingerprints": {
+      "canonical_public_hash_anchors": 37,
+      "fingerprint_algorithm_constants": 2,
+      "private_hash_references": 9,
+      "public_fingerprint_functions": 44,
+      "unique_canonical_hash_values": 37
+    },
+    "diagnostics": {
+      "apx_codes": 152,
+      "production_code_union": 160,
+      "symbolic_codes": 8
+    },
+    "freeze_tags": {
+      "annotated": 132,
+      "historical_lightweight": 34,
+      "other_phase": 2,
+      "other_phase_tags": [
+        "afp-p8-freeze",
+        "afp-p9-freeze"
+      ],
+      "p10": 7,
+      "p11": 157,
+      "total": 166
+    },
+    "identity_nesting_resolution": {
+      "explicit_exports": 17,
+      "owner_files": 6,
+      "owner_ids": [
+        "apexforge/language/identities.py",
+        "apexforge/language/resolution_candidates.py",
+        "apexforge/language/resolution_context.py",
+        "apexforge/language/resolution_outcomes.py",
+        "apexforge/language/resolution_queries.py",
+        "apexforge/language/resolution_visibility.py"
+      ],
+      "public_class_declarations": 12,
+      "public_function_declarations": 5,
+      "visibility_bases": 4,
+      "visibility_basis_order": [
+        "same_source",
+        "same_module",
+        "imported_module",
+        "legacy_context"
+      ]
+    },
+    "incremental_cache": {
+      "implementation_modules": 6,
+      "layer_ids": [
+        "capture",
+        "resonance",
+        "stability"
+      ],
+      "layers": 3,
+      "module_ids": [
+        "apexforge/incremental_cache/capture.py",
+        "apexforge/incremental_cache/integration.py",
+        "apexforge/incremental_cache/model.py",
+        "apexforge/incremental_cache/operational.py",
+        "apexforge/incremental_cache/resonance.py",
+        "apexforge/incremental_cache/stability.py"
+      ],
+      "module_public_contract_elements": 33,
+      "public_class_declarations": 7,
+      "public_function_declarations": 23,
+      "root_public_exports": 9,
+      "schema_version": 1
+    },
+    "interchange": {
+      "models": 1,
+      "operation_ids": [
+        "inspect_build_artifact_interchange",
+        "verify_build_artifact_interchange_fingerprint"
+      ],
+      "operations": 2,
+      "public_contract_elements": 3
+    },
+    "packages_and_rich_documents": {
+      "canonical_project_package_operations": 3,
+      "operation_ids": [
+        "rich_documents.project_build.build_rich_document_project",
+        "rich_documents.project_build.rich_document_project_build_payload",
+        "tooling.project_manifest.load_project_manifest"
+      ],
+      "package_tier_ids": [
+        "core",
+        "standard",
+        "domain",
+        "experimental"
+      ],
+      "package_tiers": 4,
+      "rich_document_block_kind_ids": [
+        "text",
+        "apex",
+        "semantic-table",
+        "diagram",
+        "world-bible",
+        "character-sheet",
+        "simulation-description"
+      ],
+      "rich_document_block_kinds": 7
+    },
+    "public_package_exports": {
+      "explicit_qualified_exports": 423,
+      "owner_packages": 17,
+      "unique_explicit_qualified_exports": 423
+    },
+    "quad_vector": {
+      "foundational_ids": [
+        "model",
+        "module"
+      ],
+      "foundational_modules": 2,
+      "implementation_modules": 21,
+      "operational_capability_modules": 19,
+      "operational_ids": [
+        "admission",
+        "authoring/adapter",
+        "binding",
+        "canonicalization",
+        "descriptor_execution",
+        "descriptor_integration",
+        "descriptor_orchestration",
+        "discovery",
+        "execution",
+        "field_matrix",
+        "integration",
+        "lifecycle",
+        "orchestration",
+        "parsing",
+        "registration",
+        "registry",
+        "resolver",
+        "synchronizer",
+        "validation"
+      ]
+    },
+    "repository_scale": {
+      "discoverable_smoke_tests_at_terminal_p11": 277,
+      "durable_current_pass": 48,
+      "non_durable_resolved": 130,
+      "python_parse_pass": 612,
+      "routed_verification_surfaces": 178,
+      "tracked_python": 612
+    },
+    "schemas": {
+      "dynamic_supported_schema_sets": 1,
+      "explicit_literal_contracts": 55,
+      "named_ids": [
+        "apexforge.build-artifact/v1",
+        "apexforge.build-artifact/v2",
+        "apexforge.build-artifact/v3",
+        "apexforge.narrative-build-artifact/v1",
+        "apexforge.narrative-build-artifact/v2",
+        "apexforge.narrative-build-artifact/v3",
+        "apexforge.narrative-execution-request/v1",
+        "apexforge.narrative-execution-result/v1",
+        "apexforge.narrative-session-create-request/v1",
+        "apexforge.narrative-session-step-request/v1",
+        "apexforge.narrative-session-step-result/v1",
+        "apexforge.narrative-session-terminate-request/v1",
+        "apexforge.narrative-session/v1",
+        "apexforge.performance-baseline/v1",
+        "apexforge.rich-document-project-build/v1"
+      ],
+      "named_schema_ids": 15,
+      "numeric_version_contracts": 40,
+      "production_schema_constants": 56
+    },
+    "semantic_decisions": {
+      "core_convergence_policies": 3,
+      "paradox_elevation": {
+        "classification": "SEPARATE_SEMANTIC_MECHANISM",
+        "public_classes": 4,
+        "public_functions": 2
+      },
+      "policy_ids": [
+        "select.explicit-order",
+        "compose.all-admissible",
+        "rank.explicit-order"
+      ]
+    },
+    "semantic_lattice": {
+      "axis_ids": [
+        "structural.declaration",
+        "narrative.identity_relation",
+        "authority.integrity",
+        "priority",
+        "continuity",
+        "convergence",
+        "causal.provenance",
+        "tam.traceability"
+      ],
+      "core_axes": 8
+    },
+    "source_language": {
+      "classification_note": "Narrative and semantic-decision vocabularies are separate opt-in source vocabularies and are not added to the 29-word core source grammar count.",
+      "core_lexer_keywords": 27,
+      "core_source_word_union": 29,
+      "core_source_words": [
+        "directive",
+        "workflow",
+        "authority",
+        "capability",
+        "state",
+        "event",
+        "cause",
+        "path",
+        "add",
+        "emit",
+        "message",
+        "invoke",
+        "requires",
+        "extends",
+        "principal",
+        "role",
+        "set",
+        "when",
+        "otherwise",
+        "and",
+        "or",
+        "not",
+        "true",
+        "false",
+        "function",
+        "return",
+        "let",
+        "module",
+        "import"
+      ],
+      "narrative_scalar_kinds": [
+        "boolean",
+        "identifier",
+        "string"
+      ],
+      "narrative_source_kind_count": 9,
+      "narrative_source_kinds": [
+        "character",
+        "choice",
+        "continuity",
+        "dialogue",
+        "narrative_state",
+        "perspective",
+        "scene",
+        "story",
+        "timeline"
+      ],
+      "semantic_decision_scalar_kinds": [
+        "boolean",
+        "expression",
+        "identifier",
+        "string"
+      ],
+      "structural_grammar_words": [
+        "module",
+        "import"
+      ]
+    },
+    "standard_library": {
+      "builtin_functions": 134,
+      "builtin_types": 11,
+      "contract_sha256": "602ccca69afc0f4452a3f90d98b0fb8834ce3ede1dab3637e443c398153b059e",
+      "generic_builtins": 16,
+      "group_names": [
+        "core",
+        "numeric",
+        "strings",
+        "booleans",
+        "conversions",
+        "generic_values",
+        "results",
+        "collections",
+        "time",
+        "random",
+        "diagnostics",
+        "reflection"
+      ],
+      "groups": 12,
+      "version": "10.12"
+    },
+    "tam": {
+      "composition_operations": 1,
+      "implementation_modules": 3,
+      "module_ids": [
+        "apexforge/tam/integration.py",
+        "apexforge/tam/model.py",
+        "apexforge/tam/production.py"
+      ],
+      "production_trace_adapter_operations": 19,
+      "public_model_types": 4,
+      "root_public_exports": 27,
+      "trace_domain_ids": [
+        "source",
+        "token",
+        "declaration",
+        "reference",
+        "scope",
+        "type",
+        "authority",
+        "narrative",
+        "ownership",
+        "transformation"
+      ],
+      "trace_domains": 10,
+      "trace_schema_version": 1
+    }
+  },
+  "milestone_gap_expansion": {
+    "dedicated_sections_added": [
+      "agents",
+      "authority_workflow_governance",
+      "identity_nesting_resolution",
+      "incremental_cache",
+      "tam"
+    ],
+    "original_gap_count": 5,
+    "original_gap_families": [
+      "AGENTS",
+      "AUTHORITY_WORKFLOW",
+      "IDENTITY_NESTING",
+      "INCREMENTAL_CACHE",
+      "TAM"
+    ],
+    "source_result": "P11_SRA_A_MILESTONE_RECONCILIATION_RESULT=CANDIDATE_EXPANSION_REQUIRED",
+    "status": "APPLIED"
+  },
+  "mutation": {
+    "frozen_census_artifacts": 3,
+    "preexisting_tracked_files": false,
+    "production": false
+  },
+  "p10_reconciliation": {
+    "builtin_functions": {
+      "delta": 0,
+      "p10": 134,
+      "post_p11": 134
+    },
+    "builtin_types": {
+      "delta": 0,
+      "p10": 11,
+      "post_p11": 11
+    },
+    "generic_builtins": {
+      "delta": 0,
+      "p10": 16,
+      "post_p11": 16
+    },
+    "interpretation": "P11 expanded semantic, execution, observability, package, agent, interoperability, and tooling capability above the frozen P10 standard-library surface; it did not silently mutate the P10 standard-library contract.",
+    "standard_library_groups": {
+      "delta": 0,
+      "p10": 12,
+      "post_p11": 12
+    },
+    "standard_library_version": {
+      "delta": "UNCHANGED",
+      "p10": "10.12",
+      "post_p11": "10.12"
+    }
+  },
+  "release_acceptance": {
+    "canonical_owner_resolution": "PASS",
+    "current_state_census": "PASS",
+    "final_capability_census": "PASS",
+    "freeze_authorized": true,
+    "p10_standard_library_reconciliation": "PASS",
+    "per_milestone_p11_reconciliation": "PASS",
+    "scope": "FINAL_CAPABILITY_CENSUS_ONLY"
+  },
+  "schema": "apexforge.p11-sra-final-capability-census/v2",
+  "sra_a_freeze": {
+    "baseline_terminal_p11_commit": "1d2a6b8fc43eeb361b684f89f6486c9c90a7b14c",
+    "compiler_tam_reconciliation": "ACCOUNTED_DEDICATED",
+    "current_state_census": "PASS",
+    "expanded_census_gap_count": 0,
+    "expanded_census_gaps": [],
+    "note": "This freeze seals SRA-A only. It does not seal the remaining Supplemental Release Acceptance layers and does not authorize P12.",
+    "p10_standard_library_reconciliation": "PASS",
+    "p11_milestone_capability_reconciliation": "PASS",
+    "preexisting_tracked_file_mutation": false,
+    "production_mutation": false,
+    "scope": "SUPPLEMENTAL_RELEASE_ACCEPTANCE_A_FINAL_CAPABILITY_CENSUS_ONLY",
+    "tag": "afp-p11-sra-a-final-capability-census-freeze"
+  },
+  "stage": "P11-SRA-A",
+  "status": "FROZEN"
+}
