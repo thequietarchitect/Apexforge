@@ -265,6 +265,12 @@ class RuntimeValidator:
             principal_index=principal_index,
             authority_check_index=authority_check_index,
             causal_decision_index=causal_decision_index,
+            authority_index=authority_index,
+        )
+
+        self._validate_workflows(
+            workflows=getattr(program, "workflows", ()),
+            directive_ids=set(directive_index),
         )
 
         self._validate_requirements(
@@ -1692,6 +1698,30 @@ class RuntimeValidator:
             )
 
     # ======================================================================
+    # Workflows
+    # ======================================================================
+
+    def _validate_workflows(
+        self,
+        workflows: Iterable[Any],
+        directive_ids: set[str],
+    ) -> None:
+        for workflow in workflows:
+            workflow_id = self._required_string(
+                getattr(workflow, "id", None),
+                description="workflow id",
+            )
+
+            for invocation in tuple(
+                getattr(workflow, "invocations", ()) or ()
+            ):
+                self._validate_directive_invocation(
+                    invocation=invocation,
+                    directive_ids=directive_ids,
+                    owner=f"Workflow '{workflow_id}'",
+                )
+
+    # ======================================================================
     # Directives
     # ======================================================================
 
@@ -1701,6 +1731,7 @@ class RuntimeValidator:
         principal_index: Mapping[str, Any],
         authority_check_index: Mapping[str, Any],
         causal_decision_index: Mapping[str, Any],
+        authority_index: Mapping[str, Any],
     ) -> None:
         orders: set[int] = set()
 
@@ -1729,6 +1760,26 @@ class RuntimeValidator:
                     f"Directive '{directive_id}' references undefined "
                     f"principal '{principal_id}'."
                 )
+
+            directive_authorities = getattr(
+                directive,
+                "authorities",
+                (),
+            )
+
+            for reference in directive_authorities or ():
+                authority_name = self._reference_value(
+                    reference,
+                    description=(
+                        f"directive '{directive_id}' authority reference"
+                    ),
+                )
+
+                if authority_name not in authority_index:
+                    raise UndefinedReferenceError(
+                        f"Directive '{directive_id}' references undefined "
+                        f"authority '{authority_name}'."
+                    )
 
             authority_checks = tuple(
                 getattr(
