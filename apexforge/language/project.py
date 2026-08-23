@@ -646,6 +646,13 @@ class ProjectBuild:
                 selected = directives[
                     0
                 ].id
+            elif len(
+                directives
+            ) == 0:
+                raise ProjectEntryPointError(
+                    "A project with no directives has no "
+                    "entry directive to execute."
+                )
             else:
                 raise ProjectEntryPointError(
                     "A multi-directive project "
