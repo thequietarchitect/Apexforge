@@ -590,6 +590,11 @@ def _run_execute(
         except Exception as exc:
             raise CLIProjectCheckError(str(exc)) from exc
 
+    if loaded.project_kind == PROJECT_KIND_SEMANTIC_DECISION:
+        raise CLIUsageError(
+            "run currently does not support semantic-decision projects."
+        )
+
     selected_builder = builder or _default_project_builder
     selected_entry = (
         entry
@@ -869,6 +874,10 @@ def _run_build(
         except ProjectBuildError as exc:
             raise CLIProjectCheckError(str(exc)) from exc
         artifact_schema = BUILD_ARTIFACT_SCHEMA_V2
+    elif loaded.project_kind == PROJECT_KIND_SEMANTIC_DECISION:
+        raise CLIUsageError(
+            "build currently does not support semantic-decision projects."
+        )
     else:
         build = selected_builder(
             loaded.source_mapping(),
