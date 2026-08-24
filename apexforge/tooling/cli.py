@@ -97,7 +97,7 @@ def _parser() -> _ArgumentParser:
         "path",
         nargs="?",
         default=".",
-        help="project directory, source path, or apexforge.json path",
+        help="project directory, source path within a manifested project, or apexforge.json path",
     )
 
     check = commands.add_parser(
@@ -108,7 +108,7 @@ def _parser() -> _ArgumentParser:
         "path",
         nargs="?",
         default=".",
-        help="project directory, source path, or apexforge.json path",
+        help="project directory, source path within a manifested project, or apexforge.json path",
     )
 
     run = commands.add_parser(
@@ -119,7 +119,7 @@ def _parser() -> _ArgumentParser:
         "path",
         nargs="?",
         default=".",
-        help="project directory, source path, or apexforge.json path",
+        help="project directory, source path within a manifested project, or apexforge.json path",
     )
     run.add_argument(
         "--entry",
@@ -139,7 +139,7 @@ def _parser() -> _ArgumentParser:
         "path",
         nargs="?",
         default=".",
-        help="narrative project directory, source path, or apexforge.json path",
+        help="narrative project directory, source path within a manifested project, or apexforge.json path",
     )
     simulate.add_argument(
         "--observer",
@@ -161,7 +161,7 @@ def _parser() -> _ArgumentParser:
         "path",
         nargs="?",
         default=".",
-        help="project directory, source path, or apexforge.json path",
+        help="project directory, source path within a manifested project, or apexforge.json path",
     )
     build.add_argument(
         "--output",
@@ -242,7 +242,7 @@ def _parser() -> _ArgumentParser:
         "path",
         nargs="?",
         default=".",
-        help="project directory, source path, or apexforge.json path",
+        help="project directory, source path within a manifested project, or apexforge.json path",
     )
 
     new = commands.add_parser(
