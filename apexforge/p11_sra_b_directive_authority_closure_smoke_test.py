@@ -38,7 +38,7 @@ directive Main {
     except ProjectValidationError as exc:
         require(len(exc.diagnostics) == 1, "project validation diagnostic cardinality changed")
         diagnostic = exc.diagnostics[0]
-        require(diagnostic.code == "APX-VALIDATE-999", "project validation fallback code changed")
+        require(diagnostic.code == "APX-VALIDATE-007", "project validation authority diagnostic code changed")
         require(diagnostic.stage == "validate", "project validation stage changed")
         require(
             diagnostic.message == "Directive 'directive:Main' references undefined authority 'MissingAegis'.",

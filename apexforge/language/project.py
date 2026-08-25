@@ -355,7 +355,21 @@ class ProjectValidationError(ProjectBuildError):
             message,
         )
 
-        if invocation_match is not None:
+        directive_authority_match = re.search(
+            r"Directive\s+'([^']+)'\s+references undefined authority\s+'([^']+)'",
+            message,
+        )
+
+        if directive_authority_match is not None:
+            entries = _reference_source_entries(
+                source_map,
+                kind="directive",
+                reference=directive_authority_match.group(1),
+                prefix="directive:",
+            )
+            code = "APX-VALIDATE-007"
+
+        elif invocation_match is not None:
             entries = _reference_source_entries(
                 source_map,
                 kind="directive_invocation",
