@@ -1937,6 +1937,14 @@ def compile_node_with_map(
             kind="workflow",
             reference=node.name,
         )
+        for invocation in node.invocations:
+            _append_source_entry(
+                entries,
+                air_id=f"workflow:{node.name}",
+                node=invocation,
+                kind="directive_invocation",
+                reference=invocation.target,
+            )
         return CompiledSource(
             program=AIRProgram(
                 version=AIR_VERSION,
