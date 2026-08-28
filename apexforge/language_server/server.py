@@ -51,6 +51,8 @@ from language_server.definition import (
     definition,
 )
 
+from language_server.project_definition import project_definition
+
 from language_server.references import (
     CANONICAL_REFERENCES_SHA256,
     P10_T4_REFERENCES_VERSION,
@@ -1092,7 +1094,19 @@ class LanguageServerSession:
                 has_data=True,
             )
         try:
-            return definition(document.uri, document.text, position)
+            resolved = definition(document.uri, document.text, position)
+            if resolved is not None:
+                return resolved
+            overlays = {
+                item.uri: item.text
+                for item in self.documents.snapshot()
+            }
+            return project_definition(
+                document.uri,
+                document.text,
+                position,
+                overlays,
+            )
         except (TypeError, ValueError) as error:
             raise JsonRpcFault(
                 INVALID_PARAMS,
