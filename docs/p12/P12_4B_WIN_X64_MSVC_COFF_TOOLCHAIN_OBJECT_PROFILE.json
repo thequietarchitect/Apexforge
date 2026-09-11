@@ -1,0 +1,86 @@
+{
+    "kind":  "apexforge.p12.native-toolchain-object-profile",
+    "version":  "1.0",
+    "profile_id":  "apexforge.win-x64-msvc-coff/v1",
+    "target":  {
+                   "os":  "windows",
+                   "architecture":  "x64",
+                   "rid":  "win-x64",
+                   "pointer_bits":  64,
+                   "endianness":  "little",
+                   "abi_profile":  "apexforge.win-x64-managed-native-abi/v1"
+               },
+    "compiler":  {
+                     "selected":  true,
+                     "family":  "MSVC",
+                     "driver":  "cl.exe",
+                     "host_architecture":  "x64",
+                     "target_architecture":  "x64",
+                     "discovery":  "VSWHERE_AND_VERSIONED_MSVC_ROOT",
+                     "validated_toolset_version":  "14.51.36231",
+                     "source_language_strategy":  "DEFERRED_TO_P12_4C",
+                     "llvm_required":  false,
+                     "clang_required":  false,
+                     "gcc_required":  false
+                 },
+    "object":  {
+                   "selected":  true,
+                   "format":  "COFF",
+                   "machine":  "AMD64",
+                   "extension":  ".obj",
+                   "debug_information_policy":  "DEFERRED",
+                   "machine_code_emission":  "DEFERRED_TO_P12_4C"
+               },
+    "linker":  {
+                   "selected":  true,
+                   "family":  "MSVC_LINK",
+                   "driver":  "link.exe",
+                   "target_architecture":  "x64",
+                   "image_format":  "PE32_PLUS",
+                   "artifact_kind":  "DEFERRED",
+                   "link_invocation":  "DEFERRED"
+               },
+    "librarian":  {
+                      "family":  "MSVC_LIB",
+                      "driver":  "lib.exe"
+                  },
+    "inspection":  {
+                       "tool":  "dumpbin.exe",
+                       "purpose":  "COFF_AND_PE_INSPECTION"
+                   },
+    "sdk":  {
+                "family":  "WINDOWS_SDK",
+                "validated_version":  "10.0.26100.0",
+                "discovery":  "WINDOWS_KITS_INSTALLED_ROOTS",
+                "kernel32_x64_required":  true,
+                "ucrt_x64_required":  true
+            },
+    "build":  {
+                  "build_system":  "UNSELECTED",
+                  "cmake_required":  false,
+                  "ninja_required":  false,
+                  "visual_studio_ide_dependency":  false,
+                  "direct_tool_invocation_for_acceptance":  "PERMITTED_BUT_NOT_SELECTED"
+              },
+    "semantics":  {
+                      "canonical_semantics_owner":  "UPSTREAM_CANONICAL_AIR",
+                      "native_backend_semantic_authority":  false,
+                      "toolchain_may_redefine_language":  false,
+                      "managed_runtime_relationship":  "SIBLING_TARGET"
+                  },
+    "scope":  {
+                  "object_emission_attempted":  false,
+                  "native_link_attempted":  false,
+                  "dll_production_attempted":  false,
+                  "native_source_implementation":  "DEFERRED_TO_P12_4C",
+                  "export_decoration_strategy":  "DEFERRED",
+                  "generic_ffi":  false
+              },
+    "provenance":  {
+                       "record_compiler_family":  true,
+                       "record_compiler_version":  true,
+                       "record_sdk_version":  true,
+                       "record_target_profile":  true
+                   },
+    "next_gate":  "P12.4C FIRST CONTROLLED X64 COFF OBJECT EMISSION"
+}
