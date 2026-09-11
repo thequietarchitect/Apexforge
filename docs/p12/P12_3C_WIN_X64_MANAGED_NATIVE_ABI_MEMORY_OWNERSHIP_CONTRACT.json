@@ -1,0 +1,84 @@
+{
+    "kind":  "apexforge.p12.win-x64-managed-native-abi-memory-ownership-contract",
+    "version":  "1.0",
+    "profile_id":  "apexforge.win-x64-managed-native-abi/v1",
+    "scope":  {
+                  "os":  "windows",
+                  "rid":  "win-x64",
+                  "architecture":  "x64",
+                  "pointer_bits":  64,
+                  "endianness":  "little",
+                  "managed_target_framework":  "net10.0",
+                  "profile_scope":  "CONCRETE_WINDOWS_X64_PROFILE_NOT_UNIVERSAL_ABI"
+              },
+    "ownership":  {
+                      "abi_owner":  "NATIVE_BACKEND",
+                      "canonical_language_semantics_owner":  "UPSTREAM_CANONICAL_AIR",
+                      "managed_runtime_relationship":  "SIBLING_EXECUTION_TARGET",
+                      "visual_studio_dependency":  false,
+                      "optimizer_semantic_ownership":  false
+                  },
+    "calling_convention":  {
+                               "selected":  "WINDOWS_X64_PLATFORM_ABI",
+                               "c_compatible":  true,
+                               "cpp_name_mangling":  false,
+                               "exceptions_cross_boundary":  false,
+                               "stack_unwinding_across_boundary":  false
+                           },
+    "value_boundary":  {
+                           "integer_types":  [
+                                                 "I32",
+                                                 "I64",
+                                                 "U32",
+                                                 "U64",
+                                                 "U8"
+                                             ],
+                           "boolean":  "U8_0_OR_1",
+                           "text":  "UTF8_POINTER_PLUS_U64_LENGTH",
+                           "null_termination_required":  false,
+                           "structs_by_value":  "FORBIDDEN_V1",
+                           "opaque_native_handles":  "POINTER_SIZED_OPAQUE_NON_DEREFERENCEABLE_BY_MANAGED",
+                           "pointer_arithmetic_by_managed":  "FORBIDDEN"
+                       },
+    "memory_ownership":  {
+                             "input_buffers":  "CALLER_OWNED_BORROWED_FOR_CALL_DURATION_ONLY",
+                             "callee_may_retain_input":  false,
+                             "output_buffers":  "NATIVE_OWNED_UNTIL_EXPLICIT_NATIVE_RELEASE",
+                             "cross_runtime_free":  "FORBIDDEN",
+                             "managed_gc_pointer_retention":  "FORBIDDEN",
+                             "opaque_handle_rule":  "CREATING_RUNTIME_PROVIDES_MATCHING_RELEASE_OPERATION",
+                             "managed_handle_wrapper":  "SAFEHANDLE_PLANNED_P12_3D",
+                             "finalizer_required_for_correctness":  false
+                         },
+    "errors":  {
+                   "function_result":  "I32_STATUS_CODE",
+                   "exceptions_cross_boundary":  false,
+                   "diagnostics":  "UTF8_POINTER_PLUS_U64_LENGTH_WITH_NATIVE_RELEASE",
+                   "success_code":  0
+               },
+    "ffi":  {
+                "generic_ffi":  false,
+                "managed_binding_mechanism":  "DEFERRED_TO_P12_3D",
+                "callbacks":  "DEFERRED",
+                "reverse_pinvoke":  "DEFERRED",
+                "native_library_loading_policy":  "DEFERRED_TO_P12_3D"
+            },
+    "toolchain":  {
+                      "native_compiler":  "UNSELECTED",
+                      "object_format":  "DEFERRED_TO_P12_4",
+                      "linker":  "DEFERRED_TO_P12_4",
+                      "compiler_required_for_this_contract":  false
+                  },
+    "non_goals":  [
+                      "NO_MACHINE_CODE_EMISSION",
+                      "NO_OBJECT_EMISSION",
+                      "NO_LINKING",
+                      "NO_CALLBACK_ABI",
+                      "NO_REVERSE_PINVOKE",
+                      "NO_GENERIC_FFI",
+                      "NO_CROSS_RUNTIME_ALLOCATOR_SHARING",
+                      "NO_LANGUAGE_SEMANTIC_REDEFINITION",
+                      "NO_POLYPLANE"
+                  ],
+    "next_gate":  "P12.3D managed binding and safe-handle boundary implementation after P12.3C contract commit"
+}
