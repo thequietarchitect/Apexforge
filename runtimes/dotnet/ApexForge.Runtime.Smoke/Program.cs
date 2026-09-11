@@ -27,4 +27,34 @@ if (!mismatchRejected)
 }
 Console.WriteLine("MANAGED_OWNERSHIP_MISMATCH_REJECTED=PASS");
 Console.WriteLine("P12_1C_MANAGED_ENVELOPE_ADMISSION=PASS");
+
+var payload = new CanonicalExecutionPayload(new CanonicalExecutionValue[]
+{
+    new("message", "UTF8", "hello"),
+    new("enabled", "BOOL", "true"),
+    new("count", "I64", "42"),
+});
+var admittedPayload = host.AdmitPayload(payload);
+var payloadFingerprint = admittedPayload.Fingerprint();
+Console.WriteLine($"MANAGED_PAYLOAD_FINGERPRINT={payloadFingerprint}");
+Console.WriteLine("MANAGED_VALID_PAYLOAD_ACCEPTED=PASS");
+
+var noncanonicalRejected = false;
+try
+{
+    host.AdmitPayload(new CanonicalExecutionPayload(new CanonicalExecutionValue[]
+    {
+        new("count", "I64", "0042"),
+    }));
+}
+catch (InvalidOperationException)
+{
+    noncanonicalRejected = true;
+}
+if (!noncanonicalRejected)
+{
+    return 3;
+}
+Console.WriteLine("MANAGED_NONCANONICAL_VALUE_REJECTED=PASS");
+Console.WriteLine("P12_1D_MANAGED_PAYLOAD_VALUE_ADMISSION=PASS");
 return 0;

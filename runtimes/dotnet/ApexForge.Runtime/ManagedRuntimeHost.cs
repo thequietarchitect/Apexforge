@@ -20,4 +20,10 @@ public sealed class ManagedRuntimeHost
         ValidateContract(envelope.Contract);
         return envelope;
     }
+
+    public CanonicalExecutionPayload AdmitPayload(CanonicalExecutionPayload payload)
+    {
+        payload.Validate();
+        return payload;
+    }
 }
