@@ -7,5 +7,6 @@
     <RootNamespace>ApexForge.Runtime</RootNamespace>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 </Project>
