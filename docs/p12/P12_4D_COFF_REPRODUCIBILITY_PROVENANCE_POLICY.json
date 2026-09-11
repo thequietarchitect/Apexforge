@@ -1,0 +1,76 @@
+{
+    "kind":  "apexforge.p12.coff-reproducibility-provenance-policy",
+    "version":  "1.0",
+    "profile_id":  "apexforge.win-x64-coff-reproducibility/v1",
+    "applies_to":  {
+                       "toolchain_profile":  "apexforge.win-x64-msvc-coff/v1",
+                       "target":  "windows-x64",
+                       "object_format":  "COFF",
+                       "machine":  "AMD64"
+                   },
+    "identity":  {
+                     "portable_code_identity":  "ORDERED_EXECUTABLE_SECTION_NAME_SIZE_SHA256",
+                     "whole_object_sha256":  "BUILD_INSTANCE_EVIDENCE_ONLY",
+                     "whole_object_hash_portable_across_arbitrary_build_directories":  false
+                 },
+    "same_invocation":  {
+                            "identical_output_path_byte_identity_required":  true,
+                            "brepro_required":  true
+                        },
+    "cross_directory":  {
+                            "whole_object_byte_identity_required":  false,
+                            "executable_code_section_identity_required":  true,
+                            "directive_section_identity_required":  true,
+                            "metadata_variance_allowed":  true,
+                            "allowed_varying_sections":  [
+                                                             ".debug$S",
+                                                             ".chks64"
+                                                         ],
+                            "unexpected_executable_section_variance":  "FAIL",
+                            "unexpected_non_allowlisted_section_variance":  "REVIEW_REQUIRED"
+                        },
+    "observed_evidence":  {
+                              "stage":  "P12.4D-R1",
+                              "whole_object_identical":  false,
+                              "text_section":  ".text$mn",
+                              "text_section_identical":  true,
+                              "text_section_sha256":  "4BC724F3B1D0CAF4FE369C18CBA3102E6C4EA057F63FE1587E3973134A7F755E",
+                              "directive_section":  ".drectve",
+                              "directive_section_identical":  true,
+                              "directive_section_sha256":  "0AAD7DA77D2ED59C396C99A74E49F3A4524DCDBCB5163251B1433D640247AEB4",
+                              "differing_sections":  [
+                                                         ".chks64",
+                                                         ".debug$S"
+                                                     ]
+                          },
+    "provenance":  {
+                       "required_fields":  [
+                                               "source_sha256",
+                                               "abi_header_sha256",
+                                               "toolchain_profile_id",
+                                               "compiler_family",
+                                               "compiler_version",
+                                               "windows_sdk_version",
+                                               "target",
+                                               "object_format",
+                                               "machine",
+                                               "compiler_flags",
+                                               "ordered_executable_section_hashes",
+                                               "whole_object_sha256"
+                                           ],
+                       "source_paths_are_not_portable_identity":  true,
+                       "build_directory_is_not_semantic_identity":  true
+                   },
+    "semantics":  {
+                      "canonical_semantics_owner":  "UPSTREAM_CANONICAL_AIR",
+                      "object_bytes_may_not_redefine_language":  true,
+                      "debug_metadata_is_not_semantic_identity":  true
+                  },
+    "scope":  {
+                  "native_link_attempted":  false,
+                  "dll_production_attempted":  false,
+                  "native_lifecycle_exports_implemented":  false,
+                  "build_system_selected":  false
+              },
+    "next_gate":  "P12.4E NATIVE LIFECYCLE EXPORT IMPLEMENTATION OBJECT SURFACE"
+}
