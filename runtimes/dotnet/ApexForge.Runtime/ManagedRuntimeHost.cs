@@ -26,4 +26,10 @@ public sealed class ManagedRuntimeHost
         payload.Validate();
         return payload;
     }
+
+    public CanonicalExecutionResult AdmitResult(CanonicalExecutionResult result)
+    {
+        result.Validate();
+        return result;
+    }
 }

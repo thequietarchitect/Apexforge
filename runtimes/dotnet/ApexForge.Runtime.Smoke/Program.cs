@@ -57,4 +57,30 @@ if (!noncanonicalRejected)
 }
 Console.WriteLine("MANAGED_NONCANONICAL_VALUE_REJECTED=PASS");
 Console.WriteLine("P12_1D_MANAGED_PAYLOAD_VALUE_ADMISSION=PASS");
+
+var outputs = new CanonicalExecutionPayload(new CanonicalExecutionValue[]
+{
+    new("answer", "I64", "42"),
+    new("summary", "UTF8", "done"),
+});
+var result = host.AdmitResult(new CanonicalExecutionResult(payloadFingerprint, "SUCCESS", outputs));
+var resultFingerprint = result.Fingerprint();
+Console.WriteLine($"MANAGED_RESULT_FINGERPRINT={resultFingerprint}");
+Console.WriteLine("MANAGED_VALID_RESULT_ACCEPTED=PASS");
+
+var invalidResultRejected = false;
+try
+{
+    host.AdmitResult(new CanonicalExecutionResult(payloadFingerprint.ToLowerInvariant(), "SUCCESS", outputs));
+}
+catch (InvalidOperationException)
+{
+    invalidResultRejected = true;
+}
+if (!invalidResultRejected)
+{
+    return 4;
+}
+Console.WriteLine("MANAGED_NONCANONICAL_RESULT_REJECTED=PASS");
+Console.WriteLine("P12_1E_MANAGED_CANONICAL_RESULT=PASS");
 return 0;
