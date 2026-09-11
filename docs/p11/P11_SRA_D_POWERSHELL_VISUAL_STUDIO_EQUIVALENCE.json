@@ -1,0 +1,156 @@
+{
+  "acceptance": {
+    "D0_successor_control_point": "PASS",
+    "D1_fixture_capability_owner_census": "PASS",
+    "D2_live_environment_identity": "PASS",
+    "D3_cli_lsp_diagnostics_equivalence": "PASS",
+    "D4_declaration_resolution_equivalence": "PASS",
+    "D5A_semantic_decision": "PASS",
+    "D5B_narrative": "PASS",
+    "D5C_convergence_paradox": "PASS",
+    "D5D_tam": "PASS",
+    "D5_broader_semantic_result_equivalence": "PASS",
+    "D6_negative_divergence": "PASS",
+    "D7_restart_determinism": "PASS",
+    "D8A_governance_control_point": "PASS",
+    "D8_final_regression": "PASS",
+    "freeze_authorized": true
+  },
+  "anchors": {
+    "p11_10i_sha256": "47ABD6131F609A0FCC5E315F55446549F1BFE47954F99D250A6A0643096C2F8B",
+    "p11_capability_pulse_main_sha256": "45BD8A338F8CC82B6ED3B730B9C2DD06A9D86FC69FAB0599401CE1F421A26E57",
+    "p11_capability_pulse_observer_sha256": "6B9D4CFDBE79AAC130F5596737E465D4970FFDF2A123ADDE637F12A404158F71",
+    "project_definition_sha256": "CDAD3CA55A6857096D6B3DF6CEDD0F24391A1F3F0531109E958B3F8A96B3F62B",
+    "src_h_sha256": "72AC59681E7C4411D92F3DB844E9248C635ADDBC65E27148195B833F0C89194D",
+    "tam_k_sha256": "1C765C9D68ECC23D376BD57C58268AD3E67B23DBA146710422CC55B4AD07AF03",
+    "tam_l_sha256": "692714C04EAE5E3685CDD913E9240C637AC05732EC6522061FC447554213A19B"
+  },
+  "baseline": {
+    "branch": "p11-sra-d-powershell-visual-studio-equivalence",
+    "predecessor_commit": "34ae66b6c2fb8fefa4bfeae9661ec1eac4d6dd84",
+    "predecessor_tag": "afp-p11-sra-c-visual-studio-experimental-acceptance-freeze"
+  },
+  "cli_only_canonical_semantics": {
+    "convergence_paradox": "PASS",
+    "direct_vs_result_comparison": "NOT_APPLICABLE_TO_CURRENT_SURFACE",
+    "narrative": "PASS",
+    "semantic_decision": "PASS",
+    "tam": "PASS",
+    "visual_studio_competing_implementation": "ABSENT_PASS"
+  },
+  "doctrine": {
+    "capability_sets": "CLI_CAPABILITY_SET_NE_VISUAL_STUDIO_CAPABILITY_SET",
+    "cli_only_semantics": "POWER_SHELL_CANONICAL_RESULT_PASS__VS_COMPETING_IMPLEMENTATION_ABSENT_PASS__DIRECT_VS_COMPARISON_NOT_APPLICABLE",
+    "environmental_blocker_rule": "ENVIRONMENTAL_BLOCKER_NE_SEMANTIC_FAILURE",
+    "governance_rule": "BEHAVIOR_PASS_NE_GOVERNANCE_PASS",
+    "historical_blocker_rule": "HISTORICAL_CONTRACT_BLOCKER_NE_NEW_REGRESSION",
+    "ide_semantics_rule": "IDE_MUST_NOT_BECOME_SECOND_SEMANTICS_IMPLEMENTATION",
+    "shared_operations": "SHARED_OPERATION_PS_EQ_SHARED_OPERATION_VS",
+    "visual_studio_entrypoint": "SLN_CANONICAL__SLNX_NOT_QUALIFIED"
+  },
+  "future_scope": {
+    "P12": "NOT_ENTERED_BLOCKED_UNTIL_SRA_E_AND_SRA_F",
+    "SRA_E": "QUEUED",
+    "planes": [
+      "Observation",
+      "Governance",
+      "Simulation",
+      "Optimization",
+      "Distribution",
+      "Temporal",
+      "Knowledge"
+    ],
+    "polyplane": "DEFERRED_POST_RELEASE",
+    "scope_leakage": "NOT_ESTABLISHED"
+  },
+  "historical_classifications": [
+    {
+      "classification": "BLOCKED-HISTORICAL-CONTRACT",
+      "detail": "Frozen VS Code packaging/hash tripwire is not a current definition regression.",
+      "id": "P10_DEFINITION_PACKAGING"
+    },
+    {
+      "classification": "BLOCKED-HISTORICAL-VS-PATH-CONTRACT",
+      "detail": "Historical Visual Studio Classification paths are absent from the final accepted tree.",
+      "id": "P11_4C_H_LEGACY_VS_PATHS"
+    },
+    {
+      "classification": "BLOCKED-HISTORICAL-FIXTURE-CONTRACT",
+      "detail": "examples/P11Validation canonical historical bytes are unavailable; permanent or approximate restoration is prohibited.",
+      "id": "P11_6M_EXACT_REPLAY"
+    },
+    {
+      "classification": "BLOCKED-HISTORICAL-BRANCH-CONTRACT",
+      "detail": "Current convergence/Paradox semantic core passed without replaying obsolete branch assertions.",
+      "id": "P11_10I_EXACT_REPLAY"
+    },
+    {
+      "classification": "HISTORICAL_GOVERNANCE_NOT_CURRENT_SEMANTIC_PROOF",
+      "detail": "Current TAM K/L behavioral and integration cores passed without invoking historical Git freeze/diff controls.",
+      "id": "TAM_K_L_HISTORICAL_CONTROLS"
+    }
+  ],
+  "intended_freeze_tag": "afp-p11-sra-d-powershell-visual-studio-equivalence-freeze",
+  "production_semantic_mutation": false,
+  "review_required": [
+    {
+      "classification": "REVIEW_REQUIRED",
+      "freeze_effect": "CARRIED_REVIEW_ITEM",
+      "id": "SRA-C3A",
+      "regression": "NOT_ESTABLISHED",
+      "subject": "workflow invoke Main definition resolution"
+    }
+  ],
+  "schema": 1,
+  "scope": "POWERSHELL_VISUAL_STUDIO_EQUIVALENCE_ONLY",
+  "shared_surface_evidence": {
+    "definition_negative": {
+      "ambiguous": {
+        "canonical_outcome": "ProjectAmbiguousResolution",
+        "hidden_editor_winner": false,
+        "project_definition": null
+      },
+      "unresolved": {
+        "canonical_outcome": "ProjectUnresolvedResolution",
+        "project_definition": null
+      },
+      "visibility_denial": "PASS"
+    },
+    "definition_positive": {
+      "air_id": "directive:Observer",
+      "canonical_outcome": "ProjectResolvedBinding",
+      "equivalence": "PASS",
+      "project_definition": "RESOLVED",
+      "source_name": "src/observer.apex",
+      "span": [
+        28,
+        301
+      ]
+    },
+    "diagnostics": {
+      "cli_lsp_code_equivalence": "PASS",
+      "determinism": "PASS",
+      "malformed_code": "APX-PARSE-003",
+      "valid_cli_exit": 0,
+      "valid_lsp_diagnostics": 0
+    },
+    "restart": {
+      "cli_lsp_diagnostics_fresh_process": "PASS",
+      "resolution_definition_fresh_process": "PASS"
+    }
+  },
+  "sra_d_freeze": {
+    "final_regression": "PASS",
+    "governance_review": "PASS",
+    "predecessor_commit": "34ae66b6c2fb8fefa4bfeae9661ec1eac4d6dd84",
+    "predecessor_tag": "afp-p11-sra-c-visual-studio-experimental-acceptance-freeze",
+    "production_semantic_mutation": false,
+    "release_delta_artifacts": 3,
+    "successor": "P11-SRA-E",
+    "tag": "afp-p11-sra-d-powershell-visual-studio-equivalence-freeze"
+  },
+  "stage": "P11-SRA-D",
+  "status": "FROZEN",
+  "successor": "P11-SRA-E",
+  "title": "PowerShell / Visual Studio Equivalence"
+}
