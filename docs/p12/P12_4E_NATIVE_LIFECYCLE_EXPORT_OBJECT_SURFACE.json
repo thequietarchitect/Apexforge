@@ -1,0 +1,51 @@
+{
+  "kind": "apexforge.p12.native-lifecycle-export-object-surface",
+  "version": "1.0",
+  "profile_id": "apexforge.win-x64-native-lifecycle-export-object/v1",
+  "target": {
+    "toolchain_profile": "apexforge.win-x64-msvc-coff/v1",
+    "reproducibility_profile": "apexforge.win-x64-coff-reproducibility/v1",
+    "abi_profile": "apexforge.win-x64-managed-native-abi/v1",
+    "lifecycle_profile": "apexforge.win-x64-native-export-lifecycle/v1",
+    "os": "windows",
+    "architecture": "x64",
+    "object_format": "COFF",
+    "machine": "AMD64"
+  },
+  "surface": {
+    "public_defined_symbols": [
+      "apexforge_release_handle",
+      "apexforge_release_buffer"
+    ],
+    "internal_undefined_dependencies": [
+      "apexforge_internal_release_handle",
+      "apexforge_internal_release_buffer"
+    ],
+    "public_release_symbols_forward_only": true,
+    "allocator_symbols_permitted": false,
+    "creation_symbols_permitted": false,
+    "compiler_specific_export_decoration_introduced": false
+  },
+  "ownership": {
+    "allocator_behavior_implemented": false,
+    "lifecycle_core_implemented": false,
+    "lifecycle_core_deferred_to": "P12.4F",
+    "cross_runtime_free": "FORBIDDEN",
+    "public_release_success_semantics_claimed": false
+  },
+  "emission": {
+    "native_source_language": "C",
+    "object_emission_required": true,
+    "same_output_path_byte_determinism_required": true,
+    "cross_directory_executable_section_identity_required": true,
+    "whole_object_cross_directory_identity_required": false,
+    "native_link_attempted": false,
+    "dll_production_attempted": false
+  },
+  "semantics": {
+    "canonical_semantics_owner": "UPSTREAM_CANONICAL_AIR",
+    "native_backend_semantic_authority": false,
+    "object_surface_may_redefine_language": false
+  },
+  "next_gate": "P12.4F NATIVE LIFECYCLE CORE IMPLEMENTATION"
+}
