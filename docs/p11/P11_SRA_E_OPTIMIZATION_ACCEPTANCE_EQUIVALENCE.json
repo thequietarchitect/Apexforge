@@ -1,0 +1,157 @@
+{
+  "acceptance": {
+    "E0_successor_control_point": "PASS",
+    "E1_capability_owner_census": "PASS",
+    "E2_ownership_boundary_audit": "PASS",
+    "E3_incremental_cache_equivalence": "PASS",
+    "E4_tap_observational_neutrality": "PASS",
+    "E5_optimized_air_projection_boundary": "PASS",
+    "E6_negative_invalidation_determinism": "PASS",
+    "E7A_final_governance_control_point": "PASS",
+    "E7_final_regression": "PASS",
+    "freeze_authorized": true
+  },
+  "anchors": {
+    "apexforge/aether_air/projection.py": "4538F12D006D43BF6C9D1BBF75B50692DB2DE731115D1268F7F793A8B0642A52",
+    "apexforge/incremental_cache/capture.py": "FB3E6E84400B2FCB7F74BE5060F08609F1A481BBF25FD7881A85566541967C76",
+    "apexforge/incremental_cache/integration.py": "973058C2CA9CE698FCF515B278B6A9B7D10617A2726B9D999890D8F452897E36",
+    "apexforge/incremental_cache/model.py": "055FF45999A452D19F7C2ECFFA473E29252F6DE3B9C7B3964C4F55BC3FCA1736",
+    "apexforge/incremental_cache/operational.py": "737CD68E6B2D25884F42F54F229C4B4852C5184CB666DE26C236D3430B2B47BD",
+    "apexforge/incremental_cache/resonance.py": "2982DE185AB6579AC8ED441111DDC2F84D4754508AEEADA91F8E915518510C2A",
+    "apexforge/incremental_cache/stability.py": "FCE07FFB1B483DB26F0735C3B9BBAF6C7E985865104D3B867CBF0410A87A76FB",
+    "apexforge/p11_11g_final_tap_check_integration_regression_freeze_smoke_test.py": "161525B73E079B2C9B87BCFAAB2675E8623B80883ECC3717D14BE75D53EBF57B",
+    "apexforge/p11_12h_three_layer_incremental_cache_final_acceptance_smoke_test.py": "2A918CD790BB7530D4043C4B2939FFA208BFBA1D6C86398765972A91FFEF5BD2",
+    "apexforge/p11_9i_final_aether_air_2_integration_regression_freeze_smoke_test.py": "D1EB818EDD373B7B20AFA370C7C4282784C1F258383081A6B837C2AC266A106E",
+    "apexforge/p11_sra_d_powershell_visual_studio_equivalence_freeze_smoke_test.py": "9971C1136C6A51DB411EF9B26D5C8EA3550EF5B867BBA27931FFA91A911DDE95",
+    "apexforge/tap_check/adapters.py": "8895FBF8D79EC70BE09E0F73E31B42829A3C6BB326F5B0326B54E9793C0C7CBA",
+    "apexforge/tap_check/aggregation.py": "D272A29774AC435ACF58CCB2CD678A234F2CC47D0EEDBBAEA502D99AE9733BAA",
+    "apexforge/tap_check/model.py": "C1E6F650977A73A7E3F3655A948416129AAB0AFDDB69DA561582F771C16B8769",
+    "apexforge/tap_check/projection.py": "C43F222DC98704A3C3803F475359F97B72FCB0BEAB6F829188493CF591B117A2"
+  },
+  "baseline": {
+    "branch": "p11-sra-e-optimization-acceptance-equivalence",
+    "predecessor_commit": "01364c7a65280371e07f3b37ebe1a7f92a87040e",
+    "predecessor_stage": "P11-SRA-D",
+    "predecessor_tag": "afp-p11-sra-d-powershell-visual-studio-equivalence-freeze"
+  },
+  "doctrine": {
+    "cache_rule": "CACHE_REUSES_OWNER_PRODUCED_VALUES_AND_MUST_NOT_BECOME_SEMANTIC_OWNER",
+    "canonical_semantics_rule": "OPTIMIZATION_ADJACENT_PATHS_MUST_PRESERVE_OWNER_PRODUCED_CANONICAL_RESULTS",
+    "environmental_blocker_rule": "ENVIRONMENTAL_BLOCKER_IS_NOT_SEMANTIC_FAILURE",
+    "future_scope_rule": "P12_AND_POLYPLANE_REMAIN_DEFERRED",
+    "governance_rule": "BEHAVIOR_PASS_DOES_NOT_IMPLY_GOVERNANCE_PASS",
+    "historical_blocker_rule": "HISTORICAL_CONTRACT_BLOCKER_IS_NOT_CURRENT_REGRESSION",
+    "optimized_air_rule": "OPTIMIZED_AIR_IS_CONSUMER_METADATA_ONLY_NOT_CONSTRUCTION_SELECTION_INVOCATION_OR_EXECUTION",
+    "optimizer_creation": "NONE",
+    "stale_rule": "STALE_OR_MISMATCHED_CACHE_INPUT_MUST_INVALIDATE_AND_RECOMPUTE",
+    "tap_rule": "TAP_IS_OBSERVATIONAL_AND_OPTIMIZATION_DECISIONS_REMAIN_DEFERRED"
+  },
+  "evidence": {
+    "cache": {
+      "arbitrary_percent_threshold": "NONE",
+      "changed_input_outcomes": [
+        "hit",
+        "stale",
+        "invalidated",
+        "stored",
+        "hit",
+        "miss",
+        "stored"
+      ],
+      "fixed_corpus_semantic_equivalence": "PASS",
+      "observed_warm_reduction_ratio": 0.669884,
+      "semantic_owner_mutation": "NOT_ESTABLISHED",
+      "stale_input_reused": false,
+      "unchanged_warm_path_faster": true
+    },
+    "determinism": {
+      "fresh_process_run_1": "PASS",
+      "fresh_process_run_2": "PASS",
+      "normalized_output_equal": true
+    },
+    "optimized_air": {
+      "canonical_air_mutation": "NONE",
+      "construction": "NONE",
+      "execution_owner_import_count": 0,
+      "forbidden_execution_call_count": 0,
+      "optimizer_invocation": "NONE",
+      "optimizer_selection": "NONE",
+      "role": "DOWNSTREAM_CONSUMER_METADATA_ONLY",
+      "runtime_execution": "NONE",
+      "validation_receipt_identity": "PRESERVED"
+    },
+    "tap": {
+      "mode": "OBSERVATIONAL",
+      "optimization_authority": "NONE",
+      "optimization_decisions_deferred": true,
+      "optimization_decisions_observable": false,
+      "semantic_owner_mutation": "NOT_ESTABLISHED"
+    }
+  },
+  "finalization": {
+    "artifact_state": "FROZEN",
+    "candidate_governance_review": "PASS",
+    "candidate_json_sha256": "6ABDB32AE39AC795BBBBBF9ED199E916775CEC55C2C5802206C5221FB5E5696B",
+    "candidate_markdown_sha256": "66B907D1FD4FD9C34C38B80529B4A902CC7B2740242989DFE909CEA202F72C2E",
+    "final_candidate_regression": "PASS",
+    "production_semantic_mutation": false,
+    "publication_established_at_artifact_creation": false,
+    "python_parse_failure_count": 0,
+    "repository_freeze_established_at_artifact_creation": false,
+    "repository_status_unchanged_during_regression": true,
+    "tracked_python_file_count": 623
+  },
+  "future_scope": {
+    "P12": "NOT_ENTERED",
+    "SRA_F": "QUEUED",
+    "planes": [
+      "Observation",
+      "Governance",
+      "Simulation",
+      "Optimization",
+      "Distribution",
+      "Temporal",
+      "Knowledge"
+    ],
+    "polyplane": "DEFERRED_POST_RELEASE",
+    "scope_leakage": "NOT_ESTABLISHED"
+  },
+  "historical_classifications": [
+    {
+      "classification": "BLOCKED-HISTORICAL-ARTIFACT-CONTRACT",
+      "id": "P11.12H_DIRECT_REPLAY",
+      "regression": "NOT_ESTABLISHED"
+    },
+    {
+      "classification": "BLOCKED-HISTORICAL-SCOPE-CONTRACT",
+      "id": "P11.12H_OWNER_BOUNDARY_REPLAY",
+      "regression": "NOT_ESTABLISHED"
+    },
+    {
+      "classification": "BLOCKED-HISTORICAL-ARTIFACT-CONTRACT",
+      "id": "P11.11G_DIRECT_REPLAY",
+      "regression": "NOT_ESTABLISHED"
+    },
+    {
+      "classification": "BLOCKED-HISTORICAL-BRANCH-CONTRACT",
+      "id": "P11.9I_DIRECT_REPLAY",
+      "regression": "NOT_ESTABLISHED"
+    }
+  ],
+  "historical_proofs": {
+    "p11_11f_to_11g_cli_blob_identical": true,
+    "p11_11f_to_11g_protected_delta_count": 0,
+    "p11_11g_expected_worktree_hash_representation": "CRLF",
+    "p11_12g_to_12h_protected_delta_count": 0,
+    "p11_12g_to_12h_tooling_delta_count": 0
+  },
+  "intended_freeze_tag": "afp-p11-sra-e-optimization-acceptance-equivalence-freeze",
+  "production_semantic_mutation": false,
+  "schema": 1,
+  "scope": "OPTIMIZATION_ACCEPTANCE_EQUIVALENCE_ONLY",
+  "stage": "P11-SRA-E",
+  "status": "FROZEN",
+  "successor": "P11-SRA-F",
+  "title": "Optimization Acceptance / Equivalence",
+  "tracked_delta_from_sra_d": 0
+}
