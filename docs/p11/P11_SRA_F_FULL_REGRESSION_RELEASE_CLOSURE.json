@@ -1,0 +1,82 @@
+{
+    "schema":  1,
+    "kind":  "apexforge.p11.sra-f.full-regression-release-closure",
+    "stage":  "P11-SRA-F",
+    "title":  "Full Regression and Release Closure",
+    "state":  "FROZEN_RELEASE_CLOSURE",
+    "date":  "2026-09-11",
+    "branch":  "p11-sra-f-full-regression-release-closure",
+    "predecessor":  {
+                        "commit":  "f7eae1949f1cc859799bb72a490ed2aa4b6ff261",
+                        "tag":  "afp-p11-sra-e-optimization-acceptance-equivalence-freeze"
+                    },
+    "freeze":  {
+                   "tag":  "afp-p11-sra-f-full-regression-release-closure-freeze",
+                   "artifact_count":  3,
+                   "publication_required":  true
+               },
+    "release":  {
+                    "p10":  "FROZEN",
+                    "p11":  "IMPLEMENTATION_COMPLETE_THROUGH_TERMINAL_RELEASE_CLOSURE",
+                    "supplemental_release_acceptance":  "COMPLETE_THROUGH_F6",
+                    "p12":  "NOT_ENTERED"
+                },
+    "stages":  {
+                   "F0":  "PASS",
+                   "F1":  "PASS",
+                   "F2":  "PASS",
+                   "F3":  "PASS",
+                   "F4":  "PASS",
+                   "F5":  "PASS",
+                   "F6":  "PASS",
+                   "F7":  "FREEZE_CANDIDATE"
+               },
+    "regression":  {
+                       "inventory":  237,
+                       "raw_pass":  98,
+                       "raw_fail":  139,
+                       "reconciled_failures":  139,
+                       "unresolved_execution_failures":  0,
+                       "current_semantic_regressions":  0,
+                       "established_blocked_env":  0
+                   },
+    "terminal_candidate":  {
+                               "permanent_sra_smokes":  11,
+                               "current_pass":  10,
+                               "historical_branch_contract":  1,
+                               "unexpected_failures":  0,
+                               "powershell_real_apex_acceptance":  "PASS",
+                               "tracked_python_files":  624,
+                               "python_ast_parse_failures":  0
+                           },
+    "historical_contract":  {
+                                "test":  "apexforge/p11_sra_d_powershell_visual_studio_equivalence_freeze_smoke_test.py",
+                                "classification":  "BLOCKED-HISTORICAL-BRANCH-CONTRACT",
+                                "current_regression":  "NOT_ESTABLISHED"
+                            },
+    "carried_review":  {
+                           "id":  "SRA-C3A",
+                           "observation":  "LIVE_C3A_WORKFLOW_INVOKE_MAIN_DID_NOT_RESOLVE",
+                           "classification":  "REVIEW_REQUIRED",
+                           "regression":  "NOT_ESTABLISHED",
+                           "resolution":  "NOT_CLAIMED",
+                           "current_release_blocker":  "NOT_ESTABLISHED"
+                       },
+    "deferred_scope":  {
+                           "p12_entry":  "NOT_ENTERED",
+                           "polyplane_activation":  "NOT_ESTABLISHED",
+                           "native_backend":  "DEFERRED_TO_P12"
+                       },
+    "freeze_artifacts":  [
+                             "docs/p11/P11_SRA_F_FULL_REGRESSION_RELEASE_CLOSURE.json",
+                             "docs/p11/P11_SRA_F_FULL_REGRESSION_RELEASE_CLOSURE.md",
+                             "apexforge/p11_sra_f_full_regression_release_closure_freeze_smoke_test.py"
+                         ],
+    "governance":  [
+                       "ENVIRONMENTAL_BLOCKER_DOES_NOT_EQUAL_SEMANTIC_FAILURE",
+                       "HISTORICAL_CONTRACT_BLOCKER_DOES_NOT_EQUAL_NEW_REGRESSION",
+                       "BEHAVIOR_PASS_DOES_NOT_EQUAL_GOVERNANCE_PASS",
+                       "GOVERNANCE_ALIGNMENT_REQUIRED_BEFORE_FREEZE",
+                       "SRA_C3A_REMAINS_CARRIED_AND_IS_NOT_SILENTLY_RESOLVED"
+                   ]
+}
