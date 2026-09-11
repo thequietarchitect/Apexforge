@@ -1,0 +1,94 @@
+{
+    "schema":  1,
+    "kind":  "apexforge.p12.execution-target-architecture-contract",
+    "stage":  "P12.0C",
+    "title":  "Execution Target Architecture Contract",
+    "state":  "CANDIDATE",
+    "source_release":  {
+                           "p11_freeze_commit":  "322ba125495ad7b4f3d6b2dcc447e5e383d067f9",
+                           "p11_state":  "TERMINALLY_FROZEN_PUBLISHED"
+                       },
+    "canonical_ownership":  {
+                                "language_semantics":  "ApexForge canonical semantic model / AIR",
+                                "rule":  "execution targets consume canonical semantics and MUST NOT redefine language meaning"
+                            },
+    "targets":  [
+                    {
+                        "id":  "PYTHON_REFERENCE_RUNTIME",
+                        "status":  "EXISTING",
+                        "role":  "reference semantic execution runtime",
+                        "owners":  [
+                                       "apexforge/runtime",
+                                       "apexforge_runtime.py"
+                                   ],
+                        "may_define_language_semantics":  false
+                    },
+                    {
+                        "id":  "CSHARP_DOTNET_MANAGED_RUNTIME",
+                        "status":  "PLANNED_P12",
+                        "role":  "managed execution target",
+                        "owners":  [
+                                       "future dedicated managed-runtime package/project"
+                                   ],
+                        "may_define_language_semantics":  false
+                    },
+                    {
+                        "id":  "NATIVE_BACKEND",
+                        "status":  "ACTIVE_P12_DESIGN",
+                        "role":  "native lowering, ABI, object emission, linking and native execution target",
+                        "owners":  [
+                                       "future dedicated native-backend package"
+                                   ],
+                        "may_define_language_semantics":  false
+                    }
+                ],
+    "editor_boundary":  {
+                            "visual_studio_project":  "editors/visualstudio-apexforge/src/ApexForge.VisualStudio",
+                            "classification":  "IDE_INTEGRATION",
+                            "is_csharp_runtime":  false,
+                            "rule":  "Visual Studio integration MUST NOT become managed-runtime semantic owner"
+                        },
+    "managed_runtime_contract":  {
+                                     "runtime":  "C#/.NET",
+                                     "first_class_target":  true,
+                                     "separate_from_visual_studio":  true,
+                                     "required_equivalence":  "canonical observable semantics",
+                                     "planned_surfaces":  [
+                                                              "runtime host",
+                                                              "managed lowering",
+                                                              "artifact emission",
+                                                              "interop boundary",
+                                                              "diagnostic mapping"
+                                                          ]
+                                 },
+    "native_backend_contract":  {
+                                    "first_class_target":  true,
+                                    "required_equivalence":  "canonical observable semantics",
+                                    "planned_surfaces":  [
+                                                             "native lowering",
+                                                             "ABI",
+                                                             "object emission",
+                                                             "linking",
+                                                             "native executable or library"
+                                                         ]
+                                },
+    "reference_runtime_contract":  {
+                                       "runtime":  "Python",
+                                       "purpose":  "reference and conformance execution",
+                                       "replacement_by_p12":  false
+                                   },
+    "invariants":  [
+                       "CANONICAL_SEMANTICS_SINGLE_OWNER",
+                       "PYTHON_REFERENCE_RUNTIME_DOES_NOT_REDEFINE_LANGUAGE",
+                       "CSHARP_RUNTIME_DOES_NOT_REDEFINE_LANGUAGE",
+                       "NATIVE_BACKEND_DOES_NOT_REDEFINE_LANGUAGE",
+                       "VISUAL_STUDIO_INTEGRATION_IS_NOT_CSHARP_RUNTIME",
+                       "TARGET_DIFFERENCES_MAY_CHANGE_REPRESENTATION_RUNTIME_SERVICES_PERFORMANCE_AND_DEPLOYMENT",
+                       "TARGET_DIFFERENCES_MUST_NOT_CHANGE_IDENTITY_AUTHORITY_RESOLUTION_WORKFLOW_MEANING_DIAGNOSTIC_CONTRACT_OR_OBSERVABLE_LANGUAGE_SEMANTICS"
+                   ],
+    "deferred":  {
+                     "polyplane":  "DEFERRED",
+                     "generic_ffi":  "REQUIRES_CONCRETE_P12_CONTRACT",
+                     "p13_debugger":  "DEFERRED"
+                 }
+}
