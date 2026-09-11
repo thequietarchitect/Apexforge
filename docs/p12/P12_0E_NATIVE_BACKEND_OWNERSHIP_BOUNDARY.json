@@ -1,0 +1,100 @@
+{
+    "schema":  1,
+    "kind":  "apexforge.p12.native-backend-ownership-boundary",
+    "stage":  "P12.0E",
+    "title":  "Native Backend Ownership Boundary",
+    "state":  "CANDIDATE",
+    "predecessor":  {
+                        "commit":  "22459a14f76d13005c15aee80d2d4d0c3274c2a3",
+                        "tag":  "afp-p12.0d-freeze"
+                    },
+    "identity":  {
+                     "id":  "NATIVE_BACKEND",
+                     "classification":  "FIRST_CLASS_EXECUTION_TARGET",
+                     "status":  "DESIGN_BOUNDARY",
+                     "implementation_technology":  "UNSELECTED"
+                 },
+    "planned_layout":  {
+                           "package_root":  "apexforge/native_backend",
+                           "rule":  "dedicated native-backend package separate from managed runtime and editor integrations"
+                       },
+    "canonical_input":  {
+                            "verified_air_owner":  "air.model.VerifiedAIRProgram",
+                            "rule":  "native backend consumes verified canonical semantic products and target configuration without becoming parser, resolver, authority, identity, workflow, or AIR-semantic owner"
+                        },
+    "owns":  [
+                 "native target description and selection",
+                 "native lowering from canonical verified products",
+                 "native type and layout mapping",
+                 "native ABI mapping after explicit ABI contract",
+                 "native symbol mapping",
+                 "object emission boundary",
+                 "link planning and linker invocation boundary",
+                 "native executable and library artifact construction",
+                 "native-target diagnostic translation",
+                 "native artifact provenance and target metadata"
+             ],
+    "does_not_own":  [
+                         "ApexForge grammar",
+                         "source parsing",
+                         "name resolution",
+                         "authority semantics",
+                         "identity semantics",
+                         "workflow meaning",
+                         "canonical AIR semantics",
+                         "Aether AIR semantics",
+                         "Python reference runtime",
+                         "C# .NET managed runtime",
+                         "Visual Studio editor semantics",
+                         "generic FFI policy",
+                         "optimizer semantic ownership",
+                         "PolyPlane"
+                     ],
+    "managed_runtime_boundary":  {
+                                     "relationship":  "SIBLING_TARGET",
+                                     "native_backend_owns_managed_runtime":  false,
+                                     "managed_runtime_owns_native_backend":  false,
+                                     "managed_runtime_required_for_native_execution":  false
+                                 },
+    "python_reference_boundary":  {
+                                      "relationship":  "REFERENCE_CONFORMANCE_ORACLE",
+                                      "native_backend_replaces_python_runtime":  false,
+                                      "python_runtime_required_as_native_production_dependency":  false
+                                  },
+    "editor_boundary":  {
+                            "visual_studio_runtime_or_backend_owner":  false,
+                            "rule":  "editor integrations may invoke backend services later but do not own native compilation semantics"
+                        },
+    "toolchain_policy":  {
+                             "compiler_backend":  "UNSELECTED",
+                             "object_format":  "TARGET_DEPENDENT_UNSELECTED",
+                             "linker":  "UNSELECTED",
+                             "llvm_required":  false,
+                             "rule":  "P12.0E defines ownership before selecting concrete native toolchain technology"
+                         },
+    "abi_policy":  {
+                       "state":  "DEFERRED_TO_P12_3_CONCRETE_ABI_CONTRACT",
+                       "generic_ffi":  "NOT_INTRODUCED",
+                       "rule":  "ABI and FFI surfaces require concrete target and interoperability evidence"
+                   },
+    "optimization_policy":  {
+                                "semantic_owner":  false,
+                                "optimizer_owner":  "NOT_ASSIGNED_BY_P12_0E",
+                                "rule":  "native backend may consume semantics-preserving optimized products later but does not acquire optimization semantic ownership here"
+                            },
+    "invariants":  [
+                       "ONE_CANONICAL_APEXFORGE_SEMANTIC_OWNER",
+                       "NATIVE_BACKEND_IS_FIRST_CLASS_SIBLING_TARGET",
+                       "NATIVE_BACKEND_CONSUMES_VERIFIED_CANONICAL_PRODUCTS",
+                       "NATIVE_BACKEND_DOES_NOT_PARSE_OR_RESOLVE_SOURCE",
+                       "NATIVE_BACKEND_DOES_NOT_OWN_AUTHORITY_IDENTITY_OR_WORKFLOW_SEMANTICS",
+                       "NATIVE_BACKEND_DOES_NOT_OWN_MANAGED_RUNTIME",
+                       "NATIVE_BACKEND_DOES_NOT_OWN_PYTHON_REFERENCE_RUNTIME",
+                       "VISUAL_STUDIO_IS_NOT_NATIVE_BACKEND_OWNER",
+                       "TOOLCHAIN_TECHNOLOGY_REMAINS_UNSELECTED_AT_OWNERSHIP_BOUNDARY",
+                       "NO_GENERIC_FFI_BEFORE_CONCRETE_INTEROP_CONTRACT",
+                       "NO_OPTIMIZER_SEMANTIC_OWNERSHIP_BY_NATIVE_BACKEND",
+                       "POLYPLANE_REMAINS_DEFERRED"
+                   ],
+    "next_gate":  "P12.0E freeze before native backend package creation"
+}
