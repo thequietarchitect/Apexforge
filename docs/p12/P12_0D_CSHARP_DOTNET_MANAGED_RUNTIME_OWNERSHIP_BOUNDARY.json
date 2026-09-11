@@ -1,0 +1,90 @@
+{
+    "schema":  1,
+    "kind":  "apexforge.p12.csharp-dotnet-managed-runtime-ownership-boundary",
+    "stage":  "P12.0D",
+    "title":  "C# / .NET Managed Runtime Ownership Boundary",
+    "state":  "CANDIDATE",
+    "predecessor":  {
+                        "commit":  "0350816742e6035b37ff790ef2b575e3b994228d",
+                        "tag":  "afp-p12.0c-freeze"
+                    },
+    "identity":  {
+                     "id":  "CSHARP_DOTNET_MANAGED_RUNTIME",
+                     "language":  "C#",
+                     "platform":  ".NET",
+                     "classification":  "FIRST_CLASS_EXECUTION_TARGET",
+                     "status":  "DESIGN_BOUNDARY"
+                 },
+    "planned_layout":  {
+                           "project_root":  "runtimes/dotnet/ApexForge.Runtime",
+                           "project_file":  "runtimes/dotnet/ApexForge.Runtime/ApexForge.Runtime.csproj",
+                           "assembly":  "ApexForge.Runtime",
+                           "visual_studio_project":  "editors/visualstudio-apexforge/src/ApexForge.VisualStudio/ApexForge.VisualStudio.csproj"
+                       },
+    "canonical_input":  {
+                            "verified_air_owner":  "air.model.VerifiedAIRProgram",
+                            "execution_plan_owner":  "workflow.air_runner.RegistryExecutionPlan",
+                            "rule":  "managed runtime consumes canonical verified execution products and does not become parser, resolver, authority, or language-semantic owner"
+                        },
+    "owns":  [
+                 "managed runtime host and lifecycle",
+                 "managed value representation",
+                 "managed execution dispatch",
+                 "managed call stack and execution context",
+                 "managed diagnostic translation",
+                 "managed artifact loading boundary",
+                 "managed standard-runtime services required by canonical execution"
+             ],
+    "does_not_own":  [
+                         "ApexForge grammar",
+                         "source parsing",
+                         "name resolution",
+                         "authority semantics",
+                         "identity semantics",
+                         "workflow meaning",
+                         "canonical AIR semantics",
+                         "Visual Studio editor semantics",
+                         "native ABI",
+                         "native object emission",
+                         "native linking",
+                         "PolyPlane"
+                     ],
+    "dependency_rules":  [
+                             "ApexForge.Runtime MUST NOT depend on ApexForge.VisualStudio",
+                             "ApexForge.VisualStudio MUST NOT define managed-runtime language semantics",
+                             "Python reference runtime remains an independent conformance oracle and is not a required production dependency of ApexForge.Runtime",
+                             "Native backend remains a sibling execution target and does not become managed-runtime semantic owner",
+                             "cross-target FFI or ABI bridging requires a later explicit P12 contract"
+                         ],
+    "visual_studio_boundary":  {
+                                   "classification":  "IDE_INTEGRATION_ONLY",
+                                   "runtime_owner":  false,
+                                   "may_call_runtime_later":  true,
+                                   "may_define_semantics":  false,
+                                   "reverse_dependency_from_runtime_forbidden":  true
+                               },
+    "python_reference_boundary":  {
+                                      "status":  "EXISTING",
+                                      "role":  "REFERENCE_AND_CONFORMANCE_RUNTIME",
+                                      "replaced_by_managed_runtime":  false,
+                                      "required_as_managed_runtime_production_dependency":  false
+                                  },
+    "native_boundary":  {
+                            "status":  "P12_ACTIVE_DESIGN",
+                            "relationship":  "SIBLING_TARGET",
+                            "managed_runtime_owns_native_backend":  false,
+                            "native_backend_owns_managed_runtime":  false
+                        },
+    "invariants":  [
+                       "ONE_CANONICAL_APEXFORGE_SEMANTIC_OWNER",
+                       "MANAGED_RUNTIME_IS_NOT_VISUAL_STUDIO",
+                       "MANAGED_RUNTIME_CONSUMES_VERIFIED_CANONICAL_EXECUTION_PRODUCTS",
+                       "MANAGED_RUNTIME_DOES_NOT_PARSE_OR_RESOLVE_SOURCE",
+                       "MANAGED_RUNTIME_DOES_NOT_OWN_AUTHORITY_OR_IDENTITY_SEMANTICS",
+                       "PYTHON_REFERENCE_RUNTIME_REMAINS_AVAILABLE_FOR_CONFORMANCE",
+                       "NATIVE_BACKEND_REMAINS_A_SIBLING_TARGET",
+                       "NO_GENERIC_FFI_BEFORE_CONCRETE_INTEROP_CONTRACT",
+                       "POLYPLANE_REMAINS_DEFERRED"
+                   ],
+    "next_gate":  "P12.0D freeze before managed runtime project creation"
+}
