@@ -13,4 +13,11 @@ public sealed class ManagedRuntimeHost
             throw new InvalidOperationException("Canonical execution contract mismatch.");
         }
     }
+
+    public CanonicalExecutionEnvelope Admit(CanonicalExecutionEnvelope envelope)
+    {
+        envelope.Validate();
+        ValidateContract(envelope.Contract);
+        return envelope;
+    }
 }
