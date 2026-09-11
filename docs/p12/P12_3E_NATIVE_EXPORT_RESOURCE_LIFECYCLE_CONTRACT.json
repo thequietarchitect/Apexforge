@@ -1,0 +1,77 @@
+{
+    "kind":  "apexforge.p12.native-export-resource-lifecycle-contract",
+    "version":  "1.0",
+    "profile_id":  "apexforge.win-x64-native-export-lifecycle/v1",
+    "abi_profile":  "apexforge.win-x64-managed-native-abi/v1",
+    "library":  {
+                    "logical_name":  "apexforge_native",
+                    "platform":  "windows-x64",
+                    "export_names_exact":  true,
+                    "c_linkage_semantics":  true,
+                    "cpp_name_mangling":  false
+                },
+    "status":  {
+                   "representation":  "I32",
+                   "success":  0,
+                   "valid_resource_release_must_succeed":  true,
+                   "exceptions_cross_boundary":  false
+               },
+    "exports":  [
+                    {
+                        "symbol":  "apexforge_release_handle",
+                        "result":  "I32_STATUS_CODE",
+                        "parameters":  [
+                                           "OPAQUE_NATIVE_HANDLE"
+                                       ],
+                        "ownership_effect":  "ON_SUCCESS_CONSUMES_ONE_LIVE_NATIVE_HANDLE",
+                        "null_handle":  "NOT_A_LIVE_RESOURCE_MANAGED_SAFEHANDLE_DOES_NOT_RELEASE_ZERO",
+                        "failure_rule":  "NONZERO_RESERVED_FOR_INVALID_ARGUMENT_OR_CONTRACT_VIOLATION"
+                    },
+                    {
+                        "symbol":  "apexforge_release_buffer",
+                        "result":  "I32_STATUS_CODE",
+                        "parameters":  [
+                                           "NATIVE_OWNED_BUFFER_POINTER",
+                                           "U64_LENGTH"
+                                       ],
+                        "ownership_effect":  "ON_SUCCESS_CONSUMES_ONE_LIVE_NATIVE_BUFFER",
+                        "length_rule":  "LENGTH_MUST_MATCH_BUFFER_METADATA_PRESENTED_TO_MANAGED_WRAPPER",
+                        "null_pointer":  "NOT_A_LIVE_RESOURCE_MANAGED_SAFEHANDLE_DOES_NOT_RELEASE_ZERO",
+                        "failure_rule":  "NONZERO_RESERVED_FOR_INVALID_ARGUMENT_OR_CONTRACT_VIOLATION"
+                    }
+                ],
+    "lifecycle":  {
+                      "native_resources":  "CREATED_AND_OWNED_BY_NATIVE_SIDE",
+                      "managed_view":  "OPAQUE_NON_DEREFERENCEABLE",
+                      "managed_wrapper":  "SAFEHANDLE",
+                      "release_count":  "EXACTLY_ONE_SUCCESSFUL_RELEASE_PER_LIVE_RESOURCE",
+                      "after_success":  "RESOURCE_INVALID_AND_MUST_NOT_BE_REUSED",
+                      "cross_runtime_free":  "FORBIDDEN",
+                      "managed_allocator_release":  "FORBIDDEN",
+                      "native_may_retain_borrowed_managed_input":  false
+                  },
+    "surface":  {
+                    "creation_exports":  "DEFERRED",
+                    "retain_clone_exports":  "DEFERRED",
+                    "callbacks":  "DEFERRED",
+                    "reverse_pinvoke":  "DEFERRED",
+                    "generic_ffi":  false
+                },
+    "toolchain":  {
+                      "native_compiler":  "UNSELECTED",
+                      "header_generation":  "DEFERRED",
+                      "native_implementation":  "DEFERRED",
+                      "compiler_required_for_contract":  false
+                  },
+    "non_goals":  [
+                      "NO_NATIVE_COMPILATION",
+                      "NO_DLL_PRODUCTION",
+                      "NO_OBJECT_EMISSION",
+                      "NO_LINKING",
+                      "NO_CALLBACK_ABI",
+                      "NO_RESOURCE_CREATION_EXPORTS",
+                      "NO_CROSS_RUNTIME_FREE",
+                      "NO_LANGUAGE_SEMANTIC_OWNERSHIP"
+                  ],
+    "next_gate":  "P12.3F native ABI declaration/header surface after P12.3E commit"
+}
