@@ -13,6 +13,11 @@ from .lowering_input import (
 from .model import DEFAULT_NATIVE_BACKEND_IDENTITY, NativeBackendIdentity
 from .payload import CanonicalExecutionPayload
 from .result import CanonicalExecutionResult
+from .target_neutral_lowering import (
+    TARGET_NEUTRAL_LOWERING_SCHEMA,
+    TargetNeutralLoweringProduct,
+    lower_target_neutral,
+)
 from .value import CanonicalExecutionValue
 
 __all__ = [
@@ -26,7 +31,10 @@ __all__ = [
     "DEFAULT_NATIVE_BACKEND_IDENTITY",
     "NativeBackendIdentity",
     "RegistryExecutionPlanBinding",
+    "TARGET_NEUTRAL_LOWERING_SCHEMA",
+    "TargetNeutralLoweringProduct",
     "VerifiedAIRLoweringInput",
     "bind_registry_execution_plan",
     "build_verified_air_lowering_input",
+    "lower_target_neutral",
 ]
