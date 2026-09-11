@@ -1,0 +1,62 @@
+{
+    "kind":  "apexforge.p12.internal-lifecycle-core-contract",
+    "version":  "1.0",
+    "profile_id":  "apexforge.win-x64-native-lifecycle-core/v1",
+    "predecessor_commit":  "ea74ed29c63362d05aac121dec92b37d1575c337",
+    "public_abi":  {
+                       "abi_profile":  "apexforge.win-x64-managed-native-abi/v1",
+                       "lifecycle_profile":  "apexforge.win-x64-native-export-lifecycle/v1",
+                       "status_type":  "I32",
+                       "success_status":  "ZERO",
+                       "public_failure_status":  "ANY_NONZERO_OPAQUE_V1",
+                       "public_status_namespace_extended":  false,
+                       "release_symbols":  [
+                                               "apexforge_release_handle",
+                                               "apexforge_release_buffer"
+                                           ]
+                   },
+    "lifecycle":  {
+                      "handle_success_effect":  "CONSUMES_EXACTLY_ONE_LIVE_NATIVE_HANDLE",
+                      "buffer_success_effect":  "CONSUMES_EXACTLY_ONE_LIVE_NATIVE_BUFFER",
+                      "successful_release_count":  "EXACTLY_ONE_PER_LIVE_RESOURCE",
+                      "null_resource":  "NONZERO_FAILURE_NO_CONSUME",
+                      "unknown_resource":  "NONZERO_FAILURE_NO_CONSUME",
+                      "already_released_resource":  "NONZERO_FAILURE_NO_CONSUME",
+                      "buffer_length_mismatch":  "NONZERO_FAILURE_NO_CONSUME",
+                      "cross_runtime_free":  "FORBIDDEN"
+                  },
+    "validation":  {
+                       "native_ownership_registry_required":  true,
+                       "validate_before_dispose":  true,
+                       "arbitrary_pointer_dereference_before_validation":  false,
+                       "handle_buffer_kind_separation_required":  true,
+                       "buffer_registered_length_required":  true,
+                       "failure_must_not_consume_other_resource":  true
+                   },
+    "internal_surface":  {
+                             "release_handle":  "apexforge_internal_release_handle",
+                             "release_buffer":  "apexforge_internal_release_buffer",
+                             "internal_registration_seam_permitted":  true,
+                             "internal_disposer_seam_permitted":  true,
+                             "internal_status_namespace_private":  true,
+                             "internal_symbols_are_public_abi":  false
+                         },
+    "allocator":  {
+                      "allocator_family":  "UNSELECTED",
+                      "public_creation_exports":  false,
+                      "cross_runtime_allocator_sharing":  false,
+                      "allocator_binding_deferred":  true
+                  },
+    "artifact_scope":  {
+                           "object_implementation_next":  true,
+                           "native_link_attempted":  false,
+                           "dll_production_attempted":  false,
+                           "runtime_host_execution_attempted":  false
+                       },
+    "semantics":  {
+                      "canonical_semantics_owner":  "UPSTREAM_CANONICAL_AIR",
+                      "native_backend_semantic_authority":  false,
+                      "generic_ffi":  false
+                  },
+    "next_gate":  "P12.4F-C INTERNAL LIFECYCLE CORE OBJECT IMPLEMENTATION"
+}
