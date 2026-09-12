@@ -1,0 +1,52 @@
+{
+    "kind":  "apexforge.p12.controlled-lifecycle-behavior-execution",
+    "version":  "1.0",
+    "profile_id":  "apexforge.win-x64-native-lifecycle-behavior-execution/v1",
+    "predecessor_commit":  "8feade72fa9e456de8be084994dd537794fc9337",
+    "artifact":  {
+                     "kind":  "TEMPORARY_TEST_EXECUTABLE",
+                     "format":  "PE32_PLUS",
+                     "machine":  "AMD64",
+                     "nodefaultlib":  true,
+                     "required_import":  "KERNEL32.ExitProcess",
+                     "crt_imports_allowed":  false,
+                     "production_dll_produced":  false,
+                     "runtime_host_produced":  false
+                 },
+    "behavior":  {
+                     "null_resource_rejection":  "REQUIRED",
+                     "unknown_resource_rejection":  "REQUIRED",
+                     "wrong_kind_rejection_no_consume":  "REQUIRED",
+                     "buffer_length_mismatch_no_consume":  "REQUIRED",
+                     "valid_handle_release":  "REQUIRED",
+                     "valid_buffer_release":  "REQUIRED",
+                     "double_release_rejection":  "REQUIRED",
+                     "disposer_exactly_once_per_success":  "REQUIRED",
+                     "released_slot_reuse":  "REQUIRED"
+                 },
+    "abi":  {
+                "public_release_symbols":  [
+                                               "apexforge_release_handle",
+                                               "apexforge_release_buffer"
+                                           ],
+                "public_status_namespace_extended":  false,
+                "public_creation_exports":  false,
+                "internal_registration_symbols_are_public_abi":  false
+            },
+    "allocator":  {
+                      "allocator_family":  "UNSELECTED",
+                      "dynamic_allocator_used":  false
+                  },
+    "scope":  {
+                  "native_link_attempted":  true,
+                  "production_dll_link_attempted":  false,
+                  "generic_ffi":  false,
+                  "thread_safety":  "DEFERRED"
+              },
+    "semantics":  {
+                      "canonical_semantics_owner":  "UPSTREAM_CANONICAL_AIR",
+                      "native_backend_semantic_authority":  false
+                  },
+    "probe_source":  "runtimes/native/probes/p12_4f_d_lifecycle_behavior_probe.c",
+    "next_gate":  "P12.4F-D-F1 CONTROLLED LIFECYCLE BEHAVIOR EXECUTION COMMIT"
+}
