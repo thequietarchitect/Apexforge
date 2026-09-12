@@ -1,0 +1,73 @@
+{
+  "kind": "apexforge.p12.production-native-library-reproducibility-policy",
+  "version": "1.0",
+  "profile_id": "apexforge.win-x64-production-native-library-reproducibility/v1",
+  "predecessor_commit": "99ac965b9ae19280d598ba951cd051b084b04fb2",
+  "applies_to_profile": "apexforge.win-x64-production-native-library/v1",
+  "artifact": {
+    "logical_library": "apexforge_native",
+    "file_name": "apexforge_native.dll",
+    "target": "windows-x64",
+    "machine": "AMD64",
+    "pe_format": "PE32_PLUS"
+  },
+  "build_requirements": {
+    "compiler_object_flag": "/Brepro",
+    "linker_flag": "/Brepro",
+    "linker_flags_required": [
+      "/DLL",
+      "/NOENTRY",
+      "/NODEFAULTLIB",
+      "/MACHINE:X64",
+      "/Brepro"
+    ],
+    "module_definition_file": "runtimes/native/link/apexforge_native.def",
+    "same_input_toolchain_identity_required": true,
+    "build_directory_is_artifact_identity": false
+  },
+  "reproducibility": {
+    "same_path_whole_dll_identity_required": true,
+    "cross_directory_whole_dll_identity_required": true,
+    "same_path_pe_timestamp_identity_required": true,
+    "cross_directory_pe_timestamp_identity_required": true,
+    "section_variance_allowed": false,
+    "release_artifact_identity": "WHOLE_DLL_SHA256",
+    "ignore_rdata_variance": false,
+    "ignore_pe_header_timestamp_variance": false
+  },
+  "surface": {
+    "exports": [
+      "apexforge_release_handle",
+      "apexforge_release_buffer"
+    ],
+    "import_dll_count": 0,
+    "crt_imports_allowed": false,
+    "internal_symbols_exported": false
+  },
+  "evidence": {
+    "characterization": "P12.4G-C-R1",
+    "same_path_whole_dll_identical": true,
+    "cross_directory_whole_dll_identical": true,
+    "same_path_section_variance_count": 0,
+    "cross_directory_section_variance_count": 0,
+    "observed_whole_dll_sha256": "ED1708825B13B6C23D1017A933EAAB1B681BD5D6D686C28525B9EC403B9A42A8",
+    "observed_deterministic_pe_timestamp": 144512597
+  },
+  "artifact_policy": {
+    "binary_tracked_in_git": false,
+    "release_pipeline_is_artifact_producer": true
+  },
+  "scope": {
+    "toolchain_profile": "apexforge.win-x64-msvc-coff/v1",
+    "toolchain_change_requires_recharacterization": true,
+    "source_or_link_contract_change_requires_new_artifact_identity": true,
+    "runtime_host_produced": false,
+    "public_creation_exports": false,
+    "generic_ffi": false
+  },
+  "semantics": {
+    "canonical_semantics_owner": "UPSTREAM_CANONICAL_AIR",
+    "native_backend_semantic_authority": false
+  },
+  "next_gate": "P12.4G-C-F1 DLL REPRODUCIBILITY POLICY COMMIT"
+}
