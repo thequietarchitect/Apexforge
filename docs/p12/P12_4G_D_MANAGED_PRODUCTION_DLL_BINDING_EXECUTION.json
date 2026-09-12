@@ -1,0 +1,61 @@
+{
+  "kind": "apexforge.p12.managed-production-native-binding-execution",
+  "version": "1.0",
+  "profile_id": "apexforge.win-x64-managed-production-native-binding-execution/v1",
+  "predecessor_commit": "280b40a000a7ccd8fe434eb5dd10cf135155b265",
+  "managed": {
+    "namespace": "ApexForge.Runtime",
+    "binding_type": "ManagedNativeAbi",
+    "binding_type_visibility": "internal",
+    "binding_type_shape": "static_partial_class",
+    "target_framework": "net10.0",
+    "logical_library": "apexforge_native",
+    "mechanism": "LibraryImport",
+    "entry_points": [
+      "apexforge_release_handle",
+      "apexforge_release_buffer"
+    ],
+    "custom_dll_resolver_required": false,
+    "test_access_mechanism": "REFLECTION_TO_INTERNAL_GENERATED_STUBS"
+  },
+  "native": {
+    "file_name": "apexforge_native.dll",
+    "target": "windows-x64",
+    "machine": "AMD64",
+    "pe_format": "PE32_PLUS",
+    "reproducibility_profile": "apexforge.win-x64-production-native-library-reproducibility/v1",
+    "observed_whole_dll_sha256": "ED1708825B13B6C23D1017A933EAAB1B681BD5D6D686C28525B9EC403B9A42A8",
+    "export_count": 2,
+    "import_dll_count": 0
+  },
+  "execution": {
+    "actual_libraryimport_invoked": true,
+    "handle_null_rejected": true,
+    "buffer_null_rejected": true,
+    "handle_unknown_rejected": true,
+    "buffer_unknown_rejected": true,
+    "observed_handle_null_status": 1,
+    "observed_buffer_null_status": 1,
+    "observed_handle_unknown_status": 2,
+    "observed_buffer_unknown_status": 2,
+    "observed_status_numbers_are_public_contract": false,
+    "required_public_result": "NONZERO_OPAQUE_FAILURE",
+    "live_resource_successful_release_executed": false,
+    "live_resource_successful_release_deferred_reason": "PUBLIC_CREATION_EXPORTS_DEFERRED"
+  },
+  "scope": {
+    "public_creation_exports": false,
+    "allocator_family": "UNSELECTED",
+    "generic_ffi": false,
+    "callbacks": false,
+    "reverse_pinvoke": false,
+    "runtime_host_produced": false,
+    "native_backend_semantic_authority": false
+  },
+  "artifact_policy": {
+    "native_dll_tracked_in_git": false,
+    "managed_probe_tracked_in_git": false,
+    "execution_artifacts_temporary": true
+  },
+  "next_gate": "P12.4G-D-C-F1 MANAGED PRODUCTION DLL BINDING EXECUTION EVIDENCE COMMIT"
+}
