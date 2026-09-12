@@ -1,0 +1,54 @@
+{
+  "kind": "apexforge.p12.internal-lifecycle-core-object-implementation",
+  "version": "1.0",
+  "profile_id": "apexforge.win-x64-native-lifecycle-core-object/v1",
+  "contract_profile": "apexforge.win-x64-native-lifecycle-core/v1",
+  "target": "windows-x64",
+  "object_format": "COFF_X64",
+  "implementation": {
+    "source": "runtimes/native/src/apexforge_lifecycle_core.c",
+    "registry_capacity": 64,
+    "registry_storage": "STATIC_INTERNAL_FIXED_CAPACITY",
+    "dynamic_allocator_used": false,
+    "arbitrary_pointer_dereference_before_validation": false,
+    "handle_buffer_kind_separation": true,
+    "buffer_registered_length_validation": true,
+    "release_consumes_registry_liveness_before_disposer_call": true,
+    "internal_registration_seam": [
+      "apexforge_internal_register_handle",
+      "apexforge_internal_register_buffer"
+    ],
+    "internal_release_seam": [
+      "apexforge_internal_release_handle",
+      "apexforge_internal_release_buffer"
+    ],
+    "public_abi_symbols_added": false,
+    "released_slots_reusable": true,
+    "released_resource_tombstone_required": false,
+    "thread_safety": "DEFERRED"
+  },
+  "status": {
+    "public_success": 0,
+    "public_failure_contract": "ANY_NONZERO_OPAQUE_V1",
+    "private_internal_nonzero_codes": true,
+    "public_status_namespace_extended": false
+  },
+  "allocator": {
+    "family": "UNSELECTED",
+    "disposal_mechanism": "INTERNAL_REGISTERED_DISPOSER_CALLBACK",
+    "allocator_binding_deferred": true,
+    "cross_runtime_free": "FORBIDDEN"
+  },
+  "scope": {
+    "native_link_attempted": false,
+    "dll_production_attempted": false,
+    "runtime_host_execution_attempted": false,
+    "public_creation_exports": false,
+    "callbacks_in_public_abi": false
+  },
+  "semantics": {
+    "canonical_semantics_owner": "UPSTREAM_CANONICAL_AIR",
+    "native_backend_semantic_authority": false
+  },
+  "next_gate": "P12.4F-D INTERNAL LIFECYCLE CORE BEHAVIOR EXECUTION / LINK GATE"
+}
