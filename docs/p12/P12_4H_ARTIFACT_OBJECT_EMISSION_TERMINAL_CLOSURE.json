@@ -1,0 +1,71 @@
+{
+  "kind": "apexforge.p12.artifact-object-emission-terminal-closure",
+  "version": "1.0",
+  "profile_id": "apexforge.p12.artifact-object-emission-terminal-closure/v1",
+  "predecessor_commit": "cd4649a396fe33c414255b2bedbe4f08dffb2c6e",
+  "phase": "P12.4",
+  "phase_title": "Artifact + Object Emission",
+  "state": "TERMINALLY_READY_FOR_FREEZE",
+  "completed_gates": {
+    "P12.4A": "CAPABILITY_CENSUS_CLOSED",
+    "P12.4B": "TOOLCHAIN_OBJECT_PROFILE_COMMITTED",
+    "P12.4C": "CONTROLLED_AMD64_COFF_OBJECT_COMMITTED",
+    "P12.4D": "COFF_REPRODUCIBILITY_POLICY_COMMITTED",
+    "P12.4E": "NATIVE_LIFECYCLE_EXPORT_OBJECT_SURFACE_COMMITTED",
+    "P12.4F": "NATIVE_LIFECYCLE_OWNERSHIP_COMPLETE",
+    "P12.4G": "PRODUCTION_NATIVE_LIBRARY_LINK_COMPLETE",
+    "P12.4H_A": "TERMINAL_READINESS_CENSUS_PASS"
+  },
+  "production_native_library": {
+    "logical_name": "apexforge_native",
+    "file_name": "apexforge_native.dll",
+    "target": "windows-x64",
+    "machine": "AMD64",
+    "pe_format": "PE32_PLUS",
+    "exports": [
+      "apexforge_release_handle",
+      "apexforge_release_buffer"
+    ],
+    "import_dll_count": 0,
+    "whole_dll_reproducibility_required": true,
+    "governed_reproducibility_flag": "/Brepro",
+    "observed_characterization_sha256": "ED1708825B13B6C23D1017A933EAAB1B681BD5D6D686C28525B9EC403B9A42A8",
+    "characterization_hash_is_permanent_abi_constant": false,
+    "generated_binary_tracked_in_git": false
+  },
+  "managed_native_binding": {
+    "namespace": "ApexForge.Runtime",
+    "type": "ManagedNativeAbi",
+    "target_framework": "net10.0",
+    "mechanism": "LibraryImport",
+    "logical_library": "apexforge_native",
+    "actual_binding_execution_proven": true,
+    "null_rejection_proven": true,
+    "unknown_resource_rejection_proven": true,
+    "live_resource_successful_release_proven": false,
+    "live_resource_successful_release_deferred_reason": "PUBLIC_CREATION_EXPORTS_DEFERRED"
+  },
+  "semantic_boundaries": {
+    "canonical_semantics_owner": "UPSTREAM_CANONICAL_AIR",
+    "native_backend_semantic_authority": false,
+    "generic_ffi": false,
+    "public_creation_exports": false,
+    "callbacks": false,
+    "reverse_pinvoke": false,
+    "runtime_host_produced": false,
+    "allocator_family": "UNSELECTED",
+    "thread_safety": "DEFERRED"
+  },
+  "repository_policy": {
+    "generated_native_binaries_tracked": false,
+    "artifact_producer": "BUILD_RELEASE_PIPELINE",
+    "source_control_contains_contracts_sources_and_acceptance_evidence": true
+  },
+  "freeze": {
+    "recommended": true,
+    "proposed_tag": "afp-p12.4-freeze",
+    "tag_target": "TERMINAL_CLOSURE_COMMIT",
+    "publish_after_local_freeze_verification": true
+  },
+  "next_stage": "P12.5 RUNTIME HOSTS"
+}
