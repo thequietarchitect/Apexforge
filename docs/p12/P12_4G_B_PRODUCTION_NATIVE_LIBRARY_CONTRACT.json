@@ -1,0 +1,74 @@
+{
+  "kind": "apexforge.p12.production-native-library-contract",
+  "version": "1.0",
+  "profile_id": "apexforge.win-x64-production-native-library/v1",
+  "predecessor_commit": "e9cc2a925661624ae9913c2495ea1954dd8dc41b",
+  "identity": {
+    "logical_library": "apexforge_native",
+    "file_name": "apexforge_native.dll",
+    "target": "windows-x64",
+    "machine": "AMD64",
+    "pe_format": "PE32_PLUS"
+  },
+  "link": {
+    "tool": "MSVC_LINK",
+    "dll": true,
+    "noentry": true,
+    "nodefaultlib": true,
+    "machine": "X64",
+    "export_mechanism": "MODULE_DEFINITION_FILE",
+    "module_definition_file": "runtimes/native/link/apexforge_native.def"
+  },
+  "exports": {
+    "count": 2,
+    "names": [
+      "apexforge_release_handle",
+      "apexforge_release_buffer"
+    ],
+    "ordinals_contractual": false,
+    "internal_symbols_exported": false
+  },
+  "dependencies": {
+    "import_dll_count": 0,
+    "crt_imports_allowed": false
+  },
+  "managed_binding": {
+    "mechanism": "LibraryImport",
+    "logical_library": "apexforge_native",
+    "entry_points": [
+      "apexforge_release_handle",
+      "apexforge_release_buffer"
+    ]
+  },
+  "artifact_policy": {
+    "dll_generated": true,
+    "dll_tracked_in_git": false,
+    "import_library_generated": true,
+    "import_library_tracked_in_git": false,
+    "exp_file_tracked_in_git": false,
+    "object_files_tracked_in_git": false,
+    "release_pipeline_is_artifact_producer": true
+  },
+  "reproducibility": {
+    "object_policy": "apexforge.win-x64-coff-reproducibility/v1",
+    "dll_reproducibility_characterization": "DEFERRED",
+    "deferred_to": "P12.4G-C"
+  },
+  "abi": {
+    "public_status_namespace_extended": false,
+    "public_creation_exports": false,
+    "callbacks": false,
+    "reverse_pinvoke": false,
+    "generic_ffi": false
+  },
+  "allocator": {
+    "family": "UNSELECTED",
+    "cross_runtime_free": "FORBIDDEN"
+  },
+  "semantics": {
+    "canonical_semantics_owner": "UPSTREAM_CANONICAL_AIR",
+    "native_backend_semantic_authority": false
+  },
+  "runtime_host_produced": false,
+  "production_binary_persisted_in_repository": false
+}

@@ -1,0 +1,4 @@
+LIBRARY apexforge_native
+EXPORTS
+    apexforge_release_handle
+    apexforge_release_buffer
