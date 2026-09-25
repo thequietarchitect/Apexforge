@@ -1,0 +1,40 @@
+{
+  "profile": "apexforge.p12.recovered-lineage-provenance/v1",
+  "stage": "P12.5-RCV-2",
+  "title": "Recovered P12.5 Lineage Provenance",
+  "status": "RECOVERY_PROVENANCE_ESTABLISHED",
+  "recovery": {
+    "branch": "p12-native-backend-recovered",
+    "classification": "RECOVERED_AUDITED_LINEAGE",
+    "base_commit": "13f7646f1052746f54f906076d66d29117ee2718",
+    "base_freeze_tag": "afp-p12.4-freeze",
+    "base_freeze_tag_object": "7c475986ed3ed1d58cc30148603fbfe8b09529ee",
+    "base_stage": "P12.4",
+    "base_state": "COMPLETE_FROZEN_PUBLISHED"
+  },
+  "unavailable_original_continuation": {
+    "commit": "b7d5b1c1355c648f52f7293b675a9862f5655a98",
+    "known_stage": "P12.5E-E-P",
+    "known_state": "CLOSED_PASS_COMMITTED",
+    "availability_at_recovery": "UNAVAILABLE_ON_DELL_AND_REMOTE",
+    "commit_identity_equivalence_claim": false
+  },
+  "policy": {
+    "reconstruct_original_commit_ids": false,
+    "reuse_original_branch_name": false,
+    "rebuild_from_verified_freeze": true,
+    "revalidate_each_recovered_stage": true,
+    "preserve_original_history_as_historical_evidence": true,
+    "recovered_commits_are_new_identities": true
+  },
+  "known_original_p_artifacts": {
+    "managed_executable_carrier_sha256": "93A12A19AD7AF2EE4A8165A13C0B72E5005E09EEA022F856EFB8B52ECBE97157",
+    "carrier_smoke_sha256": "09B4C737BD9C77AA335C06BA450285EF2A4304880997E38A98B7BB932A5026E5"
+  },
+  "environment_at_recovery": {
+    "python": "3.9.13",
+    "dotnet_sdk": "10.0.302",
+    "environment_equivalence_to_original": "NOT_ASSUMED"
+  },
+  "next_gate": "P12.5-RCV-3 RECOVERED P12.5 READINESS AND RECONSTRUCTION CENSUS"
+}
