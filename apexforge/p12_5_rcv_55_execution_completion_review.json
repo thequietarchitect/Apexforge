@@ -1,0 +1,97 @@
+﻿{
+    "schema":  "apexforge.p12.5-execution-completion-review/v1",
+    "profile":  "apexforge.native.win-x64.i64-literal-state-set/v1",
+    "checkpoint_commit":  "542be090e193b3d931d27c08e16de3efd961a01e",
+    "freeze_tags":  {
+                        "p12_4_object":  "7c475986ed3ed1d58cc30148603fbfe8b09529ee",
+                        "p12_4_commit":  "13f7646f1052746f54f906076d66d29117ee2718",
+                        "p12_5_object":  "9e2d7a4f57a10e0499d788f8584ace477f624b07",
+                        "p12_5_commit":  "542be090e193b3d931d27c08e16de3efd961a01e",
+                        "preserved":  true
+                    },
+    "gates":  {
+                  "rcv52_live_census":  "PASS",
+                  "p12_2d_binding":  "PASS",
+                  "profile_contract":  {
+                                           "tests":  7,
+                                           "result":  "PASS",
+                                           "evidence":  "OBSERVED_EXECUTABLE_GATE",
+                                           "command":  "py -B apexforge/p12_5_native_profile_contract_test.py"
+                                       },
+                  "native_acceptance":  {
+                                            "tests":  13,
+                                            "result":  "PASS",
+                                            "evidence_file":  "p12_5_rcv_54_native_execution_acceptance.json",
+                                            "source_hashes_match":  true
+                                        },
+                  "no_second_semantic_implementation":  "AUDITED_PASS",
+                  "rcv50_current_closure":  "PASS",
+                  "rcv51_terminal_current_closure":  "PASS",
+                  "recovery_predecessors":  46,
+                  "p12_predecessors":  25,
+                  "managed_builds_and_runs":  "PASS"
+              },
+    "historical_harness":  {
+                               "result":  "FAIL_HISTORICAL_FIXTURE_ABSENT",
+                               "discovered":  362,
+                               "passed":  8,
+                               "failed":  1,
+                               "not_executed":  353,
+                               "failing_test":  "experimental_cli_human_presentation_smoke_test.py",
+                               "missing_fixture":  "examples/P11Validation/apexforge.json",
+                               "fixture_absent_at_checkpoint":  true,
+                               "closure_policy":  "RECORDED_NOT_WEAKENED_NOT_USED_AS_CURRENT_BRANCH_CLOSURE_GATE",
+                               "policy_source":  "p12_5_rcv_50_recovery_closure_audit.json",
+                               "assertions_changed":  false
+                           },
+    "prior_attempts":  {
+                           "python_unavailable":  "CLEARED_PYTHON_3.9.13",
+                           "default_encoding_failure":  "CLEARED_PROCESS_PYTHONUTF8_1",
+                           "inherited_no_color_failure":  "CLEARED_PROCESS_ENVIRONMENT_ONLY",
+                           "initial_p12":  {
+                                               "total":  73,
+                                               "passed":  66,
+                                               "failed":  7,
+                                               "failed_rcv":  [
+                                                                  25,
+                                                                  50,
+                                                                  51,
+                                                                  6,
+                                                                  7,
+                                                                  8,
+                                                                  9
+                                                              ]
+                                           },
+                           "managed_assets_missing":  "RESTORED_BUILD_PASS",
+                           "application_control_rejections":  "RECORDED_SUBSEQUENT_UNCHANGED_CURRENT_GATES_PASSED",
+                           "application_control_settings_changed":  false
+                       },
+    "provenance":  {
+                       "receipt_fingerprint":  "47278AFED865903EACA8CEA25CFDFBD66AA5C88A74445FA47B7151C709DCA1B9",
+                       "result_fingerprint":  "8F693CEBE28B13EE9F454C30AD10BF72F7C8E1C483FCC2303D00BCF603A677FB",
+                       "image_fingerprint":  "1B75E5B4B507D9C96E440903877036992D777F16870F73A4AF64CA6A06B35D0A",
+                       "output_fingerprint":  "F2B46084FF3E9A654A62A429369FB51614D589C2D1CA84DF36ECC20257403FBD",
+                       "source_sha256":  {
+                                             "native_backend/native_execution.py":  "2BE07CE81A196C2BB446C0605E1E050281E8B51F563A02DF30E27707649A0E2C",
+                                             "native_backend/native_execution_contract.py":  "5742C08FA80A14F889C914C41959E174B782CA45A040DDDEF3C63B002E621902",
+                                             "p12_5_native_execution_acceptance_test.py":  "AB556C77C99A3279A7C247A3E1DD61CCF64B2B70F82A99922DC14D19C060D4B0",
+                                             "p12_5_native_profile_contract_test.py":  "63EFF9FF7460539B77B6BB2A5EE3B88BBC916BB6F1DACB0A3C414860DD5A2756"
+                                         }
+                   },
+    "scope":  {
+                  "whole_language_native_execution":  false,
+                  "managed_or_interpreter_fallback":  false,
+                  "unsupported_air_rejected_before_compilation":  true,
+                  "broader_equivalence":  "P12.7_NOT_ENTERED",
+                  "p12_6_started":  false,
+                  "persistent_cross_process_artifact_admission":  false
+              },
+    "git_actions":  {
+                        "staged":  false,
+                        "committed":  false,
+                        "tagged":  false,
+                        "pushed":  false,
+                        "frozen_tracked_files_changed":  false
+                    },
+    "P12_5_READY_FOR_EXECUTION_COMPLETION_FREEZE_REVIEW":  true
+}
