@@ -1,0 +1,46 @@
+{
+  "authority": {
+    "host_defines_language_semantics": false,
+    "host_shell": "ApexForge.Runtime.Host",
+    "language_semantics": "CANONICAL_AIR",
+    "managed_runtime_library": "ApexForge.Runtime"
+  },
+  "candidate_ingress_families": [
+    "COMMAND_LINE_ARGUMENTS",
+    "STANDARD_INPUT",
+    "FILE_PATH",
+    "IN_PROCESS_API"
+  ],
+  "census_targets": [
+    "runtimes/dotnet/ApexForge.Runtime.Host",
+    "runtimes/dotnet/ApexForge.Runtime",
+    "apexforge/native_backend/target_neutral_lowering.py",
+    "apexforge/native_backend/lowering_input.py"
+  ],
+  "forbidden_premature_selection": [
+    "NETWORK_LISTENER",
+    "HTTP_SERVER",
+    "SOCKET_SERVER",
+    "NAMED_PIPE",
+    "DIRECT_NATIVE_DISPATCH",
+    "NEW_LANGUAGE_SEMANTICS"
+  ],
+  "next_stage_gate": "P12.5-RCV-10 HOST INGRESS CONTRACT DECISION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.host-lifecycle-startup-implementation/v1",
+    "stage": "P12.5-RCV-8"
+  },
+  "profile": "apexforge.p12.host-ingress-architecture-census/v1",
+  "purpose": "Inventory existing managed-host ingress and transport surfaces before selecting any concrete ingress contract.",
+  "selection_state": {
+    "external_serialization": "UNSELECTED",
+    "host_ingress": "UNSELECTED",
+    "managed_executable_carrier": "DEFERRED",
+    "managed_execution_dispatch": "DEFERRED",
+    "native_execution_dispatch": "DEFERRED",
+    "target_neutral_handoff_reconstruction": "DEFERRED"
+  },
+  "stage": "P12.5-RCV-9",
+  "status": "RECOVERED_AUDIT_CANDIDATE",
+  "title": "Recovered Host Ingress Architecture Census"
+}

@@ -1,0 +1,56 @@
+{
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "transport_may_define_semantics": false,
+    "transport_may_execute": false,
+    "transport_may_lower": false,
+    "transport_may_reinterpret": false
+  },
+  "candidate_families": [
+    "IN_PROCESS_EMBEDDING_OR_BINDING",
+    "CHILD_PROCESS_STDIO",
+    "FILE_HANDOFF",
+    "NAMED_PIPE",
+    "LOCAL_SOCKET",
+    "NETWORK_SOCKET_OR_HTTP",
+    "SHARED_MEMORY",
+    "NATIVE_FFI_OR_EMBEDDED_RUNTIME"
+  ],
+  "census_scope": {
+    "managed_host": "runtimes/dotnet/ApexForge.Runtime.Host",
+    "managed_runtime": "runtimes/dotnet/ApexForge.Runtime",
+    "python_native_backend": "apexforge/native_backend",
+    "python_projection": "apexforge/native_backend/managed_handoff_projection.py"
+  },
+  "constraints": {
+    "census_only": true,
+    "must_not_enable_network_ingress": true,
+    "must_not_promote_p12_2_canonical_json_into_managed_handoff": true,
+    "must_not_treat_canonical_execution_envelope_json_as_handoff_transport_selection": true,
+    "must_preserve_in_process_host_ingress_decision": true
+  },
+  "historical_evidence": {
+    "existing_managed_json_elsewhere_is_not_transport_selection": true,
+    "p12_2_canonical_air_transport_exists": true,
+    "p12_2_canonical_serializer_delegate": "air.serialization.air_to_dict",
+    "p12_5_concrete_handoff_serialization": "UNSELECTED",
+    "p12_5_external_serialization": "UNSELECTED"
+  },
+  "next_stage_gate": "P12.5-RCV-22 CROSS-RUNTIME TRANSPORT CONTRACT DECISION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.projection-value-object-compatibility-census/v1",
+    "stage": "P12.5-RCV-20"
+  },
+  "profile": "apexforge.p12.cross-runtime-transport-architecture-census/v1",
+  "selection": {
+    "bridge_process_model": "UNSELECTED",
+    "cross_runtime_transport": "UNSELECTED",
+    "external_serialization": "UNSELECTED",
+    "host_external_ingress": "DEFERRED",
+    "network_ingress": "FORBIDDEN_IN_THIS_LINE",
+    "transport_encoding": "UNSELECTED"
+  },
+  "stage": "P12.5-RCV-21",
+  "status": "RECOVERED_AUDIT_CANDIDATE",
+  "title": "Recovered Cross-Runtime Transport Architecture Census"
+}

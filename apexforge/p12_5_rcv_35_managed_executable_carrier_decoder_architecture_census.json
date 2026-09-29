@@ -1,0 +1,93 @@
+{
+  "authority": {
+    "decoder_may_construct_authorized_carrier_nodes": true,
+    "decoder_may_dispatch": false,
+    "decoder_may_execute": false,
+    "decoder_may_reinterpret_semantics": false,
+    "decoder_may_select_transport": false,
+    "decoder_owner_project_if_selected": "ApexForge.Runtime",
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "candidate_decoder_architectures": [
+    {
+      "id": "SYSTEM_TEXT_JSON_DOM",
+      "mechanism": "JsonDocument/JsonElement",
+      "requires_explicit_number_policy": true,
+      "requires_explicit_special_float_policy": true,
+      "status": "CANDIDATE",
+      "supports_closed_world_manual_dispatch": true
+    },
+    {
+      "id": "SYSTEM_TEXT_JSON_READER",
+      "mechanism": "Utf8JsonReader",
+      "requires_explicit_number_policy": true,
+      "requires_explicit_special_float_policy": true,
+      "status": "CANDIDATE",
+      "supports_closed_world_manual_dispatch": true
+    },
+    {
+      "id": "SYSTEM_TEXT_JSON_DIRECT_SERIALIZER",
+      "mechanism": "JsonSerializer.Deserialize",
+      "requires_explicit_number_policy": true,
+      "requires_explicit_polymorphic_configuration": true,
+      "status": "CANDIDATE_WITH_POLYMORPHISM_RISK",
+      "supports_closed_world_manual_dispatch": false
+    },
+    {
+      "id": "OTHER_EXPLICIT_DECODER",
+      "mechanism": "UNSELECTED_CUSTOM_OR_GENERATED",
+      "requires_governance_decision": true,
+      "status": "CANDIDATE"
+    }
+  ],
+  "census_expectations": {
+    "carrier_decoder_type_present": false,
+    "carrier_from_json_method_present": false,
+    "carrier_json_document_reference_present": false,
+    "carrier_json_element_reference_present": false,
+    "carrier_json_serializer_reference_present": false,
+    "carrier_utf8_json_reader_reference_present": false,
+    "host_carrier_decoder_reference_present": false,
+    "managed_runtime_carrier_construction_bridge_present": false
+  },
+  "historical_evidence": {
+    "historical_carrier_external_serialization": "NOT_RECOVERED",
+    "historical_managed_air_transport_reference_count": 2,
+    "historical_managed_carrier_decoder_recovered": false,
+    "historical_managed_json_deserializer": "CanonicalExecutionEnvelope.FromJson",
+    "historical_managed_json_serializer_api": "System.Text.Json.JsonSerializer.Deserialize",
+    "historical_target_neutral_handoff_external_serialization": "UNSELECTED",
+    "original_commit_identity_equivalence": false
+  },
+  "next_stage_gate": "P12.5-RCV-36 MANAGED EXECUTABLE CARRIER DECODER ARCHITECTURE DECISION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-executable-carrier-derivation-mapping-contract/v1",
+    "stage": "P12.5-RCV-34"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-decoder-architecture-census/v1",
+  "source_contract": {
+    "authorized_mapping_count": 18,
+    "canonical_serialization_delegate": "air.serialization.air_to_dict",
+    "closed_world_mapping": true,
+    "derivation_source": "CANONICAL_AIR_TRANSPORT"
+  },
+  "stage": "P12.5-RCV-35",
+  "status": "RECOVERED_AUDIT_CANDIDATE",
+  "title": "Recovered Managed Executable Carrier Decoder Architecture Census",
+  "unresolved": {
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "decoder_architecture": "UNSELECTED",
+    "decoder_method_shape": "UNSELECTED",
+    "decoder_type_name": "UNSELECTED",
+    "duplicate_property_policy": "UNSELECTED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "float_parse_policy": "UNSELECTED",
+    "integer_parse_policy": "UNSELECTED",
+    "json_number_handling": "UNSELECTED",
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "special_float_transport_handling": "UNSELECTED",
+    "type_discriminator_contract": "UNSELECTED",
+    "unknown_property_policy": "UNSELECTED"
+  }
+}

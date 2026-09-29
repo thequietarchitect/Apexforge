@@ -1,0 +1,154 @@
+{
+  "authority": {
+    "census_changes_carrier": false,
+    "census_changes_serializer": false,
+    "census_changes_transport": false,
+    "census_executes": false,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "boundary": {
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "decoder_architecture": "SYSTEM_TEXT_JSON_DOM",
+    "decoder_implementation": "DEFERRED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "runtime_crossing": "NOT_AUTHORIZED"
+  },
+  "decoder_implications": {
+    "discriminator_based_dispatch_available": false,
+    "manual_structural_dispatch_required": true,
+    "normalized_type_and_constraint_shapes_should_be_primary": true,
+    "raw_number_text_required_for_big_integer": true,
+    "shape_collision_analysis_required": true,
+    "special_float_policy_required_before_decoder_implementation": true,
+    "unknown_shape_rejection_required": true
+  },
+  "fixture_revision": "R1_CANONICAL_CONSTRAINT_AND_TYPE_NORMALIZATION_FIX",
+  "next_stage_gate": "P12.5-RCV-38 MANAGED EXECUTABLE CARRIER JSON PARSING POLICY CONTRACT",
+  "normalization_findings": {
+    "authorized_rcv34_mapping_count": 18,
+    "constraint_string_normalizes_to": "ApexTypeConstraint",
+    "generic_type_string_normalizes_to": "ApexType",
+    "normalized_union_form_count": 2,
+    "observed_concrete_object_shape_count": 16,
+    "standalone_air_to_dict_string_remains_json_string": true,
+    "string_constraint_survives_inside_canonical_air": false,
+    "string_generic_type_survives_inside_canonical_air": false
+  },
+  "numeric_expectations": {
+    "arbitrary_precision_integer_json_token": "JSON_NUMBER_RAW_DECIMAL",
+    "nan_transport_token": "REQUIRES_LIVE_PROBE",
+    "negative_infinity_transport_token": "REQUIRES_LIVE_PROBE",
+    "negative_zero_preservation": "REQUIRES_LIVE_PROBE",
+    "normal_float_json_token": "JSON_NUMBER",
+    "positive_infinity_transport_token": "REQUIRES_LIVE_PROBE",
+    "strict_json_compatibility_for_special_float": "REQUIRES_LIVE_PROBE"
+  },
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-executable-carrier-decoder-architecture-decision/v1",
+    "stage": "P12.5-RCV-36"
+  },
+  "profile": "apexforge.p12.canonical-air-transport-json-shape-census/v1",
+  "repair_basis": {
+    "canonical_constraint_name": "numeric",
+    "canonical_constraint_object": "type_system.constraints.NUMERIC",
+    "canonical_type_fixture": "type_system.model.INT",
+    "prior_failure_class": "TEST_FIXTURE_DEFECT",
+    "prior_invalid_constraint_name": "Numeric",
+    "prior_invalid_type_name": "Number",
+    "semantic_regression": false
+  },
+  "serializer": {
+    "delegate": "air.serialization.air_to_dict",
+    "explicit_node_discriminator": false,
+    "field_names": "snake_case",
+    "list_encoding": "JSON_ARRAY",
+    "mechanism": "dataclasses.asdict_recursive_structure",
+    "none_encoding": "JSON_NULL",
+    "python_class_identity_preserved": false,
+    "transport_encoder": "json.dumps",
+    "transport_encoder_options": {
+      "ensure_ascii": false,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "sort_keys": true
+    },
+    "tuple_encoding": "JSON_ARRAY"
+  },
+  "shape_expectations": {
+    "AIRBinaryExpression": [
+      "left",
+      "operator",
+      "right"
+    ],
+    "AIRBooleanLiteral": [
+      "value"
+    ],
+    "AIRCallExpression": [
+      "target",
+      "arguments",
+      "type_arguments"
+    ],
+    "AIRFloatLiteral": [
+      "value"
+    ],
+    "AIRFunction": [
+      "id",
+      "name",
+      "parameters",
+      "return_expression",
+      "order",
+      "local_bindings",
+      "body",
+      "return_type",
+      "type_parameters"
+    ],
+    "AIRFunctionReturn": [
+      "expression"
+    ],
+    "AIRFunctionWhen": [
+      "condition",
+      "actions",
+      "otherwise_actions"
+    ],
+    "AIRIdentifierReference": [
+      "name"
+    ],
+    "AIRIntegerLiteral": [
+      "value"
+    ],
+    "AIRLocalBinding": [
+      "name",
+      "expression"
+    ],
+    "AIRParameter": [
+      "name",
+      "value_type"
+    ],
+    "AIRStringLiteral": [
+      "value"
+    ],
+    "AIRUnaryExpression": [
+      "operator",
+      "operand"
+    ],
+    "ApexType": [
+      "name",
+      "arguments"
+    ],
+    "ApexTypeConstraint": [
+      "name",
+      "description"
+    ],
+    "ApexTypeVariable": [
+      "name",
+      "owner",
+      "constraints"
+    ]
+  },
+  "stage": "P12.5-RCV-37",
+  "status": "RECOVERED_LIVE_SHAPE_AUDIT_CANDIDATE",
+  "title": "Recovered Canonical AIR Transport JSON Shape Census"
+}

@@ -1,0 +1,46 @@
+{
+  "authority": {
+    "handoff_defines_language_semantics": false,
+    "handoff_executes": false,
+    "handoff_lowers": false,
+    "host_defines_language_semantics": false,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "canonical_source": {
+    "path": "apexforge/native_backend/target_neutral_lowering.py",
+    "schema": "apexforge.target-neutral-lowering/v1",
+    "type": "TargetNeutralLoweringProduct"
+  },
+  "census": {
+    "extract_constructor_or_dataclass_fields": true,
+    "extract_python_class_shape": true,
+    "extract_validation_surface": true,
+    "scan_historical_git_text_if_reachable": false,
+    "scan_repository_references": true
+  },
+  "deferred": [
+    "MANAGED_FIELD_MAPPING_DECISION",
+    "HANDOFF_IMPLEMENTATION",
+    "EXTERNAL_SERIALIZATION",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "managed_target": {
+    "field_mapping": "UNSELECTED",
+    "implementation": "ABSENT_AT_CENSUS_GATE",
+    "owner_project": "ApexForge.Runtime",
+    "type": "ApexForge.Runtime.TargetNeutralLoweringHandoff"
+  },
+  "next_stage_gate": "P12.5-RCV-13 TARGET-NEUTRAL HANDOFF FIELD-MAPPING CONTRACT",
+  "predecessor": {
+    "required_profile": "apexforge.p12.target-neutral-managed-handoff-reconstruction-contract/v1",
+    "stage": "P12.5-RCV-11"
+  },
+  "profile": "apexforge.p12.target-neutral-handoff-representation-census/v1",
+  "purpose": "Extract the canonical P12.2 TargetNeutralLoweringProduct representation and current historical references before selecting a managed C# field mapping.",
+  "stage": "P12.5-RCV-12",
+  "status": "RECOVERED_AUDIT_CANDIDATE",
+  "title": "Recovered Target-Neutral Handoff Representation Census"
+}

@@ -1,0 +1,58 @@
+{
+  "authority": {
+    "carrier_derivation_may_copy_structure": true,
+    "carrier_derivation_may_dispatch": false,
+    "carrier_derivation_may_execute": false,
+    "carrier_derivation_may_reinterpret_semantics": false,
+    "carrier_derivation_may_select_transport": false,
+    "carrier_owner_project": "ApexForge.Runtime",
+    "language_semantics": "CANONICAL_AIR",
+    "verified_air_owner": "air.model.VerifiedAIRProgram"
+  },
+  "decision": {
+    "canonical_serialization_delegate": "air.serialization.air_to_dict",
+    "carrier_serialization_selected": false,
+    "concrete_derivation_component": "UNSELECTED",
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "decoder_implementation": "DEFERRED",
+    "derivation_direction": "CANONICAL_AIR_TRANSPORT_TO_MANAGED_EXECUTABLE_CARRIER",
+    "derivation_owner_project": "ApexForge.Runtime",
+    "derivation_source": "CANONICAL_AIR_TRANSPORT",
+    "execution_dispatch": "DEFERRED",
+    "existing_source_container": "apexforge.native_backend.VerifiedAIRLoweringInput.transport_json",
+    "external_serialization": "UNSELECTED",
+    "historical_identity_claim": false,
+    "logical_source_owner": "air.model.VerifiedAIRProgram",
+    "target_neutral_lowering_product_is_source": false,
+    "target_neutral_managed_handoff_is_source": false,
+    "verified_air_python_object_graph_is_direct_cross_runtime_source": false
+  },
+  "evidence": {
+    "historical_final_derivation_source_decision_directly_recovered": false,
+    "historical_q_derivation_bridge_reference_count": 0,
+    "historical_q_existing_handoff_boundary_reference_count": 22,
+    "historical_q_production_python_managed_carrier_reference_count": 0,
+    "historical_verified_air_transport_compatibility_census_passed": true,
+    "original_commit_identity_equivalence": false
+  },
+  "implementation": "DEFERRED",
+  "next_stage_gate": "P12.5-RCV-33 MANAGED EXECUTABLE CARRIER DERIVATION MAPPING CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-executable-carrier-derivation-boundary-census/v1",
+    "stage": "P12.5-RCV-31"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-derivation-source-decision/v1",
+  "rationale": {
+    "canonical_air_transport_contains_full_structural_air": true,
+    "canonical_air_transport_is_bound_to_verified_air": true,
+    "canonical_air_transport_is_deterministic": true,
+    "direct_python_object_crossing_would_require_unselected_transport": true,
+    "selection_does_not_authorize_json_decoder": true,
+    "selection_does_not_authorize_runtime_crossing": true,
+    "target_neutral_handoff_lacks_executable_graph": true,
+    "target_neutral_product_wraps_canonical_air_transport_but_is_not_needed_as_semantic_source": true
+  },
+  "stage": "P12.5-RCV-32",
+  "status": "RECOVERY_GOVERNANCE_DECISION",
+  "title": "Recovered Managed Executable Carrier Derivation Source Decision"
+}

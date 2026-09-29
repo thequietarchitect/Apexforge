@@ -1,0 +1,74 @@
+{
+  "admission": {
+    "behavior": "VALIDATE_AND_RETURN",
+    "host_type": "ApexForge.Runtime.ManagedRuntimeHost",
+    "implementation": "DEFERRED",
+    "method": "AdmitTargetNeutralHandoff"
+  },
+  "authority": {
+    "handoff_defines_language_semantics": false,
+    "handoff_executes": false,
+    "handoff_lowers": false,
+    "handoff_serializes": false,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "deferred": [
+    "HANDOFF_IMPLEMENTATION",
+    "HOST_ADMISSION_IMPLEMENTATION",
+    "EXTERNAL_SERIALIZATION",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "implementation": "DEFERRED",
+  "managed_type": {
+    "declaration": "public sealed record",
+    "fields": [
+      {
+        "name": "Schema",
+        "type": "string"
+      },
+      {
+        "name": "VerifiedAirFingerprint",
+        "type": "string"
+      },
+      {
+        "name": "RoutingFingerprint",
+        "type": "string"
+      },
+      {
+        "name": "EntryDirective",
+        "type": "string"
+      },
+      {
+        "name": "DirectiveOwnerIds",
+        "type": "IReadOnlyList<string>"
+      },
+      {
+        "name": "ProductFingerprint",
+        "type": "string"
+      }
+    ],
+    "name": "ApexForge.Runtime.TargetNeutralLoweringHandoff",
+    "owner_project": "ApexForge.Runtime",
+    "required_schema_constant": "apexforge.target-neutral-lowering/v1"
+  },
+  "next_stage_gate": "P12.5-RCV-15 TARGET-NEUTRAL HANDOFF IMPLEMENTATION FOUNDATION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.target-neutral-handoff-field-mapping-contract/v1",
+    "stage": "P12.5-RCV-13-R1"
+  },
+  "profile": "apexforge.p12.historical-managed-type-selection-confirmation/v1",
+  "stage": "P12.5-RCV-14",
+  "status": "RECOVERED_GOVERNANCE_CANDIDATE",
+  "title": "Recovered Historical Managed Type Selection Confirmation",
+  "validation": {
+    "DirectiveOwnerIds": "non-null; every item non-null/non-whitespace",
+    "EntryDirective": "non-null/non-whitespace",
+    "ProductFingerprint": "64 uppercase hex chars",
+    "RoutingFingerprint": "64 hex chars, uppercase or lowercase permitted",
+    "Schema": "StringComparison.Ordinal equality with RequiredSchema",
+    "VerifiedAirFingerprint": "64 hex chars, uppercase or lowercase permitted"
+  }
+}

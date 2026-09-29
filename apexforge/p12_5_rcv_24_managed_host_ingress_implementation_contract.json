@@ -1,0 +1,62 @@
+{
+  "authority": {
+    "host_shell_owner": "ApexForge.Runtime.Host",
+    "ingress_calls_native_abi": false,
+    "ingress_defines_language_semantics": false,
+    "ingress_executes": false,
+    "ingress_lowers": false,
+    "ingress_owner": "ApexForge.Runtime.Host",
+    "ingress_reinterprets": false,
+    "ingress_selects_transport": false,
+    "language_semantics": "CANONICAL_AIR",
+    "validation_owner": "ApexForge.Runtime.ManagedRuntimeHost"
+  },
+  "constraints": {
+    "must_delegate_validation": true,
+    "must_not_call_managed_native_abi": true,
+    "must_not_dispatch_execution": true,
+    "must_not_duplicate_handoff_validation": true,
+    "must_not_embed_python": true,
+    "must_not_open_pipe_or_socket": true,
+    "must_not_read_cli_payload": true,
+    "must_not_read_file_payload": true,
+    "must_not_read_stdin_payload": true,
+    "must_not_serialize": true
+  },
+  "decision": {
+    "constructor_dependency": "ApexForge.Runtime.ManagedRuntimeHost",
+    "constructor_null_guard": true,
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "duplicates_validation": false,
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "lifecycle_coupling": "NONE_IN_INITIAL_IMPLEMENTATION",
+    "method": "Admit",
+    "method_behavior": "DELEGATE_TO_ManagedRuntimeHost.AdmitTargetNeutralHandoff",
+    "method_input": "ApexForge.Runtime.TargetNeutralLoweringHandoff",
+    "method_output": "ApexForge.Runtime.TargetNeutralLoweringHandoff",
+    "owner_project": "ApexForge.Runtime.Host",
+    "representation": "SEALED_IN_PROCESS_ADAPTER",
+    "returns_delegate_result": true,
+    "type": "ApexForge.Runtime.Host.RuntimeHostIngress"
+  },
+  "historical_evidence": {
+    "future_ingress_type": "ApexForge.Runtime.Host.RuntimeHostIngress",
+    "historical_constructor_shape_recovered": false,
+    "historical_identity_claim": false,
+    "historical_implementation_body_recovered": false,
+    "historical_lifecycle_coupling_recovered": false,
+    "historical_method_name_recovered": false,
+    "host_ingress_family": "IN_PROCESS_API"
+  },
+  "implementation": "DEFERRED",
+  "next_stage_gate": "P12.5-RCV-25 MANAGED HOST INGRESS IMPLEMENTATION FOUNDATION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-host-ingress-implementation-census/v1",
+    "stage": "P12.5-RCV-23"
+  },
+  "profile": "apexforge.p12.managed-host-ingress-implementation-contract/v1",
+  "stage": "P12.5-RCV-24",
+  "status": "RECOVERY_SELECTED_GOVERNANCE_CANDIDATE",
+  "title": "Recovered Managed Host Ingress Implementation Contract"
+}

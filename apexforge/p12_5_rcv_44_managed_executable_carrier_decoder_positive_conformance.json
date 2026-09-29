@@ -1,0 +1,48 @@
+{
+  "stage": "P12.5-RCV-44",
+  "title": "Managed Executable Carrier Decoder Positive Conformance",
+  "profile": "apexforge.p12.managed-executable-carrier-decoder-positive-conformance/v1",
+  "status": "BEHAVIORAL_CONFORMANCE",
+  "predecessor": {
+    "stage": "P12.5-RCV-43",
+    "required_profile": "apexforge.p12.managed-executable-carrier-decoder-implementation/v1"
+  },
+  "fixture": {
+    "source": "LIVE_air.model.VerifiedAIRProgram",
+    "serializer": "apexforge.native_backend.build_verified_air_lowering_input",
+    "input_root": "WHOLE_CANONICAL_AIR_DOCUMENT",
+    "nonempty_workflow_present": true,
+    "function_count": 2,
+    "authorized_carrier_mapping_count": 18
+  },
+  "coverage": {
+    "all_expression_shapes": true,
+    "all_function_statement_shapes": true,
+    "apex_type_shape": true,
+    "type_variable_shape": true,
+    "constraint_shape": true,
+    "nullable_fields": true,
+    "empty_functions": true,
+    "multiple_functions_source_order": true,
+    "big_integer_exact": true,
+    "binary64_negative_zero": true,
+    "unicode_string": true,
+    "boolean": true,
+    "recursive_graph": true,
+    "workflow_compatibility_root": true
+  },
+  "result": "PASS",
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "projection_reinterprets_semantics": false,
+    "no_second_semantic_implementation": true
+  },
+  "boundary": {
+    "test_probe_is_production_transport": false,
+    "external_transport_added": false,
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED"
+  },
+  "historical_identity_claim": false,
+  "next_stage_gate": "P12.5-RCV-45 MANAGED EXECUTABLE CARRIER DECODER NEGATIVE CONFORMANCE"
+}

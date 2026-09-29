@@ -1,0 +1,62 @@
+{
+  "boundary_fields": [
+    "Schema",
+    "VerifiedAirFingerprint",
+    "RoutingFingerprint",
+    "EntryDirective",
+    "DirectiveOwnerIds",
+    "ProductFingerprint"
+  ],
+  "bridge_contract": {
+    "direction": "PYTHON_PRODUCT_TO_MANAGED_HANDOFF",
+    "managed_runtime_may_admit": true,
+    "managed_runtime_may_reconstruct_source_objects": false,
+    "managed_runtime_may_validate": true,
+    "projection_is_semantic_authority": false,
+    "projection_may_execute": false,
+    "projection_may_lower": false,
+    "projection_may_reinterpret": false,
+    "projection_may_select_transport": false
+  },
+  "deferred": [
+    "PROJECTION_BRIDGE_REPRESENTATION_DECISION",
+    "PROJECTION_BRIDGE_IMPLEMENTATION",
+    "EXTERNAL_SERIALIZATION",
+    "CROSS_RUNTIME_TRANSPORT",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "implementation": {
+    "cross_runtime_transport": "UNSELECTED",
+    "external_serialization": "UNSELECTED",
+    "projection_bridge": "DEFERRED",
+    "projection_representation": "UNSELECTED"
+  },
+  "next_stage_gate": "P12.5-RCV-18 PROJECTION BRIDGE REPRESENTATION DECISION",
+  "not_crossing_boundary": [
+    "canonical_json",
+    "RegistryExecutionPlanBinding object",
+    "RegistryExecutionPlan object",
+    "VerifiedAIRProgram object"
+  ],
+  "ownership": {
+    "host_shell_owner": "ApexForge.Runtime.Host",
+    "language_semantic_authority": "CANONICAL_AIR",
+    "managed_admission_owner": "ApexForge.Runtime.ManagedRuntimeHost",
+    "managed_handoff_owner": "ApexForge.Runtime",
+    "managed_validation_owner": "ApexForge.Runtime",
+    "projection_owner": "apexforge.native_backend",
+    "source_product_owner": "apexforge.native_backend",
+    "source_product_type": "apexforge.native_backend.target_neutral_lowering.TargetNeutralLoweringProduct"
+  },
+  "predecessor": {
+    "required_profile": "apexforge.p12.target-neutral-handoff-projection-bridge-census/v1",
+    "stage": "P12.5-RCV-16"
+  },
+  "profile": "apexforge.p12.projection-bridge-ownership-contract/v1",
+  "stage": "P12.5-RCV-17",
+  "status": "RECOVERED_GOVERNANCE_CANDIDATE",
+  "title": "Recovered Projection Bridge Ownership Contract"
+}

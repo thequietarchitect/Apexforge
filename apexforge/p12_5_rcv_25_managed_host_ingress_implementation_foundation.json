@@ -1,0 +1,50 @@
+{
+  "authority": {
+    "ingress_calls_native_abi": false,
+    "ingress_defines_language_semantics": false,
+    "ingress_executes": false,
+    "ingress_lowers": false,
+    "ingress_owner": "ApexForge.Runtime.Host",
+    "ingress_reinterprets": false,
+    "ingress_selects_transport": false,
+    "ingress_serializes": false,
+    "language_semantics": "CANONICAL_AIR",
+    "validation_owner": "ApexForge.Runtime.ManagedRuntimeHost"
+  },
+  "deferred": [
+    "HOST_PROGRAM_INGRESS_WIRING",
+    "HOST_LIFECYCLE_INGRESS_COUPLING",
+    "EXTERNAL_SERIALIZATION",
+    "CROSS_RUNTIME_TRANSPORT",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "implementation": {
+    "constructor_dependency": "ApexForge.Runtime.ManagedRuntimeHost",
+    "delegates_to": "ManagedRuntimeHost.AdmitTargetNeutralHandoff",
+    "duplicates_validation": false,
+    "historical_identity_claim": false,
+    "lifecycle_coupling": "NONE",
+    "method": "Admit",
+    "path": "runtimes/dotnet/ApexForge.Runtime.Host/RuntimeHostIngress.cs",
+    "representation": "SEALED_IN_PROCESS_ADAPTER",
+    "type": "ApexForge.Runtime.Host.RuntimeHostIngress"
+  },
+  "next_stage_gate": "P12.5-RCV-26 MANAGED HOST INGRESS INTEGRATION CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-host-ingress-implementation-contract/v1",
+    "stage": "P12.5-RCV-24"
+  },
+  "profile": "apexforge.p12.managed-host-ingress-implementation-foundation/v1",
+  "stage": "P12.5-RCV-25",
+  "status": "RECOVERY_SELECTED_IMPLEMENTATION_CANDIDATE",
+  "title": "Recovered Managed Host Ingress Implementation Foundation",
+  "unchanged_surfaces": [
+    "runtimes/dotnet/ApexForge.Runtime.Host/Program.cs",
+    "runtimes/dotnet/ApexForge.Runtime.Host/RuntimeHostLifecycle.cs",
+    "runtimes/dotnet/ApexForge.Runtime/ManagedRuntimeHost.cs",
+    "runtimes/dotnet/ApexForge.Runtime/TargetNeutralLoweringHandoff.cs"
+  ]
+}

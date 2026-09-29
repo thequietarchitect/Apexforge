@@ -1,0 +1,87 @@
+{
+  "construction": {
+    "binding_object_projected": false,
+    "canonical_json_projected": false,
+    "implementation": "DEFERRED",
+    "mapping": "DIRECT_COPY_FROM_CANONICAL_PRODUCT_AND_DERIVED_VIEWS",
+    "source": "TargetNeutralLoweringProduct"
+  },
+  "decision": {
+    "execution_authority": false,
+    "future_type": "apexforge.native_backend.managed_handoff_projection.ManagedHandoffProjection",
+    "historical_identity_claim": false,
+    "owner": "apexforge.native_backend",
+    "representation_kind": "FROZEN_DATACLASS_VALUE_OBJECT",
+    "representation_scope": "SOURCE_SIDE_INTERNAL_ONLY",
+    "semantic_authority": false,
+    "transport_authority": false
+  },
+  "deferred": [
+    "PROJECTION_VALUE_OBJECT_IMPLEMENTATION",
+    "PROJECTION_CONSTRUCTOR_IMPLEMENTATION",
+    "EXTERNAL_SERIALIZATION",
+    "CROSS_RUNTIME_TRANSPORT",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "fields": [
+    {
+      "managed_target": "Schema",
+      "name": "schema",
+      "type": "str"
+    },
+    {
+      "managed_target": "VerifiedAirFingerprint",
+      "name": "verified_air_fingerprint",
+      "type": "str"
+    },
+    {
+      "managed_target": "RoutingFingerprint",
+      "name": "routing_fingerprint",
+      "type": "str"
+    },
+    {
+      "managed_target": "EntryDirective",
+      "name": "entry_directive",
+      "type": "str"
+    },
+    {
+      "managed_target": "DirectiveOwnerIds",
+      "name": "directive_owner_ids",
+      "type": "tuple[str, ...]"
+    },
+    {
+      "managed_target": "ProductFingerprint",
+      "name": "product_fingerprint",
+      "type": "str"
+    }
+  ],
+  "historical_evidence": {
+    "concrete_bridge_representation_recovered": false,
+    "concrete_external_serialization_recovered": false,
+    "original_commit_identity_equivalence_claim": false
+  },
+  "next_stage_gate": "P12.5-RCV-19 PROJECTION VALUE-OBJECT IMPLEMENTATION FOUNDATION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.projection-bridge-ownership-contract/v1",
+    "stage": "P12.5-RCV-17"
+  },
+  "profile": "apexforge.p12.projection-bridge-representation-decision/v1",
+  "stage": "P12.5-RCV-18",
+  "status": "RECOVERY_SELECTED_GOVERNANCE_CANDIDATE",
+  "title": "Recovered Projection Bridge Representation Decision",
+  "unselected": {
+    "command_line_format": "UNSELECTED",
+    "cross_runtime_transport": "UNSELECTED",
+    "external_serialization": "UNSELECTED",
+    "file_format": "UNSELECTED",
+    "stdin_format": "UNSELECTED"
+  },
+  "validation": {
+    "managed_validation_remains_authoritative_for_handoff_shape": true,
+    "performed_by_projection_value_object": false,
+    "source_product_invariants_remain_authoritative_upstream": true
+  }
+}

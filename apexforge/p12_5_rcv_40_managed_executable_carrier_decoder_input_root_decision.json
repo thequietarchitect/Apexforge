@@ -1,0 +1,62 @@
+{
+  "stage": "P12.5-RCV-40",
+  "title": "Managed Executable Carrier Decoder Input Root Decision",
+  "profile": "apexforge.p12.managed-executable-carrier-decoder-input-root-decision/v1",
+  "status": "RECOVERY_GOVERNANCE_DECISION",
+  "predecessor": {
+    "stage": "P12.5-RCV-39",
+    "required_profile": "apexforge.p12.managed-executable-carrier-decoder-input-root-census/v1"
+  },
+  "decision": {
+    "decoder_input_root": "WHOLE_CANONICAL_AIR_DOCUMENT",
+    "source_container": "VerifiedAIRLoweringInput.transport_json",
+    "root_json_kind": "OBJECT",
+    "carrier_subtree": "$.functions",
+    "functions_only_transport_created": false,
+    "individual_function_transport_created": false,
+    "required_root_properties": [
+      "authorities",
+      "authority_checks",
+      "causal_decisions",
+      "directives",
+      "events",
+      "functions",
+      "principals",
+      "requirements",
+      "roles",
+      "states",
+      "version"
+    ],
+    "optional_compatibility_properties": ["workflows"],
+    "root_property_policy": "EXACT_REQUIRED_PLUS_OPTIONAL_WORKFLOWS",
+    "metadata_validation_scope": "ROOT_PROPERTY_SET_AND_JSON_KINDS_ONLY",
+    "metadata_semantic_reimplementation": false,
+    "empty_functions_behavior": "RETURN_EMPTY_READ_ONLY_LIST",
+    "multiple_functions_behavior": "DECODE_ALL_IN_SOURCE_ORDER",
+    "function_selection_behavior": "NONE"
+  },
+  "rationale": {
+    "reuses_existing_canonical_transport_seam": true,
+    "preserves_transport_fingerprint_source": true,
+    "avoids_new_subtree_protocol": true,
+    "avoids_new_item_protocol": true,
+    "avoids_second_metadata_semantic_decoder": true,
+    "supports_historical_empty_workflow_omission": true
+  },
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "decoder_is_structural_projection_only": true,
+    "decoder_may_execute": false,
+    "decoder_may_reinterpret_semantics": false
+  },
+  "boundary": {
+    "external_serialization": "UNSELECTED",
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "network_ingress": "FORBIDDEN",
+    "target_neutral_handoff_coupling": false,
+    "execution_dispatch": "DEFERRED"
+  },
+  "historical_identity_claim": false,
+  "next_stage_gate": "P12.5-RCV-41 MANAGED EXECUTABLE CARRIER DECODER PUBLIC API CONTRACT"
+}

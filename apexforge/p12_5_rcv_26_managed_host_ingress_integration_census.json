@@ -1,0 +1,39 @@
+{
+  "authority": {
+    "host_program_role": "ORCHESTRATION_AND_LIFECYCLE_SHELL",
+    "ingress_owner": "ApexForge.Runtime.Host",
+    "integration_census_defines_semantics": false,
+    "integration_census_executes": false,
+    "integration_census_selects_transport": false,
+    "language_semantics": "CANONICAL_AIR",
+    "managed_validation_owner": "ApexForge.Runtime.ManagedRuntimeHost"
+  },
+  "census": {
+    "execution_dispatch_expected": false,
+    "external_transport_expected": false,
+    "host_program_wiring_expected": false,
+    "ingress_implementation_expected": true,
+    "ingress_type": "ApexForge.Runtime.Host.RuntimeHostIngress",
+    "lifecycle_coupling_expected": false
+  },
+  "integration_state": {
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "host_external_payload_ingress": false,
+    "ingress_references_lifecycle": false,
+    "lifecycle_references_ingress": false,
+    "program_admits_handoff": false,
+    "program_constructs_ingress": false,
+    "runtime_host_ingress_implemented": true
+  },
+  "next_stage_gate": "P12.5-RCV-27 MANAGED HOST PROGRAM INTEGRATION CONTRACT",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-host-ingress-implementation-foundation/v1",
+    "stage": "P12.5-RCV-25"
+  },
+  "profile": "apexforge.p12.managed-host-ingress-integration-census/v1",
+  "stage": "P12.5-RCV-26",
+  "status": "RECOVERED_AUDIT_CANDIDATE",
+  "title": "Recovered Managed Host Ingress Integration Census"
+}

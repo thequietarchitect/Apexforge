@@ -1,0 +1,37 @@
+{
+  "profile": "apexforge.p12.runtime-host-project-skeleton/v1",
+  "stage": "P12.5-RCV-6",
+  "title": "Recovered Dedicated Managed Runtime Host Project Skeleton",
+  "status": "RECOVERED_IMPLEMENTATION_CANDIDATE",
+  "predecessor": {
+    "stage": "P12.5-RCV-5",
+    "required_profile": "apexforge.p12.runtime-host-topology-ownership/v1"
+  },
+  "project": {
+    "name": "ApexForge.Runtime.Host",
+    "path": "runtimes/dotnet/ApexForge.Runtime.Host",
+    "target_framework": "net10.0",
+    "output_type": "Exe",
+    "project_reference": "../ApexForge.Runtime/ApexForge.Runtime.csproj",
+    "role": "ORCHESTRATION_AND_LIFECYCLE_SHELL"
+  },
+  "behavior": {
+    "constructs_existing_managed_runtime_host": true,
+    "reports_runtime_identity_only": true,
+    "host_ingress": "UNSELECTED",
+    "target_neutral_handoff": "NOT_YET_RECONSTRUCTED",
+    "managed_executable_carrier": "NOT_YET_RECONSTRUCTED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "native_host": "DEFERRED"
+  },
+  "ownership": {
+    "language_semantics": "CANONICAL_AIR",
+    "managed_runtime_library": "ApexForge.Runtime",
+    "managed_host_shell": "ApexForge.Runtime.Host",
+    "native_interop_owner": "ApexForge.Runtime.ManagedNativeAbi",
+    "host_defines_language_semantics": false,
+    "host_duplicates_native_interop": false
+  },
+  "next_stage_gate": "P12.5-RCV-7 HOST LIFECYCLE AND STARTUP CONTRACT"
+}

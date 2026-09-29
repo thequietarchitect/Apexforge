@@ -1,0 +1,53 @@
+{
+  "stage": "P12.5-RCV-43",
+  "title": "Managed Executable Carrier Decoder Implementation",
+  "profile": "apexforge.p12.managed-executable-carrier-decoder-implementation/v1",
+  "status": "RECOVERED_PRODUCTION_IMPLEMENTATION",
+  "predecessor": {
+    "stage": "P12.5-RCV-42",
+    "required_profile": "apexforge.p12.managed-executable-carrier-structural-ambiguity-census/v1"
+  },
+  "implementation": {
+    "path": "runtimes/dotnet/ApexForge.Runtime/ManagedExecutableCarrierDecoder.cs",
+    "owner_project": "ApexForge.Runtime",
+    "type": "ApexForge.Runtime.ManagedExecutableCarrierDecoder",
+    "method": "DecodeCanonicalAirTransport",
+    "architecture": "SYSTEM_TEXT_JSON_DOM",
+    "mechanism": "System.Text.Json.JsonDocument_JsonElement",
+    "input_root": "WHOLE_CANONICAL_AIR_DOCUMENT",
+    "output": "IReadOnlyList<ManagedExecutableFunction>",
+    "closed_world": true,
+    "exact_property_validation": true,
+    "duplicate_property_rejection": true,
+    "unknown_property_rejection": true,
+    "missing_property_rejection": true,
+    "json_kind_validation": true,
+    "manual_structural_dispatch": true,
+    "direct_polymorphic_deserialization": false,
+    "project_file_change_required": false,
+    "existing_carrier_file_changed": false
+  },
+  "numeric": {
+    "integer": "BigInteger_PARSE_RAW_INVARIANT_EXACT",
+    "float": "DOUBLE_PARSE_RAW_INVARIANT_FINITE_BINARY64",
+    "negative_zero": "PRESERVE_SIGN_BIT",
+    "nonfinite_transport": "FAIL_CLOSED"
+  },
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "structural_projection_only": true,
+    "no_second_semantic_implementation": true,
+    "executes": false,
+    "dispatches_execution": false
+  },
+  "boundary": {
+    "host_wiring_changed": false,
+    "target_neutral_handoff_coupling": false,
+    "external_transport_added": false,
+    "network_ingress_added": false,
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED"
+  },
+  "historical_identity_claim": false,
+  "next_stage_gate": "P12.5-RCV-44 MANAGED EXECUTABLE CARRIER DECODER POSITIVE CONFORMANCE"
+}

@@ -32,4 +32,11 @@ public sealed class ManagedRuntimeHost
         result.Validate();
         return result;
     }
+
+    public TargetNeutralLoweringHandoff AdmitTargetNeutralHandoff(TargetNeutralLoweringHandoff handoff)
+    {
+        ArgumentNullException.ThrowIfNull(handoff);
+        handoff.Validate();
+        return handoff;
+    }
 }

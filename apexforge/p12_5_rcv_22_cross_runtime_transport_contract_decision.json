@@ -1,0 +1,61 @@
+{
+  "allowed_current_flow": [
+    "TargetNeutralLoweringProduct -> ManagedHandoffProjection",
+    "TargetNeutralLoweringHandoff -> ManagedRuntimeHost.AdmitTargetNeutralHandoff",
+    "ApexForge.Runtime.Host lifecycle shell startup/shutdown"
+  ],
+  "authority": {
+    "host_shell_owner": "ApexForge.Runtime.Host",
+    "language_semantics": "CANONICAL_AIR",
+    "managed_admission_owner": "ApexForge.Runtime.ManagedRuntimeHost",
+    "managed_handoff_owner": "ApexForge.Runtime",
+    "projection_owner": "apexforge.native_backend",
+    "transport_authority_created": false
+  },
+  "constraints": {
+    "no_execution_dispatch": true,
+    "no_file_payload_transport": true,
+    "no_json_handoff_serializer": true,
+    "no_new_native_ffi_transport": true,
+    "no_pipe_transport": true,
+    "no_python_embedding_or_pythonnet_selection": true,
+    "no_shared_memory_transport": true,
+    "no_socket_or_http_transport": true,
+    "no_stdio_payload_transport": true
+  },
+  "decision": {
+    "bridge_process_model": "UNSELECTED",
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "external_serialization": "UNSELECTED",
+    "managed_admission_scope": "IN_PROCESS_VALIDATE_AND_RETURN_ONLY",
+    "managed_host_ingress": "IN_PROCESS_API",
+    "network_ingress": "FORBIDDEN_IN_THIS_LINE",
+    "projection_scope": "SOURCE_SIDE_STRUCTURAL_ONLY",
+    "transport_encoding": "UNSELECTED"
+  },
+  "next_stage_gate": "P12.5-RCV-23 MANAGED HOST INGRESS IMPLEMENTATION CENSUS",
+  "not_connected_yet": [
+    "ManagedHandoffProjection -> TargetNeutralLoweringHandoff runtime crossing",
+    "Python runtime -> .NET runtime transport",
+    "external payload -> managed host ingress",
+    "managed handoff -> executable carrier",
+    "managed handoff -> native execution"
+  ],
+  "predecessor": {
+    "required_profile": "apexforge.p12.cross-runtime-transport-architecture-census/v1",
+    "stage": "P12.5-RCV-21"
+  },
+  "profile": "apexforge.p12.cross-runtime-transport-contract-decision/v1",
+  "rationale": {
+    "avoid_inventing_recovery_transport": true,
+    "current_host_has_external_transport_behavior": false,
+    "current_managed_handoff_has_transport_behavior": false,
+    "current_projection_has_transport_behavior": false,
+    "historical_cross_runtime_process_model_selected": false,
+    "historical_external_serialization_selected": false,
+    "historical_transport_identity_recovered": false
+  },
+  "stage": "P12.5-RCV-22",
+  "status": "RECOVERY_GOVERNANCE_DECISION",
+  "title": "Recovered Cross-Runtime Transport Contract Decision"
+}

@@ -1,0 +1,48 @@
+{
+  "stage": "P12.5-RCV-51",
+  "title": "P12.5 Recovery Terminal Closure",
+  "profile": "apexforge.p12.recovery-terminal-closure/v1",
+  "status": "TERMINALLY_READY_FOR_FREEZE_REVIEW",
+  "predecessor": {
+    "stage": "P12.5-RCV-50",
+    "required_profile": "apexforge.p12.recovery-closure-audit/v1"
+  },
+  "closure": {
+    "recovery_terminal_closure": "PASS",
+    "language_semantic_authority": "CANONICAL_AIR",
+    "no_second_semantic_implementation": true,
+    "p12_4_freeze_preserved": true,
+    "provenance_preserved": true,
+    "determinism": "PASS",
+    "managed_runtime_build": "PASS",
+    "regression_stack": "PASS",
+    "historical_identity_claim": false,
+    "ready_for_freeze_review": true
+  },
+  "implemented_boundary": {
+    "source": "VerifiedAIRLoweringInput.transport_json",
+    "decoder_root": "WHOLE_CANONICAL_AIR_DOCUMENT",
+    "projection": "$.functions",
+    "managed_api": "ManagedExecutableCarrierDecoder.DecodeCanonicalAirTransport(string)",
+    "role": "IN_PROCESS_CLOSED_WORLD_STRUCTURAL_CONSTRUCTION"
+  },
+  "deferred_boundaries": [
+    "SEPARATE_MANAGED_RUNTIME_CARRIER_ADMISSION",
+    "MANAGED_HOST_INGRESS_INTEGRATION",
+    "MANAGED_HOST_PROGRAM_WIRING",
+    "EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "TARGET_NEUTRAL_HANDOFF_COUPLING",
+    "CROSS_RUNTIME_TRANSPORT",
+    "STDIO_FILE_PIPE_SOCKET_HTTP_SHARED_MEMORY_PYTHONNET_NEW_FFI",
+    "NONFINITE_TRANSPORT_NORMALIZATION"
+  ],
+  "git_actions": {
+    "files_staged": false,
+    "commit_created": false,
+    "tag_created": false,
+    "push_attempted": false,
+    "freeze_authorized": false
+  },
+  "result": "PASS"
+}

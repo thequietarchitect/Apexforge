@@ -1,0 +1,72 @@
+{
+  "authority": {
+    "decoder_may_construct_only_authorized_carrier_nodes": true,
+    "decoder_may_copy_canonical_structure": true,
+    "decoder_may_dispatch": false,
+    "decoder_may_execute": false,
+    "decoder_may_mutate_canonical_source": false,
+    "decoder_may_reinterpret_semantics": false,
+    "decoder_may_select_transport": false,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "boundary": {
+    "construction_bridge": "ABSENT",
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "decoder_implementation": "DEFERRED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "target_neutral_handoff_coupling": false
+  },
+  "decision": {
+    "component_role": "STATELESS_CLOSED_WORLD_STRUCTURAL_DECODER",
+    "custom_external_json_library": false,
+    "decoder_architecture": "SYSTEM_TEXT_JSON_DOM",
+    "decoder_mechanism": "System.Text.Json.JsonDocument_JsonElement",
+    "decoder_method_shape": "UNSELECTED",
+    "decoder_type_name_selected": true,
+    "direct_polymorphic_json_serializer": false,
+    "future_decoder_type": "ApexForge.Runtime.ManagedExecutableCarrierDecoder",
+    "implementation": "DEFERRED",
+    "manual_node_dispatch": true,
+    "owner_project": "ApexForge.Runtime",
+    "utf8_json_reader_initial_implementation": false
+  },
+  "deferred_policies": {
+    "canonical_transport_json_shape": "REQUIRES_CENSUS",
+    "decoder_method_shape": "UNSELECTED",
+    "duplicate_property_policy": "UNSELECTED",
+    "float_parse_policy": "UNSELECTED",
+    "integer_parse_policy": "UNSELECTED",
+    "json_number_handling": "UNSELECTED",
+    "nullability_policy": "UNSELECTED",
+    "special_float_transport_handling": "UNSELECTED",
+    "type_discriminator_contract": "UNSELECTED",
+    "unknown_property_policy": "UNSELECTED"
+  },
+  "historical_evidence": {
+    "existing_managed_json_api": "System.Text.Json.JsonSerializer.Deserialize",
+    "existing_managed_json_deserializer": "CanonicalExecutionEnvelope.FromJson",
+    "historical_identity_claim": false,
+    "historical_managed_carrier_decoder_recovered": false
+  },
+  "next_stage_gate": "P12.5-RCV-37 CANONICAL AIR TRANSPORT JSON SHAPE CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-executable-carrier-decoder-architecture-census/v1",
+    "stage": "P12.5-RCV-35"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-decoder-architecture-decision/v1",
+  "rationale": {
+    "avoids_external_dependency": true,
+    "avoids_implicit_polymorphic_binding": true,
+    "does_not_authorize_runtime_crossing": true,
+    "does_not_select_transport": true,
+    "preserves_closed_world_mapping": true,
+    "supports_explicit_unknown_kind_rejection": true,
+    "supports_raw_number_text_access": true,
+    "supports_recursive_manual_mapping": true
+  },
+  "stage": "P12.5-RCV-36",
+  "status": "RECOVERY_GOVERNANCE_DECISION",
+  "title": "Recovered Managed Executable Carrier Decoder Architecture Decision"
+}

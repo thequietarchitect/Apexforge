@@ -1,0 +1,52 @@
+{
+  "authority": {
+    "host_defines_language_semantics": false,
+    "language_semantics": "CANONICAL_AIR",
+    "managed_host_shell": "ApexForge.Runtime.Host",
+    "managed_runtime_library": "ApexForge.Runtime",
+    "native_interop_owner": "ApexForge.Runtime.ManagedNativeAbi"
+  },
+  "deferred": [
+    "HOST_INGRESS",
+    "EXTERNAL_SERIALIZATION",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "QSI_COUPLING"
+  ],
+  "host": {
+    "background_daemon": false,
+    "network_listener": false,
+    "project": "ApexForge.Runtime.Host",
+    "role": "ORCHESTRATION_AND_LIFECYCLE_SHELL",
+    "shutdown_sequence": [
+      "STOP_REQUEST_OR_PROCESS_EXIT",
+      "HOST_QUIESCE",
+      "RESOURCE_RELEASE",
+      "PROCESS_EXIT"
+    ],
+    "startup_mode": "DETERMINISTIC_SINGLE_PROCESS",
+    "startup_sequence": [
+      "PROCESS_START",
+      "HOST_CONSTRUCT",
+      "RUNTIME_LIBRARY_AVAILABLE",
+      "READY_OR_FAIL"
+    ],
+    "startup_side_effects_before_validation": false
+  },
+  "implementation_in_this_slice": false,
+  "lifecycle_invariants": {
+    "host_may_not_duplicate_native_abi": true,
+    "host_may_not_promote_transport_to_semantic_authority": true,
+    "resource_release_owner_preserved": true,
+    "shutdown_is_bounded": true,
+    "startup_failure_is_explicit": true,
+    "startup_is_deterministic": true
+  },
+  "next_stage_gate": "P12.5-RCV-8 HOST LIFECYCLE AND STARTUP IMPLEMENTATION FOUNDATION",
+  "predecessor": "P12.5-RCV-6",
+  "profile": "apexforge.p12.host-lifecycle-startup-contract/v1",
+  "stage": "P12.5-RCV-7",
+  "status": "RECOVERED_GOVERNANCE_CANDIDATE",
+  "title": "Recovered Managed Host Lifecycle and Startup Contract"
+}

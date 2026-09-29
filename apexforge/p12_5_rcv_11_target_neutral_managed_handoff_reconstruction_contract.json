@@ -1,0 +1,53 @@
+{
+  "authority": {
+    "execution_plan_owner": "workflow.air_runner.RegistryExecutionPlan",
+    "language_semantics": "CANONICAL_AIR",
+    "managed_runtime_owner": "ApexForge.Runtime",
+    "target_neutral_lowering_owner": "apexforge.native_backend.target_neutral_lowering",
+    "verified_air_owner": "air.model.VerifiedAIRProgram"
+  },
+  "constraints": {
+    "must_not_call_native_abi_on_admission": true,
+    "must_not_execute_on_admission": true,
+    "must_not_infer_executable_semantics_from_fingerprint": true,
+    "must_not_redefine_language_semantics": true,
+    "must_preserve_p12_2_schema": true,
+    "must_validate_before_return": true
+  },
+  "deferred": [
+    "HANDOFF_FIELD_MAPPING",
+    "HANDOFF_IMPLEMENTATION",
+    "EXTERNAL_SERIALIZATION",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "next_stage_gate": "P12.5-RCV-12 TARGET-NEUTRAL HANDOFF REPRESENTATION CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.host-ingress-contract-decision/v1",
+    "stage": "P12.5-RCV-10"
+  },
+  "profile": "apexforge.p12.target-neutral-managed-handoff-reconstruction-contract/v1",
+  "reconstruction": {
+    "execution_authority": false,
+    "host_admission_behavior": "VALIDATE_AND_RETURN",
+    "host_admission_method": "ManagedRuntimeHost.AdmitTargetNeutralHandoff",
+    "language_semantic_authority": false,
+    "lowering_authority": false,
+    "managed_type": "ApexForge.Runtime.TargetNeutralLoweringHandoff",
+    "owner_project": "ApexForge.Runtime",
+    "source_schema": "apexforge.target-neutral-lowering/v1",
+    "subject": "TARGET_NEUTRAL_LOWERING_PRODUCT"
+  },
+  "representation": {
+    "command_line_format": "UNSELECTED",
+    "external_serialization": "UNSELECTED",
+    "field_mapping": "UNSELECTED",
+    "file_format": "UNSELECTED",
+    "stdin_format": "UNSELECTED"
+  },
+  "stage": "P12.5-RCV-11",
+  "status": "RECOVERED_GOVERNANCE_CANDIDATE",
+  "title": "Recovered Target-Neutral Managed Handoff Reconstruction Contract"
+}

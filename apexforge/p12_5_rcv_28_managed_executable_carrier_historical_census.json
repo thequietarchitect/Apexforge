@@ -1,0 +1,109 @@
+{
+  "authority": {
+    "carrier_defines_language_semantics": false,
+    "carrier_dispatches": false,
+    "carrier_executes": false,
+    "carrier_owns_native_abi": false,
+    "carrier_serializes": false,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "current_recovery_state": {
+    "carrier_implementation": "ABSENT_AT_CENSUS_GATE",
+    "carrier_reconstruction_authorized": false,
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED"
+  },
+  "historical_boundary_exclusions": [
+    "JsonSerializer",
+    "FromJson",
+    "LibraryImport",
+    "DllImport",
+    "apexforge_native",
+    "CanonicalExecutionEnvelope",
+    "TargetNeutralLoweringHandoff",
+    "Execute(",
+    "Dispatch("
+  ],
+  "historical_target": {
+    "historical_final_pass_directly_recovered": false,
+    "later_snapshot_presence_confirmed": true,
+    "original_commit_identity_equivalence": false,
+    "owner_project": "ApexForge.Runtime",
+    "path": "runtimes/dotnet/ApexForge.Runtime/ManagedExecutableCarrier.cs"
+  },
+  "materialized_r1_diagnostic": {
+    "candidate_build_valid": false,
+    "candidate_bytes_were_left_unchanged": true,
+    "carrier_smoke_passed": false,
+    "defects": [
+      {
+        "classification": "TRANSCRIPTION_DEFECT",
+        "intended": "IReadOnlyList<ManagedGenericTypeLike>",
+        "observed": "IjeadOnlyList<ManagedGenericTypeLike>",
+        "surface": "ManagedCallExpression.TypeArguments"
+      },
+      {
+        "classification": "TRANSCRIPTION_DEFECT",
+        "intended": "IReadOnlyList<ManagedConstraintReference>",
+        "observed": "IjeadOnlyList<ManagedConstraintReference>",
+        "surface": "ManagedTypeVariableReference.Constraints"
+      },
+      {
+        "classification": "SMOKE_TRANSCRIPTION_DEFECT",
+        "intended": "ManagedUnaryExpression",
+        "observed": "ManagedUnharyExpression",
+        "surface": "historical smoke probe unary construction"
+      }
+    ],
+    "diagnostic_result": "REVIEW_REQUIRED",
+    "managed_handoff_regression_passed": false
+  },
+  "next_stage_gate": "P12.5-RCV-29 MANAGED EXECUTABLE CARRIER CORRECTED TYPE-SHAPE CONTRACT",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-host-program-integration-contract/v1",
+    "stage": "P12.5-RCV-27"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-historical-census/v1",
+  "recovered_intended_shape": {
+    "constraint_graph": true,
+    "declaration_count": 25,
+    "declarations": [
+      "ManagedExecutableExpression",
+      "ManagedIntegerLiteral",
+      "ManagedFloatLiteral",
+      "ManagedStringLiteral",
+      "ManagedBooleanLiteral",
+      "ManagedIdentifierReference",
+      "ManagedUnaryExpression",
+      "ManagedBinaryExpression",
+      "ManagedCallExpression",
+      "ManagedTypeReference",
+      "ManagedGenericTypeLike",
+      "ManagedTypeLike",
+      "ManagedTypeIdentity",
+      "ManagedNamedTypeReference",
+      "ManagedApexTypeReference",
+      "ManagedTypeVariableReference",
+      "ManagedConstraintReference",
+      "ManagedNamedConstraintReference",
+      "ManagedApexTypeConstraintReference",
+      "ManagedFunctionParameter",
+      "ManagedFunctionStatement",
+      "ManagedLocalBinding",
+      "ManagedFunctionReturn",
+      "ManagedFunctionWhen",
+      "ManagedExecutableFunction"
+    ],
+    "expected_collection_interface": "IReadOnlyList<T>",
+    "function_graph": true,
+    "generic_type_graph": true,
+    "uses_big_integer": true,
+    "uses_binary64_double": true,
+    "uses_boolean": true,
+    "uses_string": true
+  },
+  "stage": "P12.5-RCV-28",
+  "status": "RECOVERED_HISTORICAL_AUDIT_CANDIDATE",
+  "title": "Recovered Managed Executable Carrier Historical Census"
+}

@@ -1,0 +1,81 @@
+{
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "projection_defines_language_semantics": false,
+    "projection_executes": false,
+    "projection_lowers": false,
+    "projection_selects_transport": false,
+    "projection_serializes": false
+  },
+  "deferred": [
+    "PROJECTION_TO_MANAGED_RUNTIME_TRANSPORT",
+    "EXTERNAL_SERIALIZATION",
+    "CROSS_RUNTIME_TRANSPORT",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "exclusions": {
+    "binding_object": "NOT_PROJECTED",
+    "canonical_json": "NOT_PROJECTED",
+    "execution_plan_object": "NOT_PROJECTED",
+    "verified_air_program_object": "NOT_PROJECTED"
+  },
+  "fields": [
+    {
+      "name": "schema",
+      "source": "product.schema",
+      "type": "str"
+    },
+    {
+      "name": "verified_air_fingerprint",
+      "source": "product.verified_air_fingerprint",
+      "type": "str"
+    },
+    {
+      "name": "routing_fingerprint",
+      "source": "product.routing_fingerprint",
+      "type": "str"
+    },
+    {
+      "name": "entry_directive",
+      "source": "product.entry_directive",
+      "type": "str"
+    },
+    {
+      "name": "directive_owner_ids",
+      "source": "tuple(product.directive_owner_ids)",
+      "type": "tuple[str, ...]"
+    },
+    {
+      "name": "product_fingerprint",
+      "source": "product.product_fingerprint",
+      "type": "str"
+    }
+  ],
+  "implementation": {
+    "constructor": "project_managed_handoff",
+    "historical_identity_claim": false,
+    "kind": "frozen dataclass",
+    "owner": "apexforge.native_backend",
+    "path": "apexforge/native_backend/managed_handoff_projection.py",
+    "type": "ManagedHandoffProjection"
+  },
+  "next_stage_gate": "P12.5-RCV-20 PROJECTION VALUE-OBJECT COMPATIBILITY CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.projection-bridge-representation-decision/v1",
+    "stage": "P12.5-RCV-18"
+  },
+  "profile": "apexforge.p12.projection-value-object-implementation-foundation/v1",
+  "stage": "P12.5-RCV-19",
+  "status": "RECOVERY_SELECTED_IMPLEMENTATION_CANDIDATE",
+  "title": "Recovered Projection Value-Object Implementation Foundation",
+  "unselected": {
+    "command_line_format": "UNSELECTED",
+    "cross_runtime_transport": "UNSELECTED",
+    "external_serialization": "UNSELECTED",
+    "file_format": "UNSELECTED",
+    "stdin_format": "UNSELECTED"
+  }
+}

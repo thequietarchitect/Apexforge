@@ -1,0 +1,71 @@
+{
+  "stage": "P12.5-RCV-42",
+  "title": "Managed Executable Carrier Structural Ambiguity Census",
+  "profile": "apexforge.p12.managed-executable-carrier-structural-ambiguity-census/v1",
+  "status": "RECOVERED_LIVE_SHAPE_AUDIT",
+  "predecessor": {
+    "stage": "P12.5-RCV-41",
+    "required_profile": "apexforge.p12.managed-executable-carrier-decoder-public-api-contract/v1"
+  },
+  "collisions": [
+    {
+      "shape": ["value"],
+      "candidates": ["AIRIntegerLiteral", "AIRFloatLiteral", "AIRStringLiteral", "AIRBooleanLiteral"],
+      "resolution": "JSON_VALUE_KIND_THEN_NUMBER_GRAMMAR",
+      "unresolved": false
+    },
+    {
+      "shape": ["name"],
+      "candidates": ["AIRIdentifierReference", "NORMALIZED_UNION_ALIAS_TYPES"],
+      "resolution": "EXPECTED_SEMANTIC_CONTEXT; CANONICAL_NORMALIZATION_EXCLUDES_ALIAS_OBJECTS",
+      "unresolved": false
+    },
+    {
+      "shape": ["name", "arguments"],
+      "candidates": ["ApexType"],
+      "resolution": "EXACT_PROPERTY_SET_IN_GENERIC_TYPE_CONTEXT",
+      "unresolved": false
+    },
+    {
+      "shape": ["name", "owner", "constraints"],
+      "candidates": ["ApexTypeVariable"],
+      "resolution": "EXACT_PROPERTY_SET_IN_GENERIC_TYPE_CONTEXT",
+      "unresolved": false
+    },
+    {
+      "shape": ["expression"],
+      "candidates": ["AIRFunctionReturn"],
+      "resolution": "FUNCTION_STATEMENT_CONTEXT",
+      "unresolved": false
+    }
+  ],
+  "dispatch": {
+    "basis": "EXPECTED_SEMANTIC_CONTEXT_PLUS_EXACT_PROPERTY_SET_PLUS_JSON_VALUE_KIND",
+    "heuristic_similarity": false,
+    "unresolved_collision_count": 0,
+    "unknown_shape": "REJECT",
+    "duplicate_property": "REJECT",
+    "extra_property": "REJECT",
+    "missing_property": "REJECT",
+    "wrong_json_kind": "REJECT"
+  },
+  "contexts": [
+    "PROGRAM_ROOT",
+    "FUNCTION",
+    "FUNCTION_PARAMETER",
+    "EXPRESSION",
+    "LOCAL_BINDING",
+    "FUNCTION_STATEMENT",
+    "GENERIC_TYPE",
+    "APEX_TYPE",
+    "TYPE_VARIABLE",
+    "CONSTRAINT"
+  ],
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "semantic_inference_added": false,
+    "no_second_semantic_implementation": true
+  },
+  "historical_identity_claim": false,
+  "next_stage_gate": "P12.5-RCV-43 MANAGED EXECUTABLE CARRIER DECODER IMPLEMENTATION"
+}

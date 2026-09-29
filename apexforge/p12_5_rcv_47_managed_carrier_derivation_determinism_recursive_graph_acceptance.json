@@ -1,0 +1,46 @@
+{
+  "stage": "P12.5-RCV-47",
+  "title": "Managed Carrier Derivation Determinism and Recursive Graph Acceptance",
+  "profile": "apexforge.p12.managed-carrier-derivation-determinism-recursive-graph-acceptance/v1",
+  "status": "DETERMINISM_ACCEPTANCE",
+  "predecessor": {
+    "stage": "P12.5-RCV-46",
+    "required_profile": "apexforge.p12.canonical-air-transport-to-managed-carrier-derivation-bridge-acceptance/v1"
+  },
+  "determinism": {
+    "repeated_canonical_transport_bytes_equal": true,
+    "repeated_canonical_transport_fingerprint_equal": true,
+    "repeated_managed_projection_structure_equal": true,
+    "collection_order_preserved": true,
+    "recursive_expression_order_preserved": true,
+    "recursive_statement_order_preserved": true,
+    "generic_argument_order_preserved": true,
+    "constraint_order_preserved": true,
+    "diagnostics_repeatable": true
+  },
+  "fingerprints": {
+    "canonical_owner": "VerifiedAIRLoweringInput.transport_fingerprint",
+    "managed_projection_test_signature": "TEST_ONLY_SHA256_STRUCTURAL_SUMMARY",
+    "production_managed_carrier_fingerprint_added": false,
+    "production_managed_carrier_serialization_added": false
+  },
+  "acceptance": {
+    "recursive_carrier_graph": "PASS",
+    "empty_function_graph": "PASS",
+    "multiple_function_graph": "PASS",
+    "malformed_graph": "REJECT",
+    "result": "PASS"
+  },
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "test_signature_defines_semantics": false,
+    "no_second_semantic_implementation": true
+  },
+  "boundary": {
+    "external_transport_added": false,
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED"
+  },
+  "historical_identity_claim": false,
+  "next_stage_gate": "P12.5-RCV-48 MANAGED CARRIER INTEGRATION SCOPE DECISION"
+}

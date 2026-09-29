@@ -1,0 +1,81 @@
+{
+  "stage": "P12.5-RCV-50",
+  "title": "P12.5 Recovery Closure Audit",
+  "profile": "apexforge.p12.recovery-closure-audit/v1",
+  "status": "CLOSURE_AUDIT_ACCEPTED",
+  "fixture_revision": "R1_MANAGED_SMOKE_ACTUAL_MARKER_FIX",
+  "r1_failure_classification": "TEST_FIXTURE_DEFECT",
+  "predecessor": {
+    "stage": "P12.5-RCV-49",
+    "required_profile": "apexforge.p12.managed-carrier-representational-equivalence-acceptance/v1"
+  },
+  "current_regression_stack": {
+    "recovery_gate_tests": {"count": 46, "passed": 46, "failed": 0, "result": "PASS"},
+    "p12_predecessor_tests": {"count": 25, "passed": 25, "failed": 0, "result": "PASS"},
+    "managed_runtime_release_build": "PASS",
+    "managed_host_release_build": "PASS",
+    "managed_smoke_release_build": "PASS",
+    "managed_host_run": "PASS",
+    "managed_smoke_run": "PASS",
+    "result": "PASS"
+  },
+  "supplemental_historical_discovery": {
+    "scope": "ALL_NON_RECOVERY_STANDALONE_SMOKE_FILES",
+    "count": 314,
+    "passed": 164,
+    "failed": 150,
+    "result": "FAIL_NOT_CLOSURE_STACK",
+    "classifications": [
+      "HISTORICAL_CONTRACT_BLOCKER_BRANCH_OR_TAG_PINNED",
+      "HISTORICAL_CONTRACT_BLOCKER_TEMPORAL_FILE_ABSENCE_ASSERTION",
+      "HISTORICAL_CONTRACT_BLOCKER_FROZEN_STAGE_HASH",
+      "ENVIRONMENTAL_BLOCKER_MISSING_HISTORICAL_FIXTURE",
+      "ENVIRONMENTAL_BLOCKER_WINDOWS_CP1252_CONSOLE"
+    ],
+    "decoder_related_failure_count": 0,
+    "policy": "RECORDED_NOT_WEAKENED_NOT_USED_AS_CURRENT_BRANCH_CLOSURE_GATE"
+  },
+  "optional_pytest_discovery": {
+    "result": "ENVIRONMENTAL_BLOCKER",
+    "reason": "PYTEST_NOT_INSTALLED",
+    "dependency_install_attempted": false
+  },
+  "freeze_ancestry": {
+    "p10_final": {"tag": "afp-p10-t5-final-freeze", "commit": "38a377824a92d8b8e2f3876ff9bdf8593fa60547", "ancestor": true},
+    "p11_final": {"tag": "afp-p11-sra-f-full-regression-release-closure-freeze", "commit": "322ba125495ad7b4f3d6b2dcc447e5e383d067f9", "ancestor": true},
+    "p12_4": {"tag": "afp-p12.4-freeze", "tag_object": "7c475986ed3ed1d58cc30148603fbfe8b09529ee", "commit": "13f7646f1052746f54f906076d66d29117ee2718", "ancestor": true, "preserved": true}
+  },
+  "determinism": {
+    "canonical_transport_fingerprint": "28D2D186E1A9A0B9E097848634C14272C3ED22225B168853CC8D45D99625C92C",
+    "test_only_managed_structural_signature": "EDA0F646D23955790B200C1D7A4FDDB7E3029C42D9E088F1D2579A3EF147E716",
+    "result": "PASS"
+  },
+  "audits": {
+    "canonical_air_ownership": "PASS",
+    "no_second_semantic_implementation": "PASS",
+    "provenance": "PASS",
+    "deterministic_artifact_and_fingerprint": "PASS",
+    "managed_native_ownership_boundary": "PASS",
+    "security_and_capability_boundary": "PASS",
+    "no_external_transport": "PASS",
+    "no_network_ingress": "PASS",
+    "no_hidden_execution_path": "PASS",
+    "tracked_generated_binary_count": 0,
+    "staged_file_count": 0
+  },
+  "git_actions": {
+    "files_staged": false,
+    "commit_created": false,
+    "tag_created": false,
+    "push_attempted": false
+  },
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "execution_plan": "workflow.air_runner.RegistryExecutionPlan",
+    "target_neutral_schema": "apexforge.target-neutral-lowering/v1",
+    "historical_identity_claim": false,
+    "no_second_semantic_implementation": true
+  },
+  "result": "PASS",
+  "next_stage_gate": "P12.5-RCV-51 P12.5 RECOVERY TERMINAL CLOSURE"
+}

@@ -1,0 +1,53 @@
+{
+  "authority": {
+    "host_defines_language_semantics": false,
+    "host_shell": "ApexForge.Runtime.Host",
+    "language_semantics": "CANONICAL_AIR",
+    "managed_runtime_library": "ApexForge.Runtime",
+    "native_interop_owner": "ApexForge.Runtime.ManagedNativeAbi"
+  },
+  "deferred": [
+    "HOST_INGRESS",
+    "EXTERNAL_SERIALIZATION",
+    "TARGET_NEUTRAL_HANDOFF_RECONSTRUCTION",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "implementation": {
+    "background_daemon": false,
+    "failure_state": "Failed",
+    "lifecycle_type": "ApexForge.Runtime.Host.RuntimeHostLifecycle",
+    "network_listener": false,
+    "project": "ApexForge.Runtime.Host",
+    "shutdown_sequence": [
+      "Ready",
+      "Quiescing",
+      "Stopped"
+    ],
+    "single_process": true,
+    "startup_sequence": [
+      "Created",
+      "Starting",
+      "Ready"
+    ],
+    "states": [
+      "Created",
+      "Starting",
+      "Ready",
+      "Quiescing",
+      "Stopped",
+      "Failed"
+    ]
+  },
+  "next_stage_gate": "P12.5-RCV-9 HOST INGRESS ARCHITECTURE CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.host-lifecycle-startup-contract/v1",
+    "stage": "P12.5-RCV-7"
+  },
+  "profile": "apexforge.p12.host-lifecycle-startup-implementation/v1",
+  "stage": "P12.5-RCV-8",
+  "status": "RECOVERED_IMPLEMENTATION_CANDIDATE",
+  "title": "Recovered Host Lifecycle and Startup Implementation Foundation"
+}

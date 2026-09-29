@@ -1,0 +1,410 @@
+{
+  "authority": {
+    "carrier_admits_handoffs": false,
+    "carrier_defines_language_semantics": false,
+    "carrier_dispatches": false,
+    "carrier_executes": false,
+    "carrier_owns_native_abi": false,
+    "carrier_serializes": false,
+    "language_semantics": "CANONICAL_AIR",
+    "owner_project": "ApexForge.Runtime"
+  },
+  "corrections": [
+    {
+      "basis": "historical smoke required token",
+      "observed": "IjeadOnlyList<ManagedGenericTypeLike>",
+      "selected": "IReadOnlyList<ManagedGenericTypeLike>",
+      "surface": "ManagedCallExpression.TypeArguments"
+    },
+    {
+      "basis": "historical smoke required token",
+      "observed": "IjeadOnlyList<ManagedConstraintReference>",
+      "selected": "IReadOnlyList<ManagedConstraintReference>",
+      "surface": "ManagedTypeVariableReference.Constraints"
+    },
+    {
+      "basis": "recovered carrier declaration",
+      "observed": "ManagedUnharyExpression",
+      "selected": "ManagedUnaryExpression",
+      "surface": "historical smoke probe unary construction"
+    }
+  ],
+  "forbidden_concerns": [
+    "JsonSerializer",
+    "FromJson",
+    "LibraryImport",
+    "DllImport",
+    "apexforge_native",
+    "CanonicalExecutionEnvelope",
+    "TargetNeutralLoweringHandoff",
+    "Execute(",
+    "Dispatch(",
+    "ManagedRuntimeHost",
+    "RuntimeHostIngress"
+  ],
+  "historical_basis": {
+    "corrected_shape_is_recovery_contract": true,
+    "historical_final_pass_directly_recovered": false,
+    "materialized_r1_build_valid": false,
+    "original_commit_identity_equivalence": false,
+    "source_path": "runtimes/dotnet/ApexForge.Runtime/ManagedExecutableCarrier.cs"
+  },
+  "implementation": "DEFERRED",
+  "next_stage_gate": "P12.5-RCV-30 MANAGED EXECUTABLE CARRIER IMPLEMENTATION FOUNDATION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-executable-carrier-historical-census/v1",
+    "stage": "P12.5-RCV-28"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-corrected-type-shape-contract/v1",
+  "representation_invariants": {
+    "boolean_representation": "System.Boolean",
+    "collection_interface": "IReadOnlyList<T>",
+    "float_representation": "System.Double_BINARY64",
+    "integer_representation": "System.Numerics.BigInteger",
+    "no_runtime_execution_methods": true,
+    "no_validation_semantic_duplication": true,
+    "records_are_data_carriers_only": true,
+    "string_representation": "System.String"
+  },
+  "source_requirements": {
+    "declaration_count": 25,
+    "declarations": [
+      {
+        "kind": "abstract record",
+        "members": [],
+        "name": "ManagedExecutableExpression"
+      },
+      {
+        "base": "ManagedExecutableExpression",
+        "kind": "sealed record",
+        "name": "ManagedIntegerLiteral",
+        "parameters": [
+          [
+            "BigInteger",
+            "Value"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedExecutableExpression",
+        "kind": "sealed record",
+        "name": "ManagedFloatLiteral",
+        "parameters": [
+          [
+            "double",
+            "Value"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedExecutableExpression",
+        "kind": "sealed record",
+        "name": "ManagedStringLiteral",
+        "parameters": [
+          [
+            "string",
+            "Value"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedExecutableExpression",
+        "kind": "sealed record",
+        "name": "ManagedBooleanLiteral",
+        "parameters": [
+          [
+            "bool",
+            "Value"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedExecutableExpression",
+        "kind": "sealed record",
+        "name": "ManagedIdentifierReference",
+        "parameters": [
+          [
+            "string",
+            "Name"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedExecutableExpression",
+        "kind": "sealed record",
+        "name": "ManagedUnaryExpression",
+        "parameters": [
+          [
+            "string",
+            "Operator"
+          ],
+          [
+            "ManagedExecutableExpression",
+            "Operand"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedExecutableExpression",
+        "kind": "sealed record",
+        "name": "ManagedBinaryExpression",
+        "parameters": [
+          [
+            "ManagedExecutableExpression",
+            "Left"
+          ],
+          [
+            "string",
+            "Operator"
+          ],
+          [
+            "ManagedExecutableExpression",
+            "Right"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedExecutableExpression",
+        "kind": "sealed record",
+        "name": "ManagedCallExpression",
+        "parameters": [
+          [
+            "string",
+            "Target"
+          ],
+          [
+            "IReadOnlyList<ManagedExecutableExpression>",
+            "Arguments"
+          ],
+          [
+            "IReadOnlyList<ManagedGenericTypeLike>",
+            "TypeArguments"
+          ]
+        ]
+      },
+      {
+        "kind": "abstract record",
+        "members": [],
+        "name": "ManagedTypeReference"
+      },
+      {
+        "bases": [],
+        "kind": "interface",
+        "name": "ManagedGenericTypeLike"
+      },
+      {
+        "bases": [
+          "ManagedGenericTypeLike"
+        ],
+        "kind": "interface",
+        "name": "ManagedTypeLike"
+      },
+      {
+        "bases": [],
+        "kind": "interface",
+        "name": "ManagedTypeIdentity"
+      },
+      {
+        "bases": [
+          "ManagedTypeReference",
+          "ManagedTypeLike"
+        ],
+        "kind": "sealed record",
+        "name": "ManagedNamedTypeReference",
+        "parameters": [
+          [
+            "string",
+            "Name"
+          ]
+        ]
+      },
+      {
+        "bases": [
+          "ManagedTypeReference",
+          "ManagedTypeLike",
+          "ManagedTypeIdentity"
+        ],
+        "kind": "sealed record",
+        "name": "ManagedApexTypeReference",
+        "parameters": [
+          [
+            "string",
+            "Name"
+          ],
+          [
+            "IReadOnlyList<ManagedApexTypeReference>",
+            "Arguments"
+          ]
+        ]
+      },
+      {
+        "bases": [
+          "ManagedTypeReference",
+          "ManagedGenericTypeLike",
+          "ManagedTypeIdentity"
+        ],
+        "kind": "sealed record",
+        "name": "ManagedTypeVariableReference",
+        "parameters": [
+          [
+            "string",
+            "Name"
+          ],
+          [
+            "string",
+            "Owner"
+          ],
+          [
+            "IReadOnlyList<ManagedConstraintReference>",
+            "Constraints"
+          ]
+        ]
+      },
+      {
+        "kind": "abstract record",
+        "members": [],
+        "name": "ManagedConstraintReference"
+      },
+      {
+        "base": "ManagedConstraintReference",
+        "kind": "sealed record",
+        "name": "ManagedNamedConstraintReference",
+        "parameters": [
+          [
+            "string",
+            "Name"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedConstraintReference",
+        "kind": "sealed record",
+        "name": "ManagedApexTypeConstraintReference",
+        "parameters": [
+          [
+            "string",
+            "Name"
+          ],
+          [
+            "string",
+            "Description"
+          ]
+        ]
+      },
+      {
+        "kind": "sealed record",
+        "name": "ManagedFunctionParameter",
+        "parameters": [
+          [
+            "string",
+            "Name"
+          ],
+          [
+            "ManagedGenericTypeLike?",
+            "ValueType"
+          ]
+        ]
+      },
+      {
+        "kind": "abstract record",
+        "members": [],
+        "name": "ManagedFunctionStatement"
+      },
+      {
+        "base": "ManagedFunctionStatement",
+        "kind": "sealed record",
+        "name": "ManagedLocalBinding",
+        "parameters": [
+          [
+            "string",
+            "Name"
+          ],
+          [
+            "ManagedExecutableExpression",
+            "Expression"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedFunctionStatement",
+        "kind": "sealed record",
+        "name": "ManagedFunctionReturn",
+        "parameters": [
+          [
+            "ManagedExecutableExpression",
+            "Expression"
+          ]
+        ]
+      },
+      {
+        "base": "ManagedFunctionStatement",
+        "kind": "sealed record",
+        "name": "ManagedFunctionWhen",
+        "parameters": [
+          [
+            "ManagedExecutableExpression",
+            "Condition"
+          ],
+          [
+            "IReadOnlyList<ManagedFunctionStatement>",
+            "Actions"
+          ],
+          [
+            "IReadOnlyList<ManagedFunctionStatement>",
+            "OtherwiseActions"
+          ]
+        ]
+      },
+      {
+        "kind": "sealed record",
+        "name": "ManagedExecutableFunction",
+        "parameters": [
+          [
+            "string",
+            "Id"
+          ],
+          [
+            "string",
+            "Name"
+          ],
+          [
+            "IReadOnlyList<ManagedFunctionParameter>",
+            "Parameters"
+          ],
+          [
+            "ManagedExecutableExpression?",
+            "ReturnExpression"
+          ],
+          [
+            "int",
+            "Order"
+          ],
+          [
+            "IReadOnlyList<ManagedLocalBinding>",
+            "LocalBindings"
+          ],
+          [
+            "IReadOnlyList<ManagedFunctionStatement>",
+            "Body"
+          ],
+          [
+            "ManagedGenericTypeLike?",
+            "ReturnType"
+          ],
+          [
+            "IReadOnlyList<ManagedTypeVariableReference>",
+            "TypeParameters"
+          ]
+        ]
+      }
+    ],
+    "namespace": "ApexForge.Runtime",
+    "usings": [
+      "System.Collections.Generic",
+      "System.Numerics"
+    ]
+  },
+  "stage": "P12.5-RCV-29",
+  "status": "RECOVERY_CORRECTED_GOVERNANCE_CANDIDATE",
+  "title": "Recovered Managed Executable Carrier Corrected Type-Shape Contract"
+}

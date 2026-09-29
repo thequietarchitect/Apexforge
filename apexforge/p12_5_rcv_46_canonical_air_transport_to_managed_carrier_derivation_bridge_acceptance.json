@@ -1,0 +1,53 @@
+{
+  "stage": "P12.5-RCV-46",
+  "title": "Canonical AIR Transport to Managed Carrier Derivation Bridge Acceptance",
+  "profile": "apexforge.p12.canonical-air-transport-to-managed-carrier-derivation-bridge-acceptance/v1",
+  "status": "DERIVATION_BRIDGE_ACCEPTED",
+  "predecessor": {
+    "stage": "P12.5-RCV-45",
+    "required_profile": "apexforge.p12.managed-executable-carrier-decoder-negative-conformance/v1"
+  },
+  "bridge": {
+    "component": "ApexForge.Runtime.ManagedExecutableCarrierDecoder",
+    "method": "DecodeCanonicalAirTransport",
+    "direction": "CANONICAL_AIR_TRANSPORT_TO_MANAGED_EXECUTABLE_CARRIER",
+    "logical_source_owner": "air.model.VerifiedAIRProgram",
+    "source_container": "apexforge.native_backend.VerifiedAIRLoweringInput.transport_json",
+    "canonical_serialization_delegate": "air.serialization.air_to_dict",
+    "target_owner": "ApexForge.Runtime",
+    "target": "IReadOnlyList<ManagedExecutableFunction>",
+    "structural_projection_only": true,
+    "additional_bridge_component_required": false
+  },
+  "acceptance": {
+    "verified_source_required_upstream": true,
+    "raw_air_program_rejected_upstream": true,
+    "whole_document_root_validated": true,
+    "empty_functions_supported": true,
+    "multiple_functions_supported": true,
+    "malformed_source_rejected": true,
+    "recursive_graph_supported": true,
+    "source_order_preserved": true
+  },
+  "provenance": {
+    "canonical_transport_fingerprint_owner": "VerifiedAIRLoweringInput.transport_fingerprint",
+    "decoder_mutates_source": false,
+    "new_managed_carrier_serialization": false,
+    "new_managed_carrier_fingerprint": false
+  },
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "no_second_semantic_implementation": true,
+    "bridge_executes": false,
+    "bridge_selects_transport": false
+  },
+  "boundary": {
+    "target_neutral_handoff_is_source": false,
+    "target_neutral_handoff_coupling": false,
+    "external_transport_added": false,
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED"
+  },
+  "historical_identity_claim": false,
+  "next_stage_gate": "P12.5-RCV-47 MANAGED CARRIER DERIVATION DETERMINISM AND RECURSIVE GRAPH ACCEPTANCE"
+}

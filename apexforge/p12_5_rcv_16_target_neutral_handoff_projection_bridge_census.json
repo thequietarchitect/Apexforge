@@ -1,0 +1,69 @@
+{
+  "bridge": {
+    "direction": "PYTHON_PRODUCT_TO_MANAGED_HANDOFF",
+    "execution_authority": false,
+    "implementation": "ABSENT_AT_CENSUS_GATE",
+    "owner": "UNSELECTED",
+    "semantic_authority": false
+  },
+  "deferred": [
+    "PROJECTION_BRIDGE_OWNER_DECISION",
+    "PROJECTION_BRIDGE_IMPLEMENTATION",
+    "EXTERNAL_SERIALIZATION",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "exclusions": {
+    "binding_object": "NOT_PROJECTED_AS_OBJECT",
+    "canonical_json": "NOT_PROJECTED_TO_HISTORICAL_MANAGED_HANDOFF",
+    "execution_plan_object": "NOT_PROJECTED_AS_OBJECT",
+    "verified_air_program_object": "NOT_PROJECTED_AS_OBJECT"
+  },
+  "managed_target": {
+    "path": "runtimes/dotnet/ApexForge.Runtime/TargetNeutralLoweringHandoff.cs",
+    "type": "ApexForge.Runtime.TargetNeutralLoweringHandoff"
+  },
+  "next_stage_gate": "P12.5-RCV-17 PROJECTION BRIDGE OWNERSHIP CONTRACT",
+  "predecessor": {
+    "required_profile": "apexforge.p12.target-neutral-handoff-implementation-foundation/v1",
+    "stage": "P12.5-RCV-15"
+  },
+  "profile": "apexforge.p12.target-neutral-handoff-projection-bridge-census/v1",
+  "projection": [
+    {
+      "managed_field": "Schema",
+      "source_expression": "product.schema"
+    },
+    {
+      "managed_field": "VerifiedAirFingerprint",
+      "source_expression": "product.verified_air_fingerprint"
+    },
+    {
+      "managed_field": "RoutingFingerprint",
+      "source_expression": "product.routing_fingerprint"
+    },
+    {
+      "managed_field": "EntryDirective",
+      "source_expression": "product.entry_directive"
+    },
+    {
+      "managed_field": "DirectiveOwnerIds",
+      "source_expression": "product.directive_owner_ids"
+    },
+    {
+      "managed_field": "ProductFingerprint",
+      "source_expression": "product.product_fingerprint"
+    }
+  ],
+  "purpose": "Verify that every historical managed handoff field has a deterministic source in TargetNeutralLoweringProduct or its canonical binding graph before reconstructing a projection bridge.",
+  "source_product": {
+    "path": "apexforge/native_backend/target_neutral_lowering.py",
+    "schema": "apexforge.target-neutral-lowering/v1",
+    "type": "TargetNeutralLoweringProduct"
+  },
+  "stage": "P12.5-RCV-16",
+  "status": "RECOVERED_AUDIT_CANDIDATE",
+  "title": "Recovered Target-Neutral Handoff Projection Bridge Census"
+}

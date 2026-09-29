@@ -1,0 +1,151 @@
+{
+  "air_program_root_expectations": {
+    "dataclass_field_count": 12,
+    "dataclass_fields": [
+      "version",
+      "states",
+      "events",
+      "authority_checks",
+      "causal_decisions",
+      "directives",
+      "requirements",
+      "authorities",
+      "principals",
+      "roles",
+      "functions",
+      "workflows"
+    ],
+    "empty_air_to_dict_field_count": 11,
+    "empty_air_to_dict_fields": [
+      "version",
+      "states",
+      "events",
+      "authority_checks",
+      "causal_decisions",
+      "directives",
+      "requirements",
+      "authorities",
+      "principals",
+      "roles",
+      "functions"
+    ],
+    "empty_transport_fields": [
+      "authorities",
+      "authority_checks",
+      "causal_decisions",
+      "directives",
+      "events",
+      "functions",
+      "principals",
+      "requirements",
+      "roles",
+      "states",
+      "version"
+    ],
+    "nonempty_workflow_transport_fields": [
+      "authorities",
+      "authority_checks",
+      "causal_decisions",
+      "directives",
+      "events",
+      "functions",
+      "principals",
+      "requirements",
+      "roles",
+      "states",
+      "version",
+      "workflows"
+    ],
+    "empty_workflows_omitted_for_historical_compatibility": true,
+    "nonempty_workflows_serialized": true,
+    "transport_keys_sorted": true,
+    "functions_field_json_kind": "ARRAY",
+    "functions_field_required_in_structural_serialization": true
+  },
+  "authority": {
+    "census_changes_carrier": false,
+    "census_changes_serializer": false,
+    "census_changes_transport": false,
+    "census_selects_input_root": false,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "boundary": {
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "target_neutral_handoff_coupling": false
+  },
+  "candidate_input_roots": [
+    {
+      "id": "WHOLE_CANONICAL_AIR_DOCUMENT",
+      "requires_functions_extraction": true,
+      "source": "VerifiedAIRLoweringInput.transport_json",
+      "status": "CANDIDATE_EXISTING_CANONICAL_SEAM"
+    },
+    {
+      "id": "FUNCTIONS_ARRAY_SUBTREE",
+      "requires_new_subtree_contract": true,
+      "source": "$.functions",
+      "status": "CANDIDATE_NO_EXISTING_TRANSPORT_SEAM"
+    },
+    {
+      "id": "INDIVIDUAL_FUNCTION_OBJECT",
+      "requires_new_item_contract": true,
+      "source": "$.functions[*]",
+      "status": "CANDIDATE_NO_EXISTING_TRANSPORT_SEAM"
+    }
+  ],
+  "canonical_transport": {
+    "container": "VerifiedAIRLoweringInput.transport_json",
+    "producer": "apexforge.native_backend.build_verified_air_lowering_input",
+    "root_json_kind": "OBJECT",
+    "root_semantic_type": "air.model.AIRProgram",
+    "source_expression": "air_to_dict(verified.program)",
+    "whole_program_transport": true
+  },
+  "carrier_relevant_subtree": {
+    "carrier_primary_target": "ManagedExecutableFunction",
+    "individual_item_json_kind": "OBJECT",
+    "individual_item_semantic_type": "AIRFunction",
+    "json_kind": "ARRAY",
+    "json_path": "$.functions",
+    "semantic_type": "tuple[AIRFunction,...]"
+  },
+  "existing_seam_census": {
+    "functions_only_transport_exists": false,
+    "individual_function_transport_exists": false,
+    "managed_decoder_exists": false,
+    "managed_decoder_method_exists": false,
+    "program_to_functions_extraction_bridge_exists": false,
+    "target_neutral_handoff_contains_functions": false,
+    "whole_program_transport_exists": true
+  },
+  "fixture_revision": "R2_DATACLASS_SERIALIZATION_TRANSPORT_TOPOLOGY_FIX",
+  "next_stage_gate": "P12.5-RCV-40 MANAGED EXECUTABLE CARRIER DECODER INPUT ROOT DECISION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-executable-carrier-json-parsing-policy-contract/v1",
+    "stage": "P12.5-RCV-38"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-decoder-input-root-census/v1",
+  "repair_basis": {
+    "air_to_dict_nonempty_workflows_position": "AFTER_functions",
+    "compatibility_behavior": "EMPTY_WORKFLOWS_OMITTED_TO_PRESERVE_HISTORICAL_PROGRAM_KEYS",
+    "dataclass_and_transport_topology_identical": false,
+    "prior_failure_class": "TEST_FIXTURE_DEFECT",
+    "serializer_policy": "VerifiedAIRLoweringInput.transport_json_SORT_KEYS_TRUE",
+    "semantic_regression": false
+  },
+  "stage": "P12.5-RCV-39",
+  "status": "RECOVERED_LIVE_ROOT_AUDIT_CANDIDATE",
+  "title": "Recovered Managed Executable Carrier Decoder Input Root Census",
+  "unresolved": {
+    "decoder_implementation": "DEFERRED",
+    "decoder_input_root": "UNSELECTED",
+    "decoder_method_shape": "UNSELECTED",
+    "empty_functions_behavior": "UNSELECTED",
+    "function_selection_behavior": "UNSELECTED",
+    "multiple_functions_behavior": "UNSELECTED",
+    "program_metadata_validation_scope": "UNSELECTED"
+  }
+}

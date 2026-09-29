@@ -1,0 +1,43 @@
+{
+  "stage": "P12.5-RCV-41",
+  "title": "Managed Executable Carrier Decoder Public API Contract",
+  "profile": "apexforge.p12.managed-executable-carrier-decoder-public-api-contract/v1",
+  "status": "RECOVERY_GOVERNANCE_DECISION",
+  "predecessor": {
+    "stage": "P12.5-RCV-40",
+    "required_profile": "apexforge.p12.managed-executable-carrier-decoder-input-root-decision/v1"
+  },
+  "api": {
+    "owner_project": "ApexForge.Runtime",
+    "type": "ApexForge.Runtime.ManagedExecutableCarrierDecoder",
+    "role": "STATELESS_CLOSED_WORLD_STRUCTURAL_DECODER",
+    "method": "DecodeCanonicalAirTransport",
+    "input_type": "System.String",
+    "input_semantics": "WHOLE_CANONICAL_AIR_TRANSPORT_JSON",
+    "return_type": "System.Collections.Generic.IReadOnlyList<ApexForge.Runtime.ManagedExecutableFunction>",
+    "null_input": "ARGUMENT_NULL_EXCEPTION",
+    "invalid_input": "FORMAT_EXCEPTION",
+    "empty_result": "Array.Empty<ManagedExecutableFunction>()",
+    "ordering": "SOURCE_FUNCTION_ORDER_PRESERVED",
+    "stateful": false,
+    "executes": false
+  },
+  "diagnostics": {
+    "path_qualified": true,
+    "deterministic": true,
+    "malformed_strict_json": "REJECT",
+    "unknown_or_ambiguous_shape": "REJECT"
+  },
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "no_second_semantic_implementation": true
+  },
+  "boundary": {
+    "external_ingress_api": false,
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED"
+  },
+  "historical_identity_claim": false,
+  "next_stage_gate": "P12.5-RCV-42 MANAGED EXECUTABLE CARRIER STRUCTURAL AMBIGUITY CENSUS"
+}

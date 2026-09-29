@@ -1,0 +1,50 @@
+{
+  "authority": {
+    "host_may_execute_on_ingress": false,
+    "host_may_lower_on_ingress": false,
+    "host_may_reinterpret_on_ingress": false,
+    "host_may_select_transport": false,
+    "language_semantics": "CANONICAL_AIR",
+    "managed_host_ingress_owner": "ApexForge.Runtime.Host",
+    "managed_runtime_validation_owner": "ApexForge.Runtime"
+  },
+  "census_targets": [
+    "runtimes/dotnet/ApexForge.Runtime.Host",
+    "runtimes/dotnet/ApexForge.Runtime/ManagedRuntimeHost.cs",
+    "runtimes/dotnet/ApexForge.Runtime/TargetNeutralLoweringHandoff.cs"
+  ],
+  "expected_current_surfaces": {
+    "host_lifecycle_type": "ApexForge.Runtime.Host.RuntimeHostLifecycle",
+    "host_program_ingress_reference": "ABSENT_AT_CENSUS_GATE",
+    "managed_admission_behavior": "VALIDATE_AND_RETURN",
+    "managed_admission_method": "ManagedRuntimeHost.AdmitTargetNeutralHandoff",
+    "managed_handoff_type": "ApexForge.Runtime.TargetNeutralLoweringHandoff",
+    "runtime_host_ingress_type": "ABSENT_AT_CENSUS_GATE"
+  },
+  "historical_evidence": {
+    "external_serialization": "UNSELECTED",
+    "future_ingress_type": "ApexForge.Runtime.Host.RuntimeHostIngress",
+    "historical_implementation_body_recovered": false,
+    "host_ingress_family": "IN_PROCESS_API",
+    "ingress_owner": "ApexForge.Runtime.Host",
+    "network_ingress": "FORBIDDEN_IN_THIS_LINE"
+  },
+  "next_stage_gate": "P12.5-RCV-24 MANAGED HOST INGRESS IMPLEMENTATION CONTRACT",
+  "predecessor": {
+    "required_profile": "apexforge.p12.cross-runtime-transport-contract-decision/v1",
+    "stage": "P12.5-RCV-22"
+  },
+  "profile": "apexforge.p12.managed-host-ingress-implementation-census/v1",
+  "selection_state": {
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "ingress_constructor_shape": "UNSELECTED",
+    "ingress_implementation": "UNSELECTED",
+    "ingress_lifecycle_coupling": "UNSELECTED",
+    "ingress_method_name": "UNSELECTED"
+  },
+  "stage": "P12.5-RCV-23",
+  "status": "RECOVERED_AUDIT_CANDIDATE",
+  "title": "Recovered Managed Host Ingress Implementation Census"
+}

@@ -1,0 +1,46 @@
+{
+  "stage": "P12.5-RCV-49",
+  "title": "Managed Carrier Representational Equivalence Acceptance",
+  "profile": "apexforge.p12.managed-carrier-representational-equivalence-acceptance/v1",
+  "status": "EQUIVALENCE_ACCEPTANCE",
+  "predecessor": {
+    "stage": "P12.5-RCV-48",
+    "required_profile": "apexforge.p12.managed-carrier-integration-scope-decision/v1"
+  },
+  "scope": {
+    "canonical_air_semantics_authoritative": true,
+    "managed_projection_reinterprets_semantics": false,
+    "managed_projection_executes": false,
+    "carrier_execution_equivalence_claimed": false,
+    "reason_execution_equivalence_not_claimed": "NO_P12_5_CARRIER_EXECUTION_CONTRACT",
+    "prior_cross_target_canonical_result_contract_preserved": true
+  },
+  "representational_equivalence": {
+    "integer_exactness": "PASS",
+    "binary64_finite_behavior": "PASS",
+    "negative_zero_sign_bit": "PASS",
+    "unicode_string_preservation": "PASS",
+    "boolean_preservation": "PASS",
+    "function_shape_preservation": "PASS",
+    "control_flow_shape_preservation": "PASS",
+    "generic_type_constraint_preservation": "PASS",
+    "nullable_shape_preservation": "PASS",
+    "collection_order_preservation": "PASS",
+    "deterministic_construction": "PASS",
+    "malformed_source_rejection": "PASS",
+    "nonfinite_transport": "FAIL_CLOSED"
+  },
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "no_second_semantic_implementation": true,
+    "historical_identity_claim": false
+  },
+  "boundary": {
+    "execution_dispatch": "DEFERRED_NO_EXECUTION_CONTRACT",
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "external_transport_added": false,
+    "network_ingress_added": false
+  },
+  "result": "PASS",
+  "next_stage_gate": "P12.5-RCV-50 P12.5 RECOVERY CLOSURE AUDIT"
+}

@@ -1,0 +1,98 @@
+{
+  "admission": {
+    "behavior": "VALIDATE_AND_RETURN",
+    "implementation": "DEFERRED",
+    "method": "ManagedRuntimeHost.AdmitTargetNeutralHandoff"
+  },
+  "authority": {
+    "handoff_defines_language_semantics": false,
+    "handoff_executes": false,
+    "handoff_lowers": false,
+    "handoff_serializes": false,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "correction_reason": "Recovered historical P12.5 evidence proves the managed handoff flattened selected source and derived product views instead of mirroring the four TargetNeutralLoweringProduct dataclass fields.",
+  "deferred": [
+    "HANDOFF_IMPLEMENTATION",
+    "HOST_ADMISSION_IMPLEMENTATION",
+    "EXTERNAL_SERIALIZATION",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "historical_managed_handoff": {
+    "canonical_json_in_managed_handoff": false,
+    "fields": [
+      {
+        "name": "Schema",
+        "source": "schema",
+        "type": "string"
+      },
+      {
+        "name": "VerifiedAirFingerprint",
+        "source": "verified_air_fingerprint",
+        "type": "string"
+      },
+      {
+        "name": "RoutingFingerprint",
+        "source": "routing_fingerprint",
+        "type": "string"
+      },
+      {
+        "name": "EntryDirective",
+        "source": "entry_directive",
+        "type": "string"
+      },
+      {
+        "name": "DirectiveOwnerIds",
+        "source": "directive_owner_ids",
+        "type": "IReadOnlyList<string>"
+      },
+      {
+        "name": "ProductFingerprint",
+        "source": "product_fingerprint",
+        "type": "string"
+      }
+    ],
+    "kind": "public sealed record",
+    "owner_project": "ApexForge.Runtime",
+    "required_schema_constant": "apexforge.target-neutral-lowering/v1",
+    "type": "ApexForge.Runtime.TargetNeutralLoweringHandoff"
+  },
+  "historical_validation": {
+    "directive_owner_ids": "non-null; each owner id required non-whitespace",
+    "entry_directive": "required non-whitespace string",
+    "product_fingerprint": "64 uppercase hexadecimal characters",
+    "routing_fingerprint": "64 hexadecimal characters; lowercase permitted",
+    "schema": "ordinal equality with RequiredSchema",
+    "verified_air_fingerprint": "64 hexadecimal characters; lowercase permitted"
+  },
+  "implementation": "DEFERRED",
+  "next_stage_gate": "P12.5-RCV-14 HISTORICAL MANAGED TYPE SELECTION CONFIRMATION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.target-neutral-handoff-representation-census/v1",
+    "stage": "P12.5-RCV-12"
+  },
+  "profile": "apexforge.p12.target-neutral-handoff-field-mapping-contract/v1",
+  "source_product": {
+    "dataclass_fields": [
+      "binding",
+      "canonical_json",
+      "product_fingerprint",
+      "schema"
+    ],
+    "derived_views": [
+      "verified_air_fingerprint",
+      "routing_fingerprint",
+      "entry_directive",
+      "directive_owner_ids"
+    ],
+    "schema": "apexforge.target-neutral-lowering/v1",
+    "type": "TargetNeutralLoweringProduct"
+  },
+  "stage": "P12.5-RCV-13-R1",
+  "status": "RECOVERED_GOVERNANCE_CORRECTION",
+  "supersedes": "P12.5-RCV-13 initial one-to-one dataclass mapping",
+  "title": "Recovered Target-Neutral Handoff Historical Projection Correction"
+}

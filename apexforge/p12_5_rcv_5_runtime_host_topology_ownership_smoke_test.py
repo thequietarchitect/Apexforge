@@ -61,7 +61,8 @@ assert permissions["allow_duplicate_managed_native_abi_in_host_project"] is Fals
 
 assert BASE_HOST.is_file()
 assert BASE_PROJECT.is_file()
-assert not DEDICATED_HOST_DIR.exists()
+if DEDICATED_HOST_DIR.exists():
+    assert (ROOT / "apexforge/p12_5_rcv_6_managed_host_project_skeleton.json").is_file()
 
 base_host_text = BASE_HOST.read_text(encoding="utf-8")
 assert "public sealed class ManagedRuntimeHost" in base_host_text

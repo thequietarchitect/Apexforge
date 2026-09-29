@@ -1,0 +1,50 @@
+{
+  "stage": "P12.5-RCV-48",
+  "title": "Managed Carrier Integration Scope Decision",
+  "profile": "apexforge.p12.managed-carrier-integration-scope-decision/v1",
+  "status": "RECOVERY_GOVERNANCE_DECISION",
+  "predecessor": {
+    "stage": "P12.5-RCV-47",
+    "required_profile": "apexforge.p12.managed-carrier-derivation-determinism-recursive-graph-acceptance/v1"
+  },
+  "evidence": {
+    "historical_carrier_executes": false,
+    "historical_derivation_bridge_recovered_before_this_line": false,
+    "historical_cross_runtime_transport_selected": false,
+    "historical_external_payload_source_recovered": false,
+    "managed_host_program_wiring_recovered": false,
+    "target_neutral_handoff_contains_executable_functions": false,
+    "decoder_construction_surface_now_exists": true
+  },
+  "decision": {
+    "separate_managed_runtime_carrier_admission": "DEFERRED_NO_CONSUMER_AUTHORITY",
+    "managed_host_ingress_integration": "DEFERRED_NO_PAYLOAD_SOURCE",
+    "managed_host_program_wiring": "DEFERRED_NO_PAYLOAD_SOURCE",
+    "execution_dispatch": "DEFERRED_NO_EXECUTION_CONTRACT",
+    "native_execution_dispatch": "DEFERRED",
+    "target_neutral_handoff_coupling": "NOT_AUTHORIZED",
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "external_transport_encoding": "UNSELECTED",
+    "network_ingress": "FORBIDDEN",
+    "decoder_role": "IN_PROCESS_STRUCTURAL_CONSTRUCTION_API_ONLY"
+  },
+  "deferred_protocols": [
+    "STDIO",
+    "FILE",
+    "NAMED_PIPE",
+    "SOCKET",
+    "HTTP_NETWORK",
+    "SHARED_MEMORY",
+    "PYTHONNET",
+    "NEW_NATIVE_FFI",
+    "ARBITRARY_EXTERNAL_JSON_INGRESS"
+  ],
+  "production_change": "NONE",
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "no_second_semantic_implementation": true,
+    "decision_expands_capability": false
+  },
+  "historical_identity_claim": false,
+  "next_stage_gate": "P12.5-RCV-49 MANAGED CARRIER REPRESENTATIONAL EQUIVALENCE ACCEPTANCE"
+}

@@ -1,0 +1,57 @@
+{
+  "authority": {
+    "carrier_admits_handoffs": false,
+    "carrier_defines_language_semantics": false,
+    "carrier_dispatches": false,
+    "carrier_executes": false,
+    "carrier_owns_native_abi": false,
+    "carrier_serializes": false,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "behavioral_acceptance": [
+    "BIG_INTEGER_EXACT",
+    "BINARY64_SPECIAL_VALUES",
+    "STRING_STORAGE",
+    "TYPE_GRAPH",
+    "FUNCTION_GRAPH"
+  ],
+  "deferred": [
+    "CARRIER_DERIVATION_FROM_CANONICAL_AIR",
+    "CARRIER_HANDOFF_COUPLING",
+    "EXTERNAL_SERIALIZATION",
+    "CROSS_RUNTIME_TRANSPORT",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "forbidden_concerns": [
+    "JsonSerializer",
+    "FromJson",
+    "LibraryImport",
+    "DllImport",
+    "apexforge_native",
+    "CanonicalExecutionEnvelope",
+    "TargetNeutralLoweringHandoff",
+    "ManagedRuntimeHost",
+    "RuntimeHostIngress",
+    "Execute(",
+    "Dispatch("
+  ],
+  "implementation": {
+    "corrected_from_r1_transcription_defects": true,
+    "data_carrier_only": true,
+    "declaration_count": 25,
+    "historical_identity_claim": false,
+    "owner_project": "ApexForge.Runtime",
+    "path": "runtimes/dotnet/ApexForge.Runtime/ManagedExecutableCarrier.cs"
+  },
+  "next_stage_gate": "P12.5-RCV-31 MANAGED EXECUTABLE CARRIER DERIVATION BOUNDARY CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-executable-carrier-corrected-type-shape-contract/v1",
+    "stage": "P12.5-RCV-29"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-implementation-foundation/v1",
+  "stage": "P12.5-RCV-30",
+  "status": "RECOVERY_CORRECTED_IMPLEMENTATION_CANDIDATE",
+  "title": "Recovered Managed Executable Carrier Implementation Foundation"
+}

@@ -1,0 +1,62 @@
+{
+  "authority": {
+    "handoff_defines_language_semantics": false,
+    "handoff_executes": false,
+    "handoff_lowers": false,
+    "handoff_serializes": false,
+    "language_semantics": "CANONICAL_AIR",
+    "managed_runtime_host_executes_on_admission": false
+  },
+  "deferred": [
+    "EXTERNAL_SERIALIZATION",
+    "HOST_EXTERNAL_INGRESS",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "historical_shape": [
+    {
+      "name": "Schema",
+      "type": "string"
+    },
+    {
+      "name": "VerifiedAirFingerprint",
+      "type": "string"
+    },
+    {
+      "name": "RoutingFingerprint",
+      "type": "string"
+    },
+    {
+      "name": "EntryDirective",
+      "type": "string"
+    },
+    {
+      "name": "DirectiveOwnerIds",
+      "type": "IReadOnlyList<string>"
+    },
+    {
+      "name": "ProductFingerprint",
+      "type": "string"
+    }
+  ],
+  "implementation": {
+    "admission_behavior": "ARGUMENT_NOT_NULL_THEN_VALIDATE_AND_RETURN",
+    "admission_method": "AdmitTargetNeutralHandoff",
+    "declaration": "public sealed record",
+    "handoff_file": "runtimes/dotnet/ApexForge.Runtime/TargetNeutralLoweringHandoff.cs",
+    "handoff_type": "ApexForge.Runtime.TargetNeutralLoweringHandoff",
+    "host_file": "runtimes/dotnet/ApexForge.Runtime/ManagedRuntimeHost.cs",
+    "required_schema": "apexforge.target-neutral-lowering/v1"
+  },
+  "next_stage_gate": "P12.5-RCV-16 TARGET-NEUTRAL HANDOFF PROJECTION BRIDGE CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.historical-managed-type-selection-confirmation/v1",
+    "stage": "P12.5-RCV-14"
+  },
+  "profile": "apexforge.p12.target-neutral-handoff-implementation-foundation/v1",
+  "stage": "P12.5-RCV-15",
+  "status": "RECOVERED_IMPLEMENTATION_CANDIDATE",
+  "title": "Recovered Target-Neutral Handoff Implementation Foundation"
+}

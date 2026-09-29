@@ -1,0 +1,64 @@
+{
+  "stage": "P12.5-RCV-45",
+  "title": "Managed Executable Carrier Decoder Negative Conformance",
+  "profile": "apexforge.p12.managed-executable-carrier-decoder-negative-conformance/v1",
+  "status": "FAIL_CLOSED_CONFORMANCE",
+  "fixture_revision": "R2_EARLY_JSON_KIND_DIAGNOSTIC_FIX",
+  "repair_basis": {
+    "prior_failure_class": "TEST_FIXTURE_DEFECT",
+    "r1_production_decoder_reached": false,
+    "r2_expected_string_alias_rejection": "must be Object; received String",
+    "r2_fail_closed_behavior_correct": true,
+    "semantic_regression": false
+  },
+  "predecessor": {
+    "stage": "P12.5-RCV-44",
+    "required_profile": "apexforge.p12.managed-executable-carrier-decoder-positive-conformance/v1"
+  },
+  "coverage": {
+    "malformed_json": true,
+    "nonfinite_nan": true,
+    "nonfinite_positive_infinity": true,
+    "nonfinite_negative_infinity": true,
+    "wrong_root_kind": true,
+    "duplicate_root_property": true,
+    "unknown_root_property": true,
+    "missing_root_property": true,
+    "wrong_root_property_kind": true,
+    "duplicate_carrier_property": true,
+    "unknown_carrier_property": true,
+    "missing_carrier_property": true,
+    "case_mismatch": true,
+    "null_collection": true,
+    "null_collection_item": true,
+    "unknown_expression_shape": true,
+    "unknown_statement_shape": true,
+    "unknown_generic_type_shape": true,
+    "unknown_constraint_shape": true,
+    "integer_order_overflow": true,
+    "float_order_token": true,
+    "finite_float_overflow": true,
+    "deterministic_diagnostics": true
+  },
+  "policy": {
+    "all_invalid_inputs": "FORMAT_EXCEPTION",
+    "null_method_argument": "ARGUMENT_NULL_EXCEPTION",
+    "partial_carrier_return": false,
+    "silent_default_injection": false,
+    "unknown_property_ignored": false,
+    "case_insensitive_matching": false
+  },
+  "result": "PASS",
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "no_second_semantic_implementation": true
+  },
+  "boundary": {
+    "nonfinite_transport_normalization_added": false,
+    "external_transport_added": false,
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED"
+  },
+  "historical_identity_claim": false,
+  "next_stage_gate": "P12.5-RCV-46 CANONICAL AIR TRANSPORT TO MANAGED CARRIER DERIVATION BRIDGE ACCEPTANCE"
+}

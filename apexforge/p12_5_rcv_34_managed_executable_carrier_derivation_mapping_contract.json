@@ -1,0 +1,366 @@
+{
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "mapping_is_structural_projection_only": true,
+    "mapping_may_dispatch": false,
+    "mapping_may_execute": false,
+    "mapping_may_mutate_canonical_source": false,
+    "mapping_may_reinterpret_semantics": false,
+    "mapping_may_select_transport": false
+  },
+  "boundary": {
+    "construction_bridge": "ABSENT",
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "decoder_component": "UNSELECTED",
+    "decoder_implementation": "DEFERRED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "json_number_handling": "UNSELECTED",
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "special_float_transport_handling": "UNSELECTED",
+    "target_neutral_handoff_coupling": false
+  },
+  "closed_world_rules": {
+    "missing_required_field": "REJECT",
+    "silent_default_injection": "FORBIDDEN",
+    "unexpected_semantic_coercion": "REJECT",
+    "unknown_constraint_kind": "REJECT",
+    "unknown_expression_kind": "REJECT",
+    "unknown_function_statement_kind": "REJECT",
+    "unknown_generic_type_kind": "REJECT"
+  },
+  "historical_identity_claim": false,
+  "implementation": "DEFERRED",
+  "mapping_contract": {
+    "authorized_mapping_count": 18,
+    "authorized_mappings": [
+      {
+        "category": "EXPRESSION",
+        "fields": [
+          [
+            "value",
+            "Value"
+          ]
+        ],
+        "source": "AIRIntegerLiteral",
+        "target": "ManagedIntegerLiteral"
+      },
+      {
+        "category": "EXPRESSION",
+        "fields": [
+          [
+            "value",
+            "Value"
+          ]
+        ],
+        "source": "AIRFloatLiteral",
+        "target": "ManagedFloatLiteral"
+      },
+      {
+        "category": "EXPRESSION",
+        "fields": [
+          [
+            "value",
+            "Value"
+          ]
+        ],
+        "source": "AIRStringLiteral",
+        "target": "ManagedStringLiteral"
+      },
+      {
+        "category": "EXPRESSION",
+        "fields": [
+          [
+            "value",
+            "Value"
+          ]
+        ],
+        "source": "AIRBooleanLiteral",
+        "target": "ManagedBooleanLiteral"
+      },
+      {
+        "category": "EXPRESSION",
+        "fields": [
+          [
+            "name",
+            "Name"
+          ]
+        ],
+        "source": "AIRIdentifierReference",
+        "target": "ManagedIdentifierReference"
+      },
+      {
+        "category": "EXPRESSION",
+        "fields": [
+          [
+            "operator",
+            "Operator"
+          ],
+          [
+            "operand",
+            "Operand"
+          ]
+        ],
+        "source": "AIRUnaryExpression",
+        "target": "ManagedUnaryExpression"
+      },
+      {
+        "category": "EXPRESSION",
+        "fields": [
+          [
+            "left",
+            "Left"
+          ],
+          [
+            "operator",
+            "Operator"
+          ],
+          [
+            "right",
+            "Right"
+          ]
+        ],
+        "source": "AIRBinaryExpression",
+        "target": "ManagedBinaryExpression"
+      },
+      {
+        "category": "EXPRESSION",
+        "fields": [
+          [
+            "target",
+            "Target"
+          ],
+          [
+            "arguments",
+            "Arguments"
+          ],
+          [
+            "type_arguments",
+            "TypeArguments"
+          ]
+        ],
+        "source": "AIRCallExpression",
+        "target": "ManagedCallExpression"
+      },
+      {
+        "category": "FUNCTION",
+        "fields": [
+          [
+            "name",
+            "Name"
+          ],
+          [
+            "value_type",
+            "ValueType"
+          ]
+        ],
+        "source": "AIRParameter",
+        "target": "ManagedFunctionParameter"
+      },
+      {
+        "category": "FUNCTION",
+        "fields": [
+          [
+            "name",
+            "Name"
+          ],
+          [
+            "expression",
+            "Expression"
+          ]
+        ],
+        "source": "AIRLocalBinding",
+        "target": "ManagedLocalBinding"
+      },
+      {
+        "category": "FUNCTION",
+        "fields": [
+          [
+            "expression",
+            "Expression"
+          ]
+        ],
+        "source": "AIRFunctionReturn",
+        "target": "ManagedFunctionReturn"
+      },
+      {
+        "category": "FUNCTION",
+        "fields": [
+          [
+            "condition",
+            "Condition"
+          ],
+          [
+            "actions",
+            "Actions"
+          ],
+          [
+            "otherwise_actions",
+            "OtherwiseActions"
+          ]
+        ],
+        "source": "AIRFunctionWhen",
+        "target": "ManagedFunctionWhen"
+      },
+      {
+        "category": "FUNCTION",
+        "fields": [
+          [
+            "id",
+            "Id"
+          ],
+          [
+            "name",
+            "Name"
+          ],
+          [
+            "parameters",
+            "Parameters"
+          ],
+          [
+            "return_expression",
+            "ReturnExpression"
+          ],
+          [
+            "order",
+            "Order"
+          ],
+          [
+            "local_bindings",
+            "LocalBindings"
+          ],
+          [
+            "body",
+            "Body"
+          ],
+          [
+            "return_type",
+            "ReturnType"
+          ],
+          [
+            "type_parameters",
+            "TypeParameters"
+          ]
+        ],
+        "source": "AIRFunction",
+        "target": "ManagedExecutableFunction"
+      },
+      {
+        "category": "TYPE",
+        "fields": [
+          [
+            "value",
+            "Name"
+          ]
+        ],
+        "source": "str(GenericTypeLike)",
+        "target": "ManagedNamedTypeReference"
+      },
+      {
+        "category": "TYPE",
+        "fields": [
+          [
+            "name",
+            "Name"
+          ],
+          [
+            "arguments",
+            "Arguments"
+          ]
+        ],
+        "source": "ApexType",
+        "target": "ManagedApexTypeReference"
+      },
+      {
+        "category": "TYPE",
+        "fields": [
+          [
+            "name",
+            "Name"
+          ],
+          [
+            "owner",
+            "Owner"
+          ],
+          [
+            "constraints",
+            "Constraints"
+          ]
+        ],
+        "source": "ApexTypeVariable",
+        "target": "ManagedTypeVariableReference"
+      },
+      {
+        "category": "CONSTRAINT",
+        "fields": [
+          [
+            "value",
+            "Name"
+          ]
+        ],
+        "source": "str(ConstraintLike)",
+        "target": "ManagedNamedConstraintReference"
+      },
+      {
+        "category": "CONSTRAINT",
+        "fields": [
+          [
+            "name",
+            "Name"
+          ],
+          [
+            "description",
+            "Description"
+          ]
+        ],
+        "source": "ApexTypeConstraint",
+        "target": "ManagedApexTypeConstraintReference"
+      }
+    ],
+    "boolean_translation": "BOOLEAN_VALUE_PRESERVED",
+    "collection_shape_translation": "tuple_to_IReadOnlyList_preserve_order",
+    "field_name_normalization": "snake_case_to_PascalCase_where_structurally_corresponding",
+    "float_translation": "CANONICAL_AIR_FLOAT_TO_SYSTEM_DOUBLE_BINARY64",
+    "integer_translation": "PYTHON_INTEGER_TO_SYSTEM_NUMERICS_BIGINTEGER_EXACT",
+    "optional_shape_translation": "Optional[T]_to_nullable_reference_or_interface",
+    "string_translation": "UNICODE_SCALAR_CONTENT_PRESERVED_AS_DOTNET_STRING",
+    "topology_only_declaration_count": 7,
+    "topology_only_declarations": [
+      "ManagedExecutableExpression",
+      "ManagedTypeReference",
+      "ManagedGenericTypeLike",
+      "ManagedTypeLike",
+      "ManagedTypeIdentity",
+      "ManagedConstraintReference",
+      "ManagedFunctionStatement"
+    ]
+  },
+  "next_stage_gate": "P12.5-RCV-35 MANAGED EXECUTABLE CARRIER DECODER ARCHITECTURE CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-executable-carrier-derivation-mapping-census/v1",
+    "stage": "P12.5-RCV-33"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-derivation-mapping-contract/v1",
+  "recursive_rules": {
+    "apex_type_arguments_preserve_order": true,
+    "call_arguments_preserve_order": true,
+    "call_type_arguments_preserve_order": true,
+    "expression_children_use_same_mapping_contract": true,
+    "function_body_preserve_order": true,
+    "function_local_bindings_preserve_order": true,
+    "function_parameters_preserve_order": true,
+    "function_type_parameters_preserve_order": true,
+    "type_variable_constraints_preserve_order": true,
+    "when_actions_preserve_order": true,
+    "when_otherwise_actions_preserve_order": true
+  },
+  "source_contract": {
+    "canonical_serialization_delegate": "air.serialization.air_to_dict",
+    "derivation_owner_project": "ApexForge.Runtime",
+    "derivation_source": "CANONICAL_AIR_TRANSPORT",
+    "logical_source_owner": "air.model.VerifiedAIRProgram"
+  },
+  "stage": "P12.5-RCV-34",
+  "status": "RECOVERY_GOVERNANCE_DECISION",
+  "title": "Recovered Managed Executable Carrier Derivation Mapping Contract"
+}

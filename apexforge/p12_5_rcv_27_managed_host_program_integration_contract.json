@@ -1,0 +1,52 @@
+{
+  "authority": {
+    "ingress_owner": "ApexForge.Runtime.Host",
+    "language_semantics": "CANONICAL_AIR",
+    "managed_validation_owner": "ApexForge.Runtime.ManagedRuntimeHost",
+    "program_defines_language_semantics": false,
+    "program_executes_handoff": false,
+    "program_role": "ORCHESTRATION_AND_LIFECYCLE_SHELL",
+    "program_selects_transport": false
+  },
+  "decision": {
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "lifecycle_ingress_coupling": "DEFERRED",
+    "network_ingress": "FORBIDDEN_IN_THIS_LINE",
+    "program_admits_target_neutral_handoff": false,
+    "program_constructs_runtime_host_ingress": false,
+    "program_ingress_wiring": "DEFERRED_NO_PAYLOAD_SOURCE",
+    "program_reads_external_payload": false,
+    "runtime_host_ingress_remains_available_as_in_process_api": true
+  },
+  "historical_evidence": {
+    "cross_runtime_transport_recovered": false,
+    "external_payload_source_recovered": false,
+    "historical_identity_claim": false,
+    "program_handoff_admission_recovered": false,
+    "program_wiring_recovered": false,
+    "runtime_host_ingress_type_recovered": true
+  },
+  "next_stage_gate": "P12.5-RCV-28 MANAGED EXECUTABLE CARRIER HISTORICAL CENSUS",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-host-ingress-integration-census/v1",
+    "stage": "P12.5-RCV-26"
+  },
+  "profile": "apexforge.p12.managed-host-program-integration-contract/v1",
+  "rationale": {
+    "avoid_dead_composition": true,
+    "avoid_inventing_payload_source": true,
+    "avoid_inventing_transport": true,
+    "preserve_existing_program_lifecycle_behavior": true,
+    "preserve_runtime_host_ingress_as_library_surface": true
+  },
+  "stage": "P12.5-RCV-27",
+  "status": "RECOVERY_GOVERNANCE_DECISION",
+  "title": "Recovered Managed Host Program Integration Contract",
+  "unchanged_surfaces": [
+    "runtimes/dotnet/ApexForge.Runtime.Host/Program.cs",
+    "runtimes/dotnet/ApexForge.Runtime.Host/RuntimeHostLifecycle.cs",
+    "runtimes/dotnet/ApexForge.Runtime.Host/RuntimeHostIngress.cs"
+  ]
+}

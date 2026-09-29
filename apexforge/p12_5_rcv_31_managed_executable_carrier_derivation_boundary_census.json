@@ -1,0 +1,78 @@
+{
+  "boundary_constraints": {
+    "do_not_add_second_language_semantic_implementation": true,
+    "do_not_infer_derivation_from_structural_similarity": true,
+    "do_not_select_cross_runtime_transport": true,
+    "do_not_select_execution_dispatch": true,
+    "do_not_treat_canonical_json_as_carrier_serialization": true,
+    "do_not_treat_target_neutral_handoff_as_derivation_source_without_decision": true
+  },
+  "candidate_derivation_sources": [
+    "VERIFIED_AIR_PROGRAM_OBJECT_GRAPH",
+    "CANONICAL_AIR_TRANSPORT",
+    "TARGET_NEUTRAL_LOWERING_PRODUCT",
+    "TARGET_NEUTRAL_MANAGED_HANDOFF"
+  ],
+  "canonical_source_surface": {
+    "canonical_serialization_delegate": "air.serialization.air_to_dict",
+    "expression_nodes": [
+      "AIRIntegerLiteral",
+      "AIRFloatLiteral",
+      "AIRStringLiteral",
+      "AIRBooleanLiteral",
+      "AIRCallExpression"
+    ],
+    "function_nodes": [
+      "AIRParameter",
+      "AIRLocalBinding",
+      "AIRFunctionReturn",
+      "AIRFunctionWhen",
+      "AIRFunction"
+    ],
+    "semantic_authority": "CANONICAL_AIR",
+    "verified_program_owner": "air.model.VerifiedAIRProgram"
+  },
+  "census_result": {
+    "carrier_execution_authority": false,
+    "derivation_direction": "UNSELECTED",
+    "derivation_owner": "UNSELECTED",
+    "derivation_source": "UNSELECTED",
+    "existing_derivation_bridge_expected": false,
+    "managed_carrier_implementation_present": true,
+    "managed_runtime_derivation_bridge_expected": false,
+    "production_python_managed_carrier_reference_expected": 0,
+    "target_neutral_handoff_carrier_coupling_expected": false
+  },
+  "deferred": {
+    "carrier_derivation_implementation": "DEFERRED",
+    "carrier_derivation_source": "UNSELECTED",
+    "carrier_handoff_coupling": "DEFERRED",
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "external_serialization": "UNSELECTED",
+    "managed_execution_dispatch": "DEFERRED",
+    "native_execution_dispatch": "DEFERRED",
+    "qsi_coupling": "DEFERRED"
+  },
+  "historical_q_census": {
+    "canonical_derivation_source_reference_count": 139,
+    "existing_derivation_bridge_reference_count": 0,
+    "existing_handoff_boundary_reference_count": 22,
+    "gate": "P12.5E-E-Q MANAGED EXECUTABLE CARRIER DERIVATION BOUNDARY CENSUS",
+    "gate_passed": true,
+    "managed_carrier_reference_outside_definition_count": 3,
+    "managed_runtime_reference_count": 26,
+    "original_commit_identity_equivalence": false,
+    "production_python_managed_carrier_reference_count": 0,
+    "regression_stack_pass": true,
+    "repository_unchanged": true
+  },
+  "next_stage_gate": "P12.5-RCV-32 MANAGED EXECUTABLE CARRIER DERIVATION SOURCE DECISION",
+  "predecessor": {
+    "required_profile": "apexforge.p12.managed-executable-carrier-implementation-foundation/v1",
+    "stage": "P12.5-RCV-30"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-derivation-boundary-census/v1",
+  "stage": "P12.5-RCV-31",
+  "status": "RECOVERED_AUDIT_CANDIDATE",
+  "title": "Recovered Managed Executable Carrier Derivation Boundary Census"
+}

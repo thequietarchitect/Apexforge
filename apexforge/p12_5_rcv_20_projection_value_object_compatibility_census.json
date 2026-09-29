@@ -1,0 +1,82 @@
+{
+  "authority": {
+    "compatibility_census_defines_semantics": false,
+    "compatibility_census_executes_programs": false,
+    "compatibility_census_selects_transport": false,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "compatibility_target": {
+    "compatibility_scope": "STRUCTURAL_AND_VALIDATION_ADMISSIBILITY_ONLY",
+    "managed_type": "ApexForge.Runtime.TargetNeutralLoweringHandoff",
+    "schema": "apexforge.target-neutral-lowering/v1",
+    "source_type": "apexforge.native_backend.managed_handoff_projection.ManagedHandoffProjection"
+  },
+  "field_correspondence": [
+    {
+      "managed": "Schema",
+      "managed_type": "string",
+      "source": "schema",
+      "source_type": "str"
+    },
+    {
+      "managed": "VerifiedAirFingerprint",
+      "managed_type": "string",
+      "source": "verified_air_fingerprint",
+      "source_type": "str"
+    },
+    {
+      "managed": "RoutingFingerprint",
+      "managed_type": "string",
+      "source": "routing_fingerprint",
+      "source_type": "str"
+    },
+    {
+      "managed": "EntryDirective",
+      "managed_type": "string",
+      "source": "entry_directive",
+      "source_type": "str"
+    },
+    {
+      "managed": "DirectiveOwnerIds",
+      "managed_type": "IReadOnlyList<string>",
+      "source": "directive_owner_ids",
+      "source_type": "tuple[str, ...]"
+    },
+    {
+      "managed": "ProductFingerprint",
+      "managed_type": "string",
+      "source": "product_fingerprint",
+      "source_type": "str"
+    }
+  ],
+  "next_stage_gate": "P12.5-RCV-21 CROSS-RUNTIME TRANSPORT ARCHITECTURE CENSUS",
+  "package_surface": {
+    "root_export_change_authorized": false,
+    "root_export_status": "CENSUS_AT_RUNTIME"
+  },
+  "predecessor": {
+    "required_profile": "apexforge.p12.projection-value-object-implementation-foundation/v1",
+    "stage": "P12.5-RCV-19"
+  },
+  "profile": "apexforge.p12.projection-value-object-compatibility-census/v1",
+  "required_properties": {
+    "binding_object_absent": true,
+    "canonical_json_absent": true,
+    "field_count_equal": true,
+    "field_order_equal": true,
+    "managed_admission_validate_and_return": true,
+    "managed_handoff_immutable_record": true,
+    "projection_immutable": true,
+    "schema_equal": true
+  },
+  "stage": "P12.5-RCV-20",
+  "status": "RECOVERED_AUDIT_CANDIDATE",
+  "title": "Recovered Projection Value-Object Compatibility Census",
+  "unselected": {
+    "command_line_format": "UNSELECTED",
+    "cross_runtime_transport": "UNSELECTED",
+    "external_serialization": "UNSELECTED",
+    "file_format": "UNSELECTED",
+    "stdin_format": "UNSELECTED"
+  }
+}

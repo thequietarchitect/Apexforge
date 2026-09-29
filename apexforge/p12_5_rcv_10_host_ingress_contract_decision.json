@@ -1,0 +1,50 @@
+{
+  "authority": {
+    "canonical_execution_plan_owner": "workflow.air_runner.RegistryExecutionPlan",
+    "canonical_verified_air_owner": "air.model.VerifiedAIRProgram",
+    "host_defines_language_semantics": false,
+    "ingress_may_execute": false,
+    "ingress_may_lower": false,
+    "ingress_may_reinterpret": false,
+    "ingress_may_validate": true,
+    "language_semantics": "CANONICAL_AIR"
+  },
+  "compatibility": {
+    "p12_2_boundary_preserved": true,
+    "p12_4_freeze_preserved": true,
+    "target_neutral_schema": "apexforge.target-neutral-lowering/v1"
+  },
+  "decision": {
+    "command_line_payload_ingress": "DEFERRED",
+    "concrete_managed_handoff_type": "DEFERRED_TO_RECONSTRUCTION_GATE",
+    "external_serialization": "UNSELECTED",
+    "file_path_payload_ingress": "DEFERRED",
+    "future_ingress_type": "ApexForge.Runtime.Host.RuntimeHostIngress",
+    "handoff_subject": "TARGET_NEUTRAL_LOWERING_PRODUCT",
+    "host_ingress_family": "IN_PROCESS_API",
+    "ingress_owner": "ApexForge.Runtime.Host",
+    "network_ingress": "FORBIDDEN_IN_THIS_LINE",
+    "standard_input_payload_ingress": "DEFERRED"
+  },
+  "deferred": [
+    "TARGET_NEUTRAL_HANDOFF_TYPE_RECONSTRUCTION",
+    "HOST_INGRESS_IMPLEMENTATION",
+    "EXTERNAL_SERIALIZATION",
+    "COMMAND_LINE_PAYLOAD_INGRESS",
+    "STANDARD_INPUT_PAYLOAD_INGRESS",
+    "FILE_PATH_PAYLOAD_INGRESS",
+    "MANAGED_EXECUTABLE_CARRIER",
+    "MANAGED_EXECUTION_DISPATCH",
+    "NATIVE_EXECUTION_DISPATCH",
+    "QSI_COUPLING"
+  ],
+  "next_stage_gate": "P12.5-RCV-11 TARGET-NEUTRAL MANAGED HANDOFF RECONSTRUCTION CONTRACT",
+  "predecessor": {
+    "required_profile": "apexforge.p12.host-ingress-architecture-census/v1",
+    "stage": "P12.5-RCV-9"
+  },
+  "profile": "apexforge.p12.host-ingress-contract-decision/v1",
+  "stage": "P12.5-RCV-10",
+  "status": "RECOVERED_GOVERNANCE_CANDIDATE",
+  "title": "Recovered Host Ingress Contract Decision"
+}

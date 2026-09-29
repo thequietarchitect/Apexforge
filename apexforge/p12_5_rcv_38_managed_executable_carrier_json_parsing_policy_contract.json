@@ -1,0 +1,153 @@
+{
+  "authority": {
+    "language_semantics": "CANONICAL_AIR",
+    "parser_is_structural_projection_only": true,
+    "parser_may_dispatch": false,
+    "parser_may_execute": false,
+    "parser_may_reinterpret_semantics": false,
+    "parser_may_select_transport": false
+  },
+  "boundary": {
+    "cross_runtime_transport": "DEFERRED_NO_TRANSPORT_AUTHORIZED",
+    "decoder_implementation": "DEFERRED",
+    "decoder_input_root": "UNSELECTED",
+    "decoder_method_shape": "UNSELECTED",
+    "execution_dispatch": "DEFERRED",
+    "external_serialization": "UNSELECTED",
+    "runtime_crossing": "NOT_AUTHORIZED",
+    "target_neutral_handoff_coupling": false
+  },
+  "decoder_context": {
+    "architecture": "SYSTEM_TEXT_JSON_DOM",
+    "canonical_source": "air.serialization.air_to_dict",
+    "explicit_node_discriminator": false,
+    "future_decoder_type": "ApexForge.Runtime.ManagedExecutableCarrierDecoder",
+    "manual_structural_dispatch": true,
+    "mechanism": "System.Text.Json.JsonDocument_JsonElement"
+  },
+  "historical_identity_claim": false,
+  "implementation": "DEFERRED",
+  "next_stage_gate": "P12.5-RCV-39 MANAGED EXECUTABLE CARRIER DECODER INPUT ROOT CENSUS",
+  "normalized_union_policy": {
+    "constraint_string_input": "NOT_EXPECTED_AFTER_CANONICAL_AIR_NORMALIZATION",
+    "generic_type_string_input": "NOT_EXPECTED_AFTER_CANONICAL_AIR_NORMALIZATION",
+    "managed_apex_type_constraint_reference": "PRIMARY_CANONICAL_CONSTRAINT_TARGET",
+    "managed_apex_type_reference": "PRIMARY_CANONICAL_TYPE_TARGET",
+    "managed_named_constraint_reference": "NOT_CONSTRUCTED_FROM_CANONICAL_TRANSPORT_IN_INITIAL_DECODER",
+    "managed_named_type_reference": "NOT_CONSTRUCTED_FROM_CANONICAL_TRANSPORT_IN_INITIAL_DECODER"
+  },
+  "nullability_policy": {
+    "all_other_authorized_mapping_fields": "NON_NULL",
+    "allowed_null_fields": [
+      "AIRParameter.value_type",
+      "AIRFunction.return_expression",
+      "AIRFunction.return_type"
+    ],
+    "null_collection": "REJECT",
+    "null_collection_item": "REJECT"
+  },
+  "numeric_policy": {
+    "float_detection": "NUMBER_TOKEN_WITH_DECIMAL_POINT_OR_EXPONENT",
+    "float_parse": "DOUBLE_PARSE_RAW_TEXT_INVARIANT_BINARY64",
+    "integer_detection": "NUMBER_TOKEN_WITHOUT_DECIMAL_POINT_OR_EXPONENT",
+    "integer_overflow_policy": "NOT_APPLICABLE_BIGINTEGER",
+    "integer_parse": "BIGINTEGER_PARSE_RAW_TEXT_INVARIANT_EXACT",
+    "nan_transport": "REJECT_NON_STRICT_JSON",
+    "negative_infinity_transport": "REJECT_NON_STRICT_JSON",
+    "negative_zero": "PRESERVE_SIGN_BIT",
+    "nonfinite_future_resolution": "REQUIRES_SEPARATE_TRANSPORT_NORMALIZATION_DECISION",
+    "nonfinite_semantic_support": "NOT_DENIED_BY_CARRIER_MODEL",
+    "nonfinite_transport_status": "INCOMPATIBLE_WITH_SELECTED_JSON_DOM_INPUT",
+    "positive_infinity_transport": "REJECT_NON_STRICT_JSON"
+  },
+  "predecessor": {
+    "required_profile": "apexforge.p12.canonical-air-transport-json-shape-census/v1",
+    "stage": "P12.5-RCV-37"
+  },
+  "profile": "apexforge.p12.managed-executable-carrier-json-parsing-policy-contract/v1",
+  "shape_signatures": {
+    "AIRBinaryExpression": [
+      "left",
+      "operator",
+      "right"
+    ],
+    "AIRCallExpression": [
+      "target",
+      "arguments",
+      "type_arguments"
+    ],
+    "AIRFunction": [
+      "id",
+      "name",
+      "parameters",
+      "return_expression",
+      "order",
+      "local_bindings",
+      "body",
+      "return_type",
+      "type_parameters"
+    ],
+    "AIRFunctionReturn": [
+      "expression"
+    ],
+    "AIRFunctionWhen": [
+      "condition",
+      "actions",
+      "otherwise_actions"
+    ],
+    "AIRIdentifierReference": [
+      "name"
+    ],
+    "AIRIntegerLiteral_OR_AIRFloatLiteral": [
+      "value"
+    ],
+    "AIRLocalBinding": [
+      "name",
+      "expression"
+    ],
+    "AIRParameter": [
+      "name",
+      "value_type"
+    ],
+    "AIRStringLiteral_OR_AIRBooleanLiteral": [
+      "value"
+    ],
+    "AIRUnaryExpression": [
+      "operator",
+      "operand"
+    ],
+    "ApexType": [
+      "name",
+      "arguments"
+    ],
+    "ApexTypeConstraint": [
+      "name",
+      "description"
+    ],
+    "ApexTypeVariable": [
+      "name",
+      "owner",
+      "constraints"
+    ]
+  },
+  "stage": "P12.5-RCV-38",
+  "status": "RECOVERY_GOVERNANCE_DECISION",
+  "structural_dispatch_policy": {
+    "collection_order": "PRESERVE",
+    "dispatch_basis": "EXACT_PROPERTY_SET_PLUS_JSON_VALUE_KIND",
+    "duplicate_property_policy": "REJECT",
+    "missing_required_property_policy": "REJECT",
+    "property_name_matching": "ORDINAL_CASE_SENSITIVE_SNAKE_CASE",
+    "silent_default_injection": "FORBIDDEN",
+    "unknown_property_policy": "REJECT",
+    "unknown_shape_policy": "REJECT"
+  },
+  "title": "Recovered Managed Executable Carrier JSON Parsing Policy Contract",
+  "value_kind_disambiguation": {
+    "value_object_boolean": "AIRBooleanLiteral",
+    "value_object_number_float_grammar": "AIRFloatLiteral",
+    "value_object_number_integer_grammar": "AIRIntegerLiteral",
+    "value_object_other": "REJECT",
+    "value_object_string": "AIRStringLiteral"
+  }
+}
