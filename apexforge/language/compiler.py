@@ -186,12 +186,29 @@ class CompiledSource:
     source_map: SourceMap
 
 
+@dataclass(frozen=True)
+class CompilerOperationEvidence:
+    """Exact producer occurrence and existing SourceMap entry; no semantic payload."""
+
+    kind: str
+    occurrence: tuple[int, ...]
+    entry: Optional[SourceMapEntry]
+
+
 @dataclass
 class _CompileContext:
     source_entries: list[SourceMapEntry]
     scope: str
     invocation_index: int = 0
     action_index: int = 0
+    assignment_evidence: Optional[list] = None
+    assignment_index: int = 0
+
+    def observe_assignment(self, entry_count: int) -> None:
+        if self.assignment_evidence is not None:
+            entry = self.source_entries[-1] if len(self.source_entries) > entry_count else None
+            self.assignment_evidence.append((self.assignment_index, entry))
+        self.assignment_index += 1
 
     def child(self, suffix: str) -> "_CompileContext":
         return _CompileContext(
@@ -1115,6 +1132,7 @@ def compile_actions(
                     node=action,
                 )
 
+            entry_count = len(entries)
             compiled_actions.append(
                 StateAssignment(
                     state=state_id,
@@ -1129,6 +1147,7 @@ def compile_actions(
                 kind="state_assignment",
                 reference=state_id,
             )
+            context.observe_assignment(entry_count)
             continue
 
         if isinstance(action, SetActionNode):
@@ -1159,6 +1178,7 @@ def compile_actions(
                     node=action,
                 )
 
+            entry_count = len(entries)
             compiled_actions.append(
                 StateAssignment(
                     state=state_id,
@@ -1173,6 +1193,7 @@ def compile_actions(
                 kind="state_assignment",
                 reference=state_id,
             )
+            context.observe_assignment(entry_count)
             continue
 
         if isinstance(action, InvokeActionNode):
@@ -1254,6 +1275,7 @@ def _compile_directive_with_map(
     node: DirectiveNode,
     *,
     function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
+    operation_evidence: Optional[list[CompilerOperationEvidence]] = None,
 ) -> CompiledSource:
     principal_id = f"principal:{node.name}"
     directive_id = f"directive:{node.name}"
@@ -1303,7 +1325,8 @@ def _compile_directive_with_map(
     state_ids = {state.name: f"state:{state.name}" for state in node.states}
     event_ids = {event.name: f"event:{event.name}" for event in node.events}
 
-    for state in node.states:
+    for state_index, state in enumerate(node.states):
+        entry_count = len(entries)
         _append_source_entry(
             entries,
             air_id=state_ids[state.name],
@@ -1311,6 +1334,9 @@ def _compile_directive_with_map(
             kind="state",
             reference=state.name,
         )
+        if operation_evidence is not None:
+            entry = entries[-1] if len(entries) > entry_count else None
+            operation_evidence.append(CompilerOperationEvidence("state", (state_index,), entry))
 
     for event in node.events:
         _append_source_entry(
@@ -1323,7 +1349,7 @@ def _compile_directive_with_map(
 
     causal_decisions: list[CausalDecision] = []
 
-    for cause in node.causes:
+    for cause_index, cause in enumerate(node.causes):
         cause_id = f"cause:{cause.name}"
         _append_source_entry(
             entries,
@@ -1334,7 +1360,7 @@ def _compile_directive_with_map(
         )
         paths: list[CausalPath] = []
 
-        for path in cause.paths:
+        for path_index, path in enumerate(cause.paths):
             path_id = f"path:{path.name}"
             _append_source_entry(
                 entries,
@@ -1344,9 +1370,11 @@ def _compile_directive_with_map(
                 reference=path.name,
             )
 
+            assignment_evidence = [] if operation_evidence is not None else None
             action_context = _CompileContext(
                 source_entries=entries,
                 scope=f"{node.name}:{cause.name}:{path.name}",
+                assignment_evidence=assignment_evidence,
             )
             ordered_actions = compile_actions(
                 path.actions,
@@ -1355,6 +1383,12 @@ def _compile_directive_with_map(
                 context=action_context,
                 state_types=state_types,
             )
+
+            if operation_evidence is not None:
+                operation_evidence.extend(
+                    CompilerOperationEvidence("assignment", (cause_index, path_index, index), entry)
+                    for index, entry in assignment_evidence
+                )
 
             assignments = tuple(
                 action for action in ordered_actions if isinstance(action, StateAssignment)
@@ -2076,6 +2110,27 @@ def compile_source_with_map(
     )
 
 
+def compile_source_with_operation_evidence(
+    source: str,
+    *,
+    source_name: str = "<memory>",
+    function_signatures: Optional[Mapping[str, FunctionSignature]] = None,
+) -> tuple[CompiledSource, tuple[CompilerOperationEvidence, ...]]:
+    """Opt-in single-directive producer observation; other source forms unsupported.
+
+    Conditional/nested actions retain ordinary compiler evidence but do not acquire
+    guessed top-level assignment locators. AIR and the existing SourceMap are unchanged.
+    """
+    unit = parse_source_unit(source, source_name=source_name)
+    if len(unit.declarations) != 1 or type(unit.declarations[0]) is not DirectiveNode:
+        raise ValueError("Operation correspondence currently requires one directive source unit.")
+    observations: list[CompilerOperationEvidence] = []
+    compiled = _compile_directive_with_map(
+        unit.declarations[0], function_signatures=function_signatures, operation_evidence=observations,
+    )
+    return compiled, tuple(observations)
+
+
 def compile_source(
     source: str,
     *,
@@ -2092,6 +2147,8 @@ def compile_source(
 
 
 __all__ = (
+    "CompilerOperationEvidence",
+    "compile_source_with_operation_evidence",
     "CompiledSource",
     "CompilerError",
     "SourceMap",

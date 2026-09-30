@@ -38,7 +38,7 @@ def _constant(value: int) -> str:
     return "(-9223372036854775807LL - 1LL)" if value == -(2 ** 63) else f"{value}LL"
 
 
-def _source(admission) -> bytes:
+def _source(admission, *, region_sink=None) -> bytes:
     # No AIR names enter C identifiers. Stores retain the admitted order.
     lines = [
         'typedef unsigned long DWORD;',
@@ -54,9 +54,23 @@ def _source(admission) -> bytes:
         '}',
         'void __stdcall apexforge_entry(void) {',
     ]
-    lines += [f'  volatile __int64 s{index} = {_constant(value)};'
-              for index, value in enumerate(admission.initial_values)]
-    lines += [f'  s{index} = {_constant(value)};' for index, value in admission.stores]
+    # Side-channel ranges are recorded by the emitter, never reconstructed from C.
+    offset = sum(len(line) + 1 for line in lines)
+    ordinal = 0
+    for index, value in enumerate(admission.initial_values):
+        line = f'  volatile __int64 s{index} = {_constant(value)};'
+        lines.append(line)
+        if region_sink is not None:
+            region_sink.append((ordinal, offset, offset + len(line)))
+        offset += len(line) + 1
+        ordinal += 1
+    for index, value in admission.stores:
+        line = f'  s{index} = {_constant(value)};'
+        lines.append(line)
+        if region_sink is not None:
+            region_sink.append((ordinal, offset, offset + len(line)))
+        offset += len(line) + 1
+        ordinal += 1
     lines += [f'  emit(s{index});' for index in range(len(admission.state_ids))]
     lines += ['  ExitProcess(0);', '}', '']
     return '\n'.join(lines).encode('ascii')
